@@ -1,6 +1,8 @@
 from prefect import flow, task
 from random import random
 
+ID = "id"
+
 @task()
 def start_task(val):
     print(f"start {val}")
@@ -29,6 +31,9 @@ class FlowAtom(object):
     def __init__(self, params):
         self.params = params
     
+    @classmethod
+    def get_atoms(cls):
+        return cls._REGISTERED_ATOMS
     
     #This takes care of registering the atom locally for our pipeline project,
     #and also running the prefect registration hook. 
@@ -69,17 +74,21 @@ class TaskTwo(FlowAtom):
         for i in range(self.params["iterations"]):
             task_with_no_input()
 
-        
+@flow()
 class Pipeline():
     def __init__(self, config):
         self.config = config
     
     def __validate(self):
-        
-    
-    def do_flow(self):
+        available_atoms = FlowAtom.get_atoms()
         for task in self.config:
-            FlowAtom._REGISTERED_ATOMS[task["id"]](task["params"])()
+            if task[ID] not in available_atoms:
+                raise RuntimeError(f"{task[ID]} is not registered")
+    
+    def __call__(self):
+        available_atoms = FlowAtom.get_atoms()
+        for task in self.config:
+            available_atoms[task[ID]](task["params"])()
 
 config = [
     {
@@ -114,9 +123,12 @@ config = [
 ]
 
 #This, then is all we really need
+#I'm not sure why we can't just do `Pipeline(config)()`, something about how the pipeline is registered I guess.
+#But this is ultimatley enough to play with!
+
 @flow()
 def compose_pipeline(config):
-    pl = Pipeline(config)
-    pl.do_flow()
+    test_pipeline = Pipeline(config)
+    test_pipeline()
     
 compose_pipeline(config)
