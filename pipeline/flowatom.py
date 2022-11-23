@@ -10,6 +10,7 @@ in order to specify a nice encapsulated and validatable confuguration vocabulary
 DEFAULTS = "_defaults"
 
 class FlowAtom(object):
+    #Silly singleton pattern lets us register subclasses to this parameter
     _REGISTERED_ATOMS = {}
 
     task_name:str
@@ -38,6 +39,7 @@ class FlowAtom(object):
     #Validates the provided parameters, and sets the values to the object
     def __validate_and_apply(self, params):
         
+        #Gather all annotations and defaults from the MRO
         all_annotations = {}
         all_defaults = {}
         for cls in type(self).mro():
@@ -47,8 +49,7 @@ class FlowAtom(object):
                 else:
                     all_annotations.update({name:value})
         
-        print(all_annotations)
-        print(all_defaults)
+        #Validate and set parameters which are provided by the configuration
         set_params = []
         for key, value in params.items():
             if key not in all_annotations.keys():
@@ -59,11 +60,11 @@ class FlowAtom(object):
             set_params.append(key)    
             setattr(self, key, value)
         
-        
+        #Try to apply defaults for parameters which are unconfigured
         for key, value in all_annotations.items():
             if key not in set_params:
                 if key not in all_defaults:
-                    raise RuntimeError(f"Bad Configuration, missing required parameter {key}")
+                    raise RuntimeError(f"Bad Configuration, missing required parameter {key}:{value}")
                 else:
                     setattr(self, key, all_defaults[key])
             
