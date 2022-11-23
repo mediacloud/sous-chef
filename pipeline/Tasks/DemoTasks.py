@@ -1,5 +1,5 @@
 from prefect import task
-from FlowAtom import FlowAtom
+from ..flowatom import FlowAtom
 from random import random
 
 @task()

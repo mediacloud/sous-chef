@@ -4,8 +4,12 @@ from prefect import flow
 class FlowAtom(object):
     _REGISTERED_ATOMS = {}
     
+    #params
+    task_name:str
+    
     def __init__(self, params):
         self.params = params
+        print(vars(self))
     
     @classmethod
     def get_atoms(cls):

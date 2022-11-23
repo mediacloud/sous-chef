@@ -1,7 +1,6 @@
-from Pipeline import RunPipeline
-from Tasks import *
-#from DemoTasks import PrintParameters, PrintRandomValues
+from pipeline import RunPipeline
 
+#And of course eventually we can define these guys as yaml or whatever
 config = [
     {
         "id":"TestParamAccessTask",
