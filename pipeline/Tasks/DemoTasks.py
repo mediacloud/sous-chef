@@ -35,9 +35,8 @@ class PrintParameters(FlowAtom):
     
     def task_body(self):
         task_with_input(self.value)
-        task_with_three_inputs(1,2,3)
         
-
+        
 @FlowAtom.register("PrintRandomValuesTask")
 class PrintRandomValues(FlowAtom):
     
@@ -46,3 +45,19 @@ class PrintRandomValues(FlowAtom):
     def task_body(self):
         for i in range(self.iterations):
             task_with_no_input()
+            
+@FlowAtom.register("PrintParamsWithDefaults")
+class DefaultParameters(FlowAtom):
+    
+    a:int
+    b:int
+    c:int
+        
+    _defaults:{
+        "a":1,
+        "b":2,
+        "c":3,
+    }
+        
+    def task_body(self):
+        task_with_three_inputs(self.a, self.b, self.c)

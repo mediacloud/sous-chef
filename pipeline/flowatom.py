@@ -7,10 +7,13 @@ This is the magic class which performs most of the mucking about with python inn
 in order to specify a nice encapsulated and validatable confuguration vocabulary
 """
 
+DEFAULTS = "_defaults"
+
 class FlowAtom(object):
     _REGISTERED_ATOMS = {}
 
     task_name:str
+    _defaults:{"task_name":"A placeholder name"}
     
     def __init__(self, params):
         self.__validate_and_apply(params)
@@ -36,16 +39,33 @@ class FlowAtom(object):
     def __validate_and_apply(self, params):
         
         all_annotations = {}
-        for cls in self.__class__.__mro__:
-            all_annotations.update(inspect.get_annotations(cls))
+        all_defaults = {}
+        for cls in type(self).mro():
+            for name, value in inspect.get_annotations(cls).items():
+                if name == DEFAULTS:
+                    all_defaults.update(value)
+                else:
+                    all_annotations.update({name:value})
         
+        print(all_annotations)
+        print(all_defaults)
+        set_params = []
         for key, value in params.items():
             if key not in all_annotations.keys():
                 raise RuntimeError(f"Bad Configuration, {key} is not a valid configuration key. Options are: {all_annotations.keys()}")
             if not isinstance(value, all_annotations[key]):
                 raise RuntimeError(f"Bad Configuration, {key} must be {all_annotations[key]}")
-                
+            
+            set_params.append(key)    
             setattr(self, key, value)
+        
+        
+        for key, value in all_annotations.items():
+            if key not in set_params:
+                if key not in all_defaults:
+                    raise RuntimeError(f"Bad Configuration, missing required parameter {key}")
+                else:
+                    setattr(self, key, all_defaults[key])
             
         
   

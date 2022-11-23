@@ -14,6 +14,9 @@ class Pipeline():
         
         self.config = config
         self.__validate()
+        available_atoms = FlowAtom.get_atoms()
+        #We create all the atoms up top so they run their validation against the provided configuration
+        self.steps = [available_atoms[task[ID]](task["params"]) for task in self.config]
     
     def __validate(self):
         available_atoms = FlowAtom.get_atoms()
@@ -22,9 +25,8 @@ class Pipeline():
                 raise RuntimeError(f"{task[ID]} is not registered")
     
     def __call__(self):
-        available_atoms = FlowAtom.get_atoms()
-        for task in self.config:
-            available_atoms[task[ID]](task["params"])()
+        for step in self.steps:
+            step()
 
             
 #This is the main entrypoint for the whole thing            

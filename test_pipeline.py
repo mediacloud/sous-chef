@@ -24,10 +24,9 @@ config = [
         }
     },
     {
-        "id": "PrintRandomValuesTask",
+        "id": "PrintParamsWithDefaults",
         "params":{
-            "task_name": "do random values a second time",
-            "iterations":2
+            
         }
     },
     
