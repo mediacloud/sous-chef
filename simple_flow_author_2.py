@@ -123,7 +123,7 @@ config = [
 ]
 
 #This, then is all we really need
-#I'm not sure why we can't just do `Pipeline(config)()`, something about how the pipeline is registered I guess.
+#I'm not sure why we can't just do `Pipeline(config)()` outside of a parent flow, something about how the pipeline is registered I guess.
 #But this is ultimatley enough to play with!
 
 @flow()
