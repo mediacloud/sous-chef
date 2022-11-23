@@ -5,28 +5,28 @@ config = [
     {
         "id":"TestParamAccessTask",
         "params":{
-            "name":"the first one",
+            "task_name":"the first one",
             "value":"ten"
         }
     },
     {
         "id": "PrintRandomValuesTask",
         "params":{
-            "name": "the second one",
+            "task_name": "the second one",
             "iterations":5
         }
     },
     {
         "id": "TestParamAccessTask",
         "params":{
-            "name":"the third one",
+            "task_name":"the third one",
             "value":"five"
         }
     },
     {
         "id": "PrintRandomValuesTask",
         "params":{
-            "name": "do random values a second time",
+            "task_name": "do random values a second time",
             "iterations":2
         }
     },

@@ -2,6 +2,10 @@ from prefect import task
 from ..flowatom import FlowAtom
 from random import random
 
+
+#It is good to define steps of the atoms as tasks
+#so that we can take advantage of things like retries
+#and other prefect magic 
 @task()
 def start_task(val):
     print(f"start {val}")
@@ -26,13 +30,19 @@ def task_with_three_inputs(a, b, c):
 
 @FlowAtom.register("TestParamAccessTask")
 class PrintParameters(FlowAtom):
+    
+    value:str
+    
     def task_body(self):
-        task_with_input(self.params["value"])
+        task_with_input(self.value)
         task_with_three_inputs(1,2,3)
         
 
 @FlowAtom.register("PrintRandomValuesTask")
 class PrintRandomValues(FlowAtom):
+    
+    iterations:int
+    
     def task_body(self):
-        for i in range(self.params["iterations"]):
+        for i in range(self.iterations):
             task_with_no_input()
