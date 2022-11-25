@@ -1,7 +1,12 @@
 from pipeline import RunPipeline
 
 #And of course eventually we can define these guys as yaml or whatever
-config = [
+config = {
+    "data_strategy":{
+        "id":"CSVStrategy",
+        "data_location":"data/"
+    },
+    "steps":[
     {
         "id":"TestParamAccessTask",
         "params":{
@@ -26,11 +31,12 @@ config = [
     {
         "id": "PrintParamsWithDefaults",
         "params":{
-            
+            "a":25
+            #b and c are set by defaults in the atom definition
         }
     },
     
-]
+]}
 
 
 if __name__ == "__main__":
