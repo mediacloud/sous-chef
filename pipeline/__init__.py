@@ -1,8 +1,7 @@
 from prefect import flow
-
 from .flowatom import FlowAtom
 from .datastrategy import DataStrategy, DATASTRATEGY
-from . import Tasks 
+from .tasks import *
 
 
 ID = "id"

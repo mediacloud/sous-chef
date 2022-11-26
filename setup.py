@@ -5,5 +5,6 @@ setup(name='mc-pipeline',
       description='A package which contains configurable data processing atoms, piggybacking on prefect',
       author='Paige Gulley',
       author_email='nano3.14@gmail.com',
-      packages=['pipeline'],
+      packages=['pipeline',
+               'pipeline.tasks'],
      )
