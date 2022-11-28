@@ -7,7 +7,7 @@ DATASTRATEGY = "data_strategy"
 DATALOCATION = "data_location"
 READLOCATION = "read_location"
 WRITELOCATION = "write_location"
-
+PARAMS = "params"
 
 #There should be one data strategy per pipeline
 #Each impliments three methods:
@@ -32,6 +32,7 @@ class DataStrategy(object):
         self.data_location = config[DATALOCATION]
         self.read_location = config[READLOCATION]
         self.write_location = config[WRITELOCATION]
+        self.config = config
     
     # a class method update_config which reads a pipeline configuration 
     #and backfills each step with the information the strategy will need at each step
@@ -44,11 +45,14 @@ class DataStrategy(object):
         pass  
     
     #A method which writes data to outputlocation
-    def put_data(self, data):
+    def write_data(self, data):
         pass
     
     
-    
+#This strategy writes the output of each step to its own file using pandas,
+#and offers access to the previous step via get_data. 
+#This is kinda bad- as it leaves the actual access to the dataframe to each
+#flow atom implimentation, which is bad encapsulation. Iterate by leveraging pandas a bit more explicitly. 
 @DataStrategy.register("CSVStrategy")
 class CSVStrategy(DataStrategy):
 
@@ -71,19 +75,21 @@ class CSVStrategy(DataStrategy):
                 WRITELOCATION: step_out
             }
             
-            step[DATA] = data_meta
+            step[PARAMS][DATA] = data_meta
                 
             
         return config
           
-
-        
+    
     def get_data(self):
-        dataframe = pd.load_csv(f"{self.data_location}/{self.read_location}")
+        dataframe = pd.read_csv(f"{self.data_location}/{self.read_location}")
         return dataframe
     
-    def put_data(self, dataframe):
+    def write_data(self, dataframe):
         dataframe.to_csv(f"{self.data_location}/{self.write_location}")
         return True
-        
-        
+
+@DataStrategy.register("PandasStrategy")
+class PandasStrategy(DataStrategy):
+    pass
+#In this strategy

@@ -12,7 +12,6 @@ STEPS = "steps"
 @flow()
 class Pipeline():
     def __init__(self, config):
-        
         self.config = config
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
@@ -25,13 +24,16 @@ class Pipeline():
             strat_name = self.config[DATASTRATEGY][ID]
             if strat_name in available_strategies:
                 self.config = available_strategies[strat_name].update_config(self.config)
+            else:
+                raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
     
     #Do a top-level validation first
     def __validate_and_setup_steps(self):
         available_atoms = FlowAtom.get_atoms()
+        print(self.config)
         for task in self.config[STEPS]:
             if task[ID] not in available_atoms:
-                raise RuntimeError(f"{task[ID]} is not registered")
+                raise RuntimeError(f"{task[ID]} is not a registered Flow Atom")
          
         #Then create all the lower-level validation things
         self.steps = [available_atoms[task[ID]](task["params"]) for task in self.config[STEPS]]

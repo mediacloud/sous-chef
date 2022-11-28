@@ -28,6 +28,7 @@ class FlowAtom(object):
     #Easy Access to the subclass registry 
     @classmethod
     def get_atoms(cls):
+
         return cls._REGISTERED_ATOMS
     
     #This takes care of registering the atom locally for our pipeline project,
@@ -75,8 +76,8 @@ class FlowAtom(object):
                     setattr(self, key, all_defaults[key])
       
     def __setup_strategy(self, data_config):
-        available_strategies = DataStrategy.get_atoms()
-        strat_name = data_meta[DATASTRATEGY]
+        available_strategies = DataStrategy.get_strats()
+        strat_name = data_config[DATASTRATEGY]s
         if strat_name in available_strategies:
             self.__data_strategy = available_strategies[strat_name](data_config)
         else:
@@ -87,10 +88,16 @@ class FlowAtom(object):
         raise RunTimeError("task_body is Unimplimented")
     
     def get_data(self):
-        return self.__data_strategy.get_data()
+        if self.__data_strategy == None:
+            raise RuntimeError("Cannot Use get_data if No Datastrategy Is Specified")
+        else:
+            return self.__data_strategy.get_data()
     
     def write_data(self, data):
-        return self.__data_strategy.write_data(data)
+        if self.__data_strategy == None:
+            raise RuntimeError("Cannot Use write_data if No Datastrategy Is Specified")
+        else:
+            return self.__data_strategy.write_data(data)
     
     #Optional pre-task method, to be utilized by some intermediate class, probably.
     def __pre_task(self):
