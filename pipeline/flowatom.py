@@ -78,7 +78,7 @@ class FlowAtom(object):
     def __setup_strategy(self, data_config):
         available_strategies = DataStrategy.get_strats()
         if data_config is None:
-            self.__data_strategy = available_strategies[NO_STRAT](data_config)
+            self.__data_strategy = available_strategies[NOSTRAT](data_config)
         else:   
             
             strat_name = data_config[DATASTRATEGY]
