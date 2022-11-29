@@ -1,4 +1,5 @@
 import pandas as pd
+import inspect
 
 ID = "id"
 STEPS = "steps"
@@ -30,12 +31,17 @@ class DataStrategy(object):
             return stratclass 
         return _register
     
-    def __init__(self, config):
-        if config is not None:
-            self.data_location = config[DATALOCATION]
-            self.read_location = config[READLOCATION]
-            self.write_location = config[WRITELOCATION]
-            self.config = config
+    def __init__(self, params, _input, _output):
+        self._function_inputs = inspect.get_annotations(_input)
+        self._function_outputs = inspect.get_annotations(_output)
+        
+        print(self._function_inputs)
+        print(self._function_outputs)
+        if params is not None:
+            self.data_location = params[DATALOCATION]
+            self.read_location = params[READLOCATION]
+            self.write_location = params[WRITELOCATION]
+            self.params = params
     
     # a class method update_config which reads a pipeline configuration 
     #and backfills each step with the information the strategy will need at each step

@@ -77,26 +77,27 @@ class FlowAtom(object):
       
     def __setup_strategy(self, data_config):
         available_strategies = DataStrategy.get_strats()
+        
         if data_config is None:
-            self.__data_strategy = available_strategies[NOSTRAT](data_config)
+            strat_name = NOSTRAT
         else:   
-            
             strat_name = data_config[DATASTRATEGY]
-            if strat_name in available_strategies:
-                self.__data_strategy = available_strategies[strat_name](data_config)
-            else:
-                raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
+        
+        if strat_name in available_strategies:
+            self.__data_strategy = available_strategies[strat_name](data_config, self.f_input(), self.f_output())
+        else:
+            raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             
     #The details of the specific task are implimented here
     def task_body(self):
         raise RunTimeError("task_body is Unimplimented")
     
     
-    class __input():
-        pass
+    def f_input(self):
+        return _input
     
-    class __output():
-        pass
+    def f_output(self):
+        return _output
     
     def get_data(self):
         if self.__data_strategy == None:
@@ -126,7 +127,11 @@ class FlowAtom(object):
         
 
         
-    
+class _input():
+    pass
+
+class _output():
+    pass
 
     
     

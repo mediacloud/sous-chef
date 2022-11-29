@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 
 
+class RandomSeriesTaskOutput():
+    numbers:int
+
 @FlowAtom.register("GenerateRandomSeriesTask")
 class GenerateRandomSeriesTask(FlowAtom):
     
@@ -13,8 +16,8 @@ class GenerateRandomSeriesTask(FlowAtom):
         "sample_size":10
     }
         
-    class __output():
-        numbers:int
+    def f_output(self):
+        return RandomSeriesTaskOutput
     
     def task_body(self):
 
@@ -22,16 +25,21 @@ class GenerateRandomSeriesTask(FlowAtom):
         self.write_data(df)
         
 
+        
+class PrimeFactorsTaskInput():
+    to_factorize:int
+        
+class PrimeFactorsTaskOutput():
+    factors:[int]
 
 @FlowAtom.register("ListPrimeFactorsTask")
 class ListPrimeFactorsTask(FlowAtom):
     
-    
-    class __input():
-        to_factorize:int
+    def f_input(self):
+        return PrimeFactorsTaskInput
         
-    class __output():
-        factors:[int]
+    def f_output(self):
+        return PrimeFactorsTaskOutput
             
     def task_body(self):
 
