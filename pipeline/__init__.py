@@ -1,11 +1,12 @@
 from prefect import flow
 from .flowatom import FlowAtom
-from .datastrategy import DataStrategy, DATASTRATEGY
+from .datastrategy import DataStrategy, DATASTRATEGY, NOSTRAT, DATA
 from .tasks import *
 
 
 ID = "id"
 STEPS = "steps"
+PARAMS = "params"
 
 #This guy manages the overall pacing of the pipeline.
 #Environment setup, variables, data strategies, etc. 
@@ -26,17 +27,18 @@ class Pipeline():
                 self.config = available_strategies[strat_name].update_config(self.config)
             else:
                 raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
+        else:
+            self.config = available_strategies[NOSTRAT].update_config(self.config)
     
     #Do a top-level validation first
     def __validate_and_setup_steps(self):
         available_atoms = FlowAtom.get_atoms()
-        print(self.config)
         for task in self.config[STEPS]:
             if task[ID] not in available_atoms:
                 raise RuntimeError(f"{task[ID]} is not a registered Flow Atom")
          
         #Then create all the lower-level validation things
-        self.steps = [available_atoms[task[ID]](task["params"]) for task in self.config[STEPS]]
+        self.steps = [available_atoms[task[ID]](task[PARAMS], task[DATA]) for task in self.config[STEPS]]
         
     
     def __call__(self):

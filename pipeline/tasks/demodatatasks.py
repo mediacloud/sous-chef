@@ -12,6 +12,9 @@ class GenerateRandomSeriesTask(FlowAtom):
     _defaults:{
         "sample_size":10
     }
+        
+    class __output():
+        numbers:int
     
     def task_body(self):
 
@@ -23,6 +26,13 @@ class GenerateRandomSeriesTask(FlowAtom):
 @FlowAtom.register("ListPrimeFactorsTask")
 class ListPrimeFactorsTask(FlowAtom):
     
+    
+    class __input():
+        to_factorize:int
+        
+    class __output():
+        factors:[int]
+            
     def task_body(self):
 
         data = self.get_data()

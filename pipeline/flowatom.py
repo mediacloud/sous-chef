@@ -1,7 +1,7 @@
 import inspect
 from pydantic import BaseModel
 from prefect import flow
-from .datastrategy import DataStrategy, DATA, DATASTRATEGY
+from .datastrategy import DataStrategy, DATA, DATASTRATEGY, NOSTRAT
 
 """
 This is the magic class which performs most of the mucking about with python innards
@@ -17,12 +17,12 @@ class FlowAtom(object):
     task_name:str
     _defaults:{"task_name":"A placeholder name"}
     
-    def __init__(self, params):
+    def __init__(self, params, data_config):
         
-        self.__data_strategy = None
-        if DATA in params:
-            data_config = params.pop(DATA, None)
-            self.__setup_strategy(data_config)
+        #self.__data_strategy = None
+
+        self.__setup_strategy(data_config)
+
         self.__validate_and_apply(params)
     
     #Easy Access to the subclass registry 
@@ -77,15 +77,26 @@ class FlowAtom(object):
       
     def __setup_strategy(self, data_config):
         available_strategies = DataStrategy.get_strats()
-        strat_name = data_config[DATASTRATEGY]s
-        if strat_name in available_strategies:
-            self.__data_strategy = available_strategies[strat_name](data_config)
-        else:
-            raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
+        if data_config is None:
+            self.__data_strategy = available_strategies[NO_STRAT](data_config)
+        else:   
+            
+            strat_name = data_config[DATASTRATEGY]
+            if strat_name in available_strategies:
+                self.__data_strategy = available_strategies[strat_name](data_config)
+            else:
+                raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             
     #The details of the specific task are implimented here
     def task_body(self):
         raise RunTimeError("task_body is Unimplimented")
+    
+    
+    class __input():
+        pass
+    
+    class __output():
+        pass
     
     def get_data(self):
         if self.__data_strategy == None:

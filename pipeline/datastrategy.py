@@ -9,6 +9,8 @@ READLOCATION = "read_location"
 WRITELOCATION = "write_location"
 PARAMS = "params"
 
+NOSTRAT = "NoStrategy"
+
 #There should be one data strategy per pipeline
 #Each impliments three methods:
 
@@ -29,10 +31,11 @@ class DataStrategy(object):
         return _register
     
     def __init__(self, config):
-        self.data_location = config[DATALOCATION]
-        self.read_location = config[READLOCATION]
-        self.write_location = config[WRITELOCATION]
-        self.config = config
+        if config is not None:
+            self.data_location = config[DATALOCATION]
+            self.read_location = config[READLOCATION]
+            self.write_location = config[WRITELOCATION]
+            self.config = config
     
     # a class method update_config which reads a pipeline configuration 
     #and backfills each step with the information the strategy will need at each step
@@ -48,6 +51,22 @@ class DataStrategy(object):
     def write_data(self, data):
         pass
     
+@DataStrategy.register(NOSTRAT)
+class NoStrategy(DataStrategy):
+        
+    
+    @classmethod
+    def update_config(self, config):
+        for i, step in enumerate(config[STEPS]):
+            step[DATA] = None
+            
+        return config
+    
+    def get_data(self):
+        return None
+    
+    def write_data(self, data):
+        return None
     
 #This strategy writes the output of each step to its own file using pandas,
 #and offers access to the previous step via get_data. 
@@ -75,7 +94,7 @@ class CSVStrategy(DataStrategy):
                 WRITELOCATION: step_out
             }
             
-            step[PARAMS][DATA] = data_meta
+            step[DATA] = data_meta
                 
             
         return config
@@ -92,4 +111,7 @@ class CSVStrategy(DataStrategy):
 @DataStrategy.register("PandasStrategy")
 class PandasStrategy(DataStrategy):
     pass
-#In this strategy
+#In this strategy, each configuration step will have to define where it wants to load and write data
+#Maybe we'll have some naming convention- like taskname_field- 
+#so the config just has to say something like input_cols:[a,b], output_cols:[d]. 
+#Realistically, the atom itself will have to define what kind of input it expects from the datastrategy too. 
