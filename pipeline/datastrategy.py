@@ -8,6 +8,8 @@ DATASTRATEGY = "data_strategy"
 DATALOCATION = "data_location"
 READLOCATION = "read_location"
 WRITELOCATION = "write_location"
+INPUTS = "inputs"
+OUTPUTS = "outputs"
 PARAMS = "params"
 
 NOSTRAT = "NoStrategy"
@@ -78,6 +80,7 @@ class NoStrategy(DataStrategy):
 #and offers access to the previous step via get_data. 
 #This is kinda bad- as it leaves the actual access to the dataframe to each
 #flow atom implimentation, which is bad encapsulation. Iterate by leveraging pandas a bit more explicitly. 
+#I will ultimately depreciate this once the alternative works
 @DataStrategy.register("CSVStrategy")
 class CSVStrategy(DataStrategy):
 
@@ -98,6 +101,7 @@ class CSVStrategy(DataStrategy):
                 DATALOCATION: config[DATASTRATEGY][DATALOCATION],
                 READLOCATION: step_in,
                 WRITELOCATION: step_out
+                
             }
             
             step[DATA] = data_meta
@@ -116,6 +120,34 @@ class CSVStrategy(DataStrategy):
 
 @DataStrategy.register("PandasStrategy")
 class PandasStrategy(DataStrategy):
+    
+    @classmethod
+    def update_config(self, config):
+        data_locations = []
+ 
+        for i, step in enumerate(config[STEPS]):
+            step_out = f"{i}_write.csv"
+            data_locations.append(step_out)
+            
+            if i > 0:
+                step_in = data_locations[-2]
+            else:
+                step_in = None
+            
+            if INPUTS in step 
+            data_meta = {
+                DATASTRATEGY: config[DATASTRATEGY][ID],
+                DATALOCATION: config[DATASTRATEGY][DATALOCATION],
+                READLOCATION: step_in,
+                WRITELOCATION: step_out
+                INPUTS: step[INPUTS] if INPUTS in step else None,
+                OUTPUTS: step[OUTPUTS] if OUTPUTS in step else None 
+            }
+            
+            step[DATA] = data_meta
+                
+            
+        return config
     pass
 #In this strategy, each configuration step will have to define where it wants to load and write data
 #Maybe we'll have some naming convention- like taskname_field- 

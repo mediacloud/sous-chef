@@ -9,6 +9,8 @@ in order to specify a nice encapsulated and validatable confuguration vocabulary
 """
 
 DEFAULTS = "_defaults"
+INPUTS = "_inputs"
+OUTPUT = "_outputs"
 
 class FlowAtom(object):
     #Silly singleton pattern lets us register subclasses to this parameter
@@ -55,6 +57,13 @@ class FlowAtom(object):
                     all_defaults.update(value)
                 else:
                     all_annotations.update({name:value})
+        
+        #Gather input and output annotations
+        #These are the names of the columns to read and write from 
+        for name, value in inspect.get_annotations(self.f_input()):
+            all_annotations.append({name:str})
+        for name, value in inspect.get_annotations(self.f_output()):
+            all_annotations.append({name:str})
         
         #Validate and set parameters which are provided by the configuration
         set_params = []

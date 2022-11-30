@@ -12,12 +12,21 @@ config = {
             "params":{
                 "task_name":"Generate",
                 "sample_size":20
+            },
+            "output":{
+                "numbers":"numbers"
             }
         },
         {
             "id":"ListPrimeFactorsTask",
             "params":{
                 "task_name":"factors"
+            },
+            "input":{
+                "to_factor":"numbers"
+            },
+            "output":{
+                "factors":"factors"
             }
         }
     ]
