@@ -76,9 +76,10 @@ class FlowAtom(object):
         
         if data_config is None:
             strat_name = NOSTRAT
+            
         else:   
             strat_name = data_config[DATASTRATEGY]
-        
+        self.__data_strategy_name = strat_name
         if strat_name in available_strategies:
             self.__data_strategy = available_strategies[strat_name](data_config, self.f_input(), self.f_output())
         else:
@@ -115,14 +116,19 @@ class FlowAtom(object):
         else:
             return self.__data_strategy.write_data(data)
     
-    #Optional pre-task method, to be utilized by some intermediate class, probably.
+    #This loads specified data to self.data as a dataframe
     def __pre_task(self):
-        #Could be used to do data interface configuration, for example
-        pass 
+        if self.__data_strategy_name is not None:
+            if self.__data_strategy.inputs is not None:
+                self.data = self.get_data()
         
+
+    #Task finish- write self.data to the dataframe
     def __post_task(self):
-        #Could be used to do environment teardown, for example
-        pass
+        if self.__data_strategy_name is not None:
+            if self.__data_strategy.outputs is not None:
+                self.write_data(self.data)
+
     
     def __call__(self):
         self.__pre_task()

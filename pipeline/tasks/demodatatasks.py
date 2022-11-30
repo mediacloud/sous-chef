@@ -20,9 +20,8 @@ class GenerateRandomSeriesTask(FlowAtom):
         return RandomSeriesTaskOutput
     
     def task_body(self):
+        self.data = pd.DataFrame(np.random.randint(0,100,size=(self.sample_size)), columns=["numbers"])
 
-        df = pd.DataFrame(np.random.randint(0,100,size=(self.sample_size)), columns=["numbers"])
-        self.write_data(df)
         
 
         
@@ -42,16 +41,23 @@ class ListPrimeFactorsTask(FlowAtom):
         return PrimeFactorsTaskOutput
             
     def task_body(self):
-
-        data = self.get_data()
         output = []
-        for num in data.to_factor:
+        for num in self.data.to_factor:
             output.append(factorize(num))
         
-        data.factors = output
-        self.write_data(data)
-            
+        self.data.factors = output
         
+#Really dumb method to factorize a number
+@task()
+def factorize(num):
+    factors = []
+    for i in range(2, num-1):
+        if num % i == 0:
+            factors.append(i)
+    return factors            
+
+
+
 class CountItemsInput():
     to_count:list
 
@@ -68,15 +74,10 @@ class CountItems(FlowAtom):
         return CountItemsOutput
     
     def task_body(self):
-        
-        data = self.get_data()
         output = []
-        for l in data.to_count:
+        for l in self.data.to_count:
             output.append(len(l))
-        print(f"output = {output}")
-        data.counted = output
-        print(data)
-        self.write_data(data)
+        self.data.counted = output
 
         
 class PrintFieldInput():
@@ -96,19 +97,38 @@ class PrintField(FlowAtom):
         return PrintFieldInput
     
     def task_body(self):
-        data = self.get_data()
         print("="*len(self.pre_message))
         print(self.pre_message)
-        print(data.to_print)
+        print(self.data.to_print)
         print(self.post_message)
         
         
-#Really dumb method to factorize a number
-@task()
-def factorize(num):
-    factors = []
-    for i in range(2, num-1):
-        if num % i == 0:
-            factors.append(i)
-    return factors
+        
+class DivisibleByInput():
+    to_divide:int
+    
+class DivisibleByOutput():
+    divisible:bool
+        
+@FlowAtom.register("DivisibleByNTask")
+class DivisibleByNTask(FlowAtom):
+    
+    n:int
+    _defaults:{
+        "n": 2
+    }
+        
+    def f_input(self):
+        return DivisibleByInput
+    
+    def f_output(self):
+        return DivisibleByOutput
+    
+    def task_body(self):
+        output = []
+        
+        for val in self.data.to_divide:
+            output.append(val % self.n == 0)
+        
+        self.data.divisible = output
     

@@ -73,12 +73,35 @@ config = {
             }
         },
         {
-        "id": "PrintRandomValuesTask",
-        "params":{
-            "task_name": "the second one",
-            "iterations":5
+            "id": "PrintRandomValuesTask",
+            "params":{
+                "task_name": "the second one",
+                "iterations":5
+            }
+        },
+        {
+            "id":"DivisibleByNTask",
+            "params":{
+                "task_name":"is count divisible by five?",
+                "n":5
+            }, 
+            "inputs":{
+                "to_divide":"factor_count"
+            },
+            "outputs":{
+                "divisible":"5_divisible"
+            }
+        },
+        {
+            "id":"PrintFieldTask",
+            "params":{
+                "task_name":"print divisiblity",
+                "pre_message":"Printing divisibility"
+            }, 
+            "inputs":{
+                "to_print":"5_divisible"
+            }
         }
-    },
     ]
 }
 
