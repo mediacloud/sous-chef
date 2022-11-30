@@ -27,13 +27,13 @@ class DataStrategy(object):
             return stratclass 
         return _register
     
-    def __init__(self, config, _input, _output):
+    def __init__(self, config, function_inputs, function_outputs):
 
         
         if config is not None:
             if INPUTS in config and config[INPUTS] is not None:
                 config_inputs = config[INPUTS].keys()
-                function_inputs = inspect.get_annotations(_input).keys()
+                
                 for i in config_inputs:
                     if i not in function_inputs:
                         raise RuntimeError(f"Configuration Error: Atom has no input named {i}")
@@ -46,7 +46,7 @@ class DataStrategy(object):
                 
             if OUTPUTS in config and config[OUTPUTS] is not None:
                 config_outputs = config[OUTPUTS].keys()
-                function_outputs = inspect.get_annotations(_output).keys()
+                
                 for i in config_outputs:
                     if i not in function_outputs:
                         raise RuntimeError(f"Configuration Error: Atom has no output named {i}")

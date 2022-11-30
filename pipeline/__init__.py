@@ -1,6 +1,6 @@
 from prefect import flow
 from .flowatom import FlowAtom
-from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS
+from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS
 from .datastrategy import DataStrategy
 from .tasks import *
 
@@ -13,8 +13,8 @@ class Pipeline():
         self.config = config
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
+        self.__validate_whole_flow()
 
-    
     #In which we add the datastrategy specific config into the user supplied config
     def __validate_and_setup_data(self):
         available_strategies = DataStrategy.get_strats()
@@ -36,6 +36,35 @@ class Pipeline():
          
         #Then create all the lower-level validation things
         self.steps = [available_atoms[task[ID]](task[PARAMS], task[DATA]) for task in self.config[STEPS]]
+        
+    
+    #Do a validation of the way the atoms are plugged into one another here. 
+    def __validate_whole_flow(self):
+        #Iterate through the config, and get the expected type for each column name at each step. 
+        output_type_map = {}
+        
+        #Note all the output types
+        for i, step in enumerate(self.steps):
+            if OUTPUTS in self.config[STEPS][i]:
+                outputs = self.config[STEPS][i][OUTPUTS]
+                for function_name, ds_name in outputs.items():
+                    output_type_map[ds_name] = step.task_outputs[function_name]
+        
+        #Then iterate through the steps again and make sure that the inputs all equal the expected outputs
+        for i, step in enumerate(self.steps):
+            if INPUTS in self.config[STEPS][i]:
+                name = self.config[STEPS][i][ID]
+                inputs = self.config[STEPS][i][INPUTS]
+                for function_name, ds_name in inputs.items():
+                    if ds_name not in output_type_map:
+                        raise RuntimeError(f"Configuration Error: input {ds_name} does not correspond to any defined outputs")
+                    
+                    input_type = step.task_inputs[function_name]
+                    output_type = output_type_map[ds_name]
+                    
+                    if input_type != output_type and input_type is not None:
+                        raise RuntimeError(f"Configuration Error: {name} input {ds_name} expects type {input_type}, but is {output_type}")
+                    
         
     
     def __call__(self):

@@ -17,8 +17,12 @@ class FlowAtom(object):
     _defaults:{"task_name":"A placeholder name"}
     
     def __init__(self, params, data_config):
+        self.task_inputs = inspect.get_annotations(self.inputs)
+        self.task_outputs = inspect.get_annotations(self.outputs)
+        
         self.__setup_strategy(data_config)
         self.__validate_and_apply(params)
+
     
     #Easy Access to the subclass registry 
     @classmethod
@@ -81,7 +85,7 @@ class FlowAtom(object):
             strat_name = data_config[DATASTRATEGY]
         self.__data_strategy_name = strat_name
         if strat_name in available_strategies:
-            self.__data_strategy = available_strategies[strat_name](data_config, self.inputs, self.outputs)
+            self.__data_strategy = available_strategies[strat_name](data_config, self.task_inputs, self.task_outputs)
         else:
             raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             

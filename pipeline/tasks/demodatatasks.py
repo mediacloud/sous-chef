@@ -24,7 +24,7 @@ class GenerateRandomSeriesTask(FlowAtom):
 class ListPrimeFactorsTask(FlowAtom):
 
     def inputs(self, to_factor:int): pass
-    def outputs(self, factors:[int]): pass
+    def outputs(self, factors:list): pass
     
     def task_body(self):
         output = []
@@ -68,7 +68,8 @@ class PrintField(FlowAtom):
         "post_message":"Print Field Task End"
     }
     
-    def inputs(self, to_print:True): pass
+    #Nonetype here specifies that we don't care about the input type, we'll work with anything
+    def inputs(self, to_print:None): pass
     
     def task_body(self):
         print("="*len(self.pre_message))

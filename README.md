@@ -83,8 +83,7 @@ The following json (from `samples/basic_datastrategy_sample.py`) configures this
 
 
 ### Package TODO:
-- Type Validation- we should make sure that inputs and outputs correspond in a given config. 
-- Explore Better FlowAtom Registration- we shouldn't have to load every single submodule into memory. Cheap solution is to wait to `import` until the inside of the task body, but that would also have other overhead consequences. Is there a better way? Lazy Importing?
+- Explore Better FlowAtom Registration- we shouldn't have to load every single submodule into memory. Cheap solution is to wait to `import` until the inside of the task body, but that would also have other overhead consequences. Is there a better way? Lazy Importing? 
 - Flow Atoms should be able to return expected parameter types as documentation- this will enable easier config authoring, and eventually will make a hypothetical config authoring interface very straightforward. 
 - Real Tests, Good God Please.
 - YAML config parsing
