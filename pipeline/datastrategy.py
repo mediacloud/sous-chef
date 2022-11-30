@@ -43,11 +43,11 @@ class DataStrategy(object):
     def setup_config(cls, config):
         pass
     
-    #A generator which yeilds data from inputlocation
+    #A generator which yeilds data 
     def get_data(self):
         pass  
     
-    #A method which writes data to outputlocation
+    #A method which writes data 
     def write_data(self, data):
         pass
     

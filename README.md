@@ -21,6 +21,8 @@ Right now I have two sample pipelines- one with and one without a datastrategy l
 #### Installation
 I make no claims about the build! A setup.py exists, but don't rely on a system level installation of this at this point. Samples can be run from the root directory. 
 
+
+
 ### Classes:
 
 #### Pipeline (in `__init__`)
@@ -35,6 +37,59 @@ Manages actually loading and writing data.
 Subclassed for different kinds of data interfaces, also registered to a parent singleton.
 PandasStrategy is a good default right now- it creates a pandas dataframe and saves it as a CSV in between steps. FlowAtom Access to input and output columns is managed under the hood. 
  
+ 
+### Example
+
+This is an example implementation of a simple flowatom subclass
+```
+class DivisibleByInput():
+    to_divide:int
+    
+class DivisibleByOutput():
+    divisible:bool
+        
+@FlowAtom.register("DivisibleByNTask")
+class DivisibleByNTask(FlowAtom):
+    
+    n:int
+    _defaults:{
+        "n": 2
+    }
+        
+    def f_input(self):
+        return DivisibleByInput
+    
+    def f_output(self):
+        return DivisibleByOutput
+    
+    def task_body(self):
+        output = []
+        
+        for val in self.data.to_divide:
+            output.append(val % self.n == 0)
+        
+        self.data.divisible = output
+```
+
+The following json (from `samples/basic_datastrategy_sample.py`) configures this atom to test divisibility by 5 of values loaded from a column named `factor_count` and to place the result in a column named `5_divisible`. 
+```
+...
+    {
+        "id":"DivisibleByNTask",
+        "params":{
+            "task_name":"is count divisible by five?",
+            "n":5
+        }, 
+        "inputs":{
+            "to_divide":"factor_count"
+        },
+        "outputs":{
+            "divisible":"5_divisible"
+        }
+    },
+...
+```
+
 
 ### Package TODO:
 - Type Validation- we should make sure that inputs and outputs correspond in a given config. 
