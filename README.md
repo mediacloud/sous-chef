@@ -41,13 +41,7 @@ PandasStrategy is a good default right now- it creates a pandas dataframe and sa
 ### Example
 
 This is an example implementation of a simple flowatom subclass
-```
-class DivisibleByInput():
-    to_divide:int
-    
-class DivisibleByOutput():
-    divisible:bool
-        
+```python
 @FlowAtom.register("DivisibleByNTask")
 class DivisibleByNTask(FlowAtom):
     
@@ -55,12 +49,9 @@ class DivisibleByNTask(FlowAtom):
     _defaults:{
         "n": 2
     }
-        
-    def f_input(self):
-        return DivisibleByInput
-    
-    def f_output(self):
-        return DivisibleByOutput
+            
+    def inputs(self, to_divide:int): pass
+    def outputs(self, divisible:bool): pass
     
     def task_body(self):
         output = []
@@ -72,7 +63,7 @@ class DivisibleByNTask(FlowAtom):
 ```
 
 The following json (from `samples/basic_datastrategy_sample.py`) configures this atom to test divisibility by 5 of values loaded from a column named `factor_count` and to place the result in a column named `5_divisible`. 
-```
+```python
 ...
     {
         "id":"DivisibleByNTask",
@@ -93,19 +84,11 @@ The following json (from `samples/basic_datastrategy_sample.py`) configures this
 
 ### Package TODO:
 - Type Validation- we should make sure that inputs and outputs correspond in a given config. 
-- Explore Better FlowAtom Registration- we shouldn't have to load every single submodule into memory. Cheap solution is to wait to `import` until the inside of the task body, but that would also have other overhead consequences. Is there a better way?
+- Explore Better FlowAtom Registration- we shouldn't have to load every single submodule into memory. Cheap solution is to wait to `import` until the inside of the task body, but that would also have other overhead consequences. Is there a better way? Lazy Importing?
 - Flow Atoms should be able to return expected parameter types as documentation- this will enable easier config authoring, and eventually will make a hypothetical config authoring interface very straightforward. 
 - Real Tests, Good God Please.
 - YAML config parsing
-- Better Flow Atom Input/Output type specification. Having to define classes, then return them via a function is just a bad developer experience
 
-
-### Pipeline Atoms We Want
-- Query Mediacloud
-- Entity Extraction
-- Apply Huggingface Models
-- Export to some dashboard, Kibana, etc. 
-- More? Ask questions of the mediacloud team. 
 
 ### Questions
 1. What about when results aren't tabular- there isn't always going to be a 1-to-1 relationship between inputs and exports- will this mess things up? ... I guess that pandas will be fine.

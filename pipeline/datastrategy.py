@@ -134,7 +134,7 @@ class PandasStrategy(DataStrategy):
         else:
             raise RuntimeError("Can't call write_data on an atom with no outputs defined")
         
-    
+#Apply this to csvs when read from disk to restore pythonic types contained within
 def eval_or_nan(val):
     if str(val) == "nan":
         return val

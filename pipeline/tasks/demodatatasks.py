@@ -5,9 +5,6 @@ import pandas as pd
 import numpy as np
 
 
-class RandomSeriesTaskOutput():
-    numbers:int
-
 @FlowAtom.register("GenerateRandomSeriesTask")
 class GenerateRandomSeriesTask(FlowAtom):
     
@@ -16,30 +13,19 @@ class GenerateRandomSeriesTask(FlowAtom):
         "sample_size":10
     }
         
-    def f_output(self):
-        return RandomSeriesTaskOutput
+    def outputs(self, numbers:int): pass
     
     def task_body(self):
         self.data = pd.DataFrame(np.random.randint(0,100,size=(self.sample_size)), columns=["numbers"])
 
-        
-
-        
-class PrimeFactorsTaskInput():
-    to_factorize:int
-        
-class PrimeFactorsTaskOutput():
-    factors:[int]
+    
 
 @FlowAtom.register("ListPrimeFactorsTask")
 class ListPrimeFactorsTask(FlowAtom):
+
+    def inputs(self, to_factor:int): pass
+    def outputs(self, factors:[int]): pass
     
-    def f_input(self):
-        return PrimeFactorsTaskInput
-        
-    def f_output(self):
-        return PrimeFactorsTaskOutput
-            
     def task_body(self):
         output = []
         for num in self.data.to_factor:
@@ -57,21 +43,12 @@ def factorize(num):
     return factors            
 
 
-
-class CountItemsInput():
-    to_count:list
-
-class CountItemsOutput():
-    counted:int
         
 @FlowAtom.register("CountItemsTask")
 class CountItems(FlowAtom):
     
-    def f_input(self):
-        return CountItemsInput
-    
-    def f_output(self):
-        return CountItemsOutput
+    def inputs(self, to_count:list): pass
+    def outputs(self, counted:int): pass
     
     def task_body(self):
         output = []
@@ -79,9 +56,7 @@ class CountItems(FlowAtom):
             output.append(len(l))
         self.data.counted = output
 
-        
-class PrintFieldInput():
-    to_print:True
+
         
 @FlowAtom.register("PrintFieldTask")
 class PrintField(FlowAtom):
@@ -93,22 +68,15 @@ class PrintField(FlowAtom):
         "post_message":"Print Field Task End"
     }
     
-    def f_input(self):
-        return PrintFieldInput
+    def inputs(self, to_print:True): pass
     
     def task_body(self):
         print("="*len(self.pre_message))
         print(self.pre_message)
         print(self.data.to_print)
         print(self.post_message)
-        
-        
-        
-class DivisibleByInput():
-    to_divide:int
-    
-class DivisibleByOutput():
-    divisible:bool
+               
+
         
 @FlowAtom.register("DivisibleByNTask")
 class DivisibleByNTask(FlowAtom):
@@ -117,12 +85,9 @@ class DivisibleByNTask(FlowAtom):
     _defaults:{
         "n": 2
     }
-        
-    def f_input(self):
-        return DivisibleByInput
-    
-    def f_output(self):
-        return DivisibleByOutput
+            
+    def inputs(self, to_divide:int): pass
+    def outputs(self, divisible:bool): pass
     
     def task_body(self):
         output = []

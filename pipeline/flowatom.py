@@ -88,9 +88,9 @@ class FlowAtom(object):
         #io_annotations = []
         #Gather input and output annotations
         #These are the names of the columns to read and write from 
-        #for name, value in inspect.get_annotations(self.f_input()):
+        #for name, value in inspect.get_annotations(self.inputs):
         #    io_annotations.append({name:str})
-        #for name, value in inspect.get_annotations(self.f_output()):
+        #for name, value in inspect.get_annotations(self.outputs):
         #    io_annotations.append({name:str})
             
     #The details of the specific task are implimented here
@@ -103,6 +103,10 @@ class FlowAtom(object):
     
     def f_output(self):
         return _output
+    
+    def inputs(self): pass
+    
+    def outputs(self): pass
     
     def get_data(self):
         if self.__data_strategy == None:
@@ -122,7 +126,6 @@ class FlowAtom(object):
             if self.__data_strategy.inputs is not None:
                 self.data = self.get_data()
         
-
     #Task finish- write self.data to the dataframe
     def __post_task(self):
         if self.__data_strategy_name is not None:
