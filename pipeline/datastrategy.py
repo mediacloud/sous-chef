@@ -39,9 +39,10 @@ class DataStrategy(object):
     def __init__(self, config, _input, _output):
         self._function_inputs = inspect.get_annotations(_input)
         self._function_outputs = inspect.get_annotations(_output)
-
-        for key, value in config.items():
-            setattr(self, key, value)
+        
+        if config is not None:
+            for key, value in config.items():
+                setattr(self, key, value)
 
         self.config = config
     
