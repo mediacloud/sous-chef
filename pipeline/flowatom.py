@@ -58,12 +58,6 @@ class FlowAtom(object):
                 else:
                     all_annotations.update({name:value})
         
-        #Gather input and output annotations
-        #These are the names of the columns to read and write from 
-        for name, value in inspect.get_annotations(self.f_input()):
-            all_annotations.append({name:str})
-        for name, value in inspect.get_annotations(self.f_output()):
-            all_annotations.append({name:str})
         
         #Validate and set parameters which are provided by the configuration
         set_params = []
@@ -96,6 +90,14 @@ class FlowAtom(object):
             self.__data_strategy = available_strategies[strat_name](data_config, self.f_input(), self.f_output())
         else:
             raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
+            
+        #io_annotations = []
+        #Gather input and output annotations
+        #These are the names of the columns to read and write from 
+        #for name, value in inspect.get_annotations(self.f_input()):
+        #    io_annotations.append({name:str})
+        #for name, value in inspect.get_annotations(self.f_output()):
+        #    io_annotations.append({name:str})
             
     #The details of the specific task are implimented here
     def task_body(self):

@@ -19,18 +19,19 @@ class Pipeline():
 
     
     #In which we add the datastrategy specific config into the user supplied config
+    
     def __validate_and_setup_data(self):
         available_strategies = DataStrategy.get_strats()
         if DATASTRATEGY in self.config:
             strat_name = self.config[DATASTRATEGY][ID]
             if strat_name in available_strategies:
-                self.config = available_strategies[strat_name].update_config(self.config)
+                self.config = available_strategies[strat_name].setup_config(self.config)
             else:
                 raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
         else:
             self.config = available_strategies[NOSTRAT].update_config(self.config)
     
-    #Do a top-level validation first
+    #Do a top-level validation of the configuration parameters first, then initialize all the steps 
     def __validate_and_setup_steps(self):
         available_atoms = FlowAtom.get_atoms()
         for task in self.config[STEPS]:

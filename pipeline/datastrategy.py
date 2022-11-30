@@ -1,5 +1,7 @@
 import pandas as pd
+from pathlib import Path
 import inspect
+import os
 
 ID = "id"
 STEPS = "steps"
@@ -11,6 +13,7 @@ WRITELOCATION = "write_location"
 INPUTS = "inputs"
 OUTPUTS = "outputs"
 PARAMS = "params"
+RUNNAME = "name"
 
 NOSTRAT = "NoStrategy"
 
@@ -33,22 +36,19 @@ class DataStrategy(object):
             return stratclass 
         return _register
     
-    def __init__(self, params, _input, _output):
+    def __init__(self, config, _input, _output):
         self._function_inputs = inspect.get_annotations(_input)
         self._function_outputs = inspect.get_annotations(_output)
-        
-        print(self._function_inputs)
-        print(self._function_outputs)
-        if params is not None:
-            self.data_location = params[DATALOCATION]
-            self.read_location = params[READLOCATION]
-            self.write_location = params[WRITELOCATION]
-            self.params = params
+
+        for key, value in config.items():
+            setattr(self, key, value)
+
+        self.config = config
     
     # a class method update_config which reads a pipeline configuration 
     #and backfills each step with the information the strategy will need at each step
     @classmethod
-    def process_config(cls, config):
+    def setup_config(cls, config):
         pass
     
     #A generator which yeilds data from inputlocation
@@ -85,7 +85,7 @@ class NoStrategy(DataStrategy):
 class CSVStrategy(DataStrategy):
 
     @classmethod
-    def update_config(self, config):
+    def setup_config(self, config):
         data_locations = []
  
         for i, step in enumerate(config[STEPS]):
@@ -118,28 +118,36 @@ class CSVStrategy(DataStrategy):
         dataframe.to_csv(f"{self.data_location}/{self.write_location}")
         return True
 
+    
+#In this strategy, each configuration step will have to define where it wants to load and write data
+#Maybe we'll have some naming convention- like taskname_field- 
+#so the config just has to say something like input_cols:[a,b], output_cols:[d]. 
+
 @DataStrategy.register("PandasStrategy")
 class PandasStrategy(DataStrategy):
     
     @classmethod
-    def update_config(self, config):
-        data_locations = []
- 
+    def setup_config(self, config):
+        data_location_root = f"{config[DATASTRATEGY][DATALOCATION]}{config[RUNNAME]}"
+        
+        #iterate so we don't overwrite old runs unintentionally
+        i = 0
+        while os.path.exists(f"{data_location_root}_{i}.csv"):
+            i += 1
+        
+        data_location = f"{data_location_root}_{i}.csv"
+        
+        start_dataframe = pd.DataFrame()
+        start_dataframe.to_csv(data_location)
+        
         for i, step in enumerate(config[STEPS]):
-            step_out = f"{i}_write.csv"
-            data_locations.append(step_out)
             
-            if i > 0:
-                step_in = data_locations[-2]
-            else:
-                step_in = None
-            
-            if INPUTS in step 
+            #We could have some method of inferring inputs and outputs, if none are given
+            #and also maybe we should have some method of making sure the input/outputs are unique.
+            #but for now we just go with this. 
             data_meta = {
                 DATASTRATEGY: config[DATASTRATEGY][ID],
-                DATALOCATION: config[DATASTRATEGY][DATALOCATION],
-                READLOCATION: step_in,
-                WRITELOCATION: step_out
+                DATALOCATION: data_location,
                 INPUTS: step[INPUTS] if INPUTS in step else None,
                 OUTPUTS: step[OUTPUTS] if OUTPUTS in step else None 
             }
@@ -148,8 +156,30 @@ class PandasStrategy(DataStrategy):
                 
             
         return config
-    pass
-#In this strategy, each configuration step will have to define where it wants to load and write data
-#Maybe we'll have some naming convention- like taskname_field- 
-#so the config just has to say something like input_cols:[a,b], output_cols:[d]. 
-#Realistically, the atom itself will have to define what kind of input it expects from the datastrategy too. 
+    
+    def get_data(self):
+        read_dataframe = pd.read_csv(self.data_location)
+        operating_dataframe = pd.DataFrame()
+        for function_name, read_location in self.inputs.items():
+            operating_dataframe[function_name] = read_dataframe[read_location]
+        
+        if self.outputs is not None:
+            #This just sets up the outputs so that the flow object can write to it with dot syntax
+            for function_name, read_location in self.outputs.items():
+                operating_dataframe[function_name] = 0
+       
+        return operating_dataframe
+
+    def write_data(self, operating_dataframe):
+        if self.outputs is not None:
+
+            write_dataframe = pd.read_csv(self.data_location)
+            for function_name, write_location in self.outputs.items():
+                write_dataframe[write_location] = operating_dataframe[function_name]
+            write_dataframe.to_csv(self.data_location)
+        
+        else:
+            raise RuntimeError("Can't call write_data on an atom with no outputs defined")
+        
+        
+
