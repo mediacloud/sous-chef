@@ -72,6 +72,13 @@ config = {
                 "to_print":"factor_count"
             }
         },
+        {
+        "id": "PrintRandomValuesTask",
+        "params":{
+            "task_name": "the second one",
+            "iterations":5
+        }
+    },
     ]
 }
 

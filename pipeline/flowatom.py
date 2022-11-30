@@ -17,11 +17,7 @@ class FlowAtom(object):
     _defaults:{"task_name":"A placeholder name"}
     
     def __init__(self, params, data_config):
-        
-        #self.__data_strategy = None
-
         self.__setup_strategy(data_config)
-
         self.__validate_and_apply(params)
     
     #Easy Access to the subclass registry 
@@ -38,9 +34,9 @@ class FlowAtom(object):
         def _register(stepclass):
             cls._REGISTERED_ATOMS[name] = flow(stepclass, name=name)
             return stepclass 
+        
         return _register
     
-
     #This walks the MRO and grabs all the annotations that are defined on it
     #Validates the provided parameters, and sets the values to the object
     def __validate_and_apply(self, params):
