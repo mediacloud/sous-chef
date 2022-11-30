@@ -19,7 +19,6 @@ class Pipeline():
 
     
     #In which we add the datastrategy specific config into the user supplied config
-    
     def __validate_and_setup_data(self):
         available_strategies = DataStrategy.get_strats()
         if DATASTRATEGY in self.config:

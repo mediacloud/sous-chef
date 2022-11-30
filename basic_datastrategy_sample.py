@@ -39,7 +39,7 @@ config = {
                 "to_count":"factors"
             },
             "outputs":{
-                "count":"factor_count"
+                "counted":"factor_count"
             }
         },
         {
@@ -61,7 +61,17 @@ config = {
             "inputs":{
                 "to_print":"factors"
             }
-        }
+        },
+        {
+            "id":"PrintFieldTask",
+            "params":{
+                "task_name":"print number of factors",
+                "pre_message":"Printing Number of Factors"
+            }, 
+            "inputs":{
+                "to_print":"factor_count"
+            }
+        },
     ]
 }
 

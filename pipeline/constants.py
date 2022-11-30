@@ -3,6 +3,7 @@ ID = "id"
 STEPS = "steps"
 PARAMS = "params"
 DATASTRATEGY = "data_strategy"
+RUNNAME = "name"
 
 #DATA STRATEGY INTERNALS
 DATALOCATION = "data_location"

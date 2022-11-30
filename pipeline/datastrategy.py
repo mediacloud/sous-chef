@@ -1,7 +1,8 @@
 import pandas as pd
-from pathlib import Path
+import numpy as np
 import inspect
 import os
+import ast
 
 ID = "id"
 STEPS = "steps"
@@ -77,53 +78,10 @@ class NoStrategy(DataStrategy):
     def write_data(self, data):
         return None
     
-#This strategy writes the output of each step to its own file using pandas,
-#and offers access to the previous step via get_data. 
-#This is kinda bad- as it leaves the actual access to the dataframe to each
-#flow atom implimentation, which is bad encapsulation. Iterate by leveraging pandas a bit more explicitly. 
-#I will ultimately depreciate this once the alternative works
-@DataStrategy.register("CSVStrategy")
-class CSVStrategy(DataStrategy):
 
-    @classmethod
-    def setup_config(self, config):
-        data_locations = []
- 
-        for i, step in enumerate(config[STEPS]):
-            step_out = f"{i}_write.csv"
-            data_locations.append(step_out)
-            if i > 0:
-                step_in = data_locations[-2]
-            else:
-                step_in = None
-            
-            data_meta = {
-                DATASTRATEGY: config[DATASTRATEGY][ID],
-                DATALOCATION: config[DATASTRATEGY][DATALOCATION],
-                READLOCATION: step_in,
-                WRITELOCATION: step_out
-                
-            }
-            
-            step[DATA] = data_meta
-                
-            
-        return config
-          
-    
-    def get_data(self):
-        dataframe = pd.read_csv(f"{self.data_location}/{self.read_location}")
-        return dataframe
-    
-    def write_data(self, dataframe):
-        dataframe.to_csv(f"{self.data_location}/{self.write_location}")
-        return True
-
-    
 #In this strategy, each configuration step will have to define where it wants to load and write data
 #Maybe we'll have some naming convention- like taskname_field- 
 #so the config just has to say something like input_cols:[a,b], output_cols:[d]. 
-
 @DataStrategy.register("PandasStrategy")
 class PandasStrategy(DataStrategy):
     
@@ -161,13 +119,17 @@ class PandasStrategy(DataStrategy):
     def get_data(self):
         read_dataframe = pd.read_csv(self.data_location)
         operating_dataframe = pd.DataFrame()
+        
         for function_name, read_location in self.inputs.items():
-            operating_dataframe[function_name] = read_dataframe[read_location]
+            #apply literal eval so that types are preserved
+            #read_dataframe[read_location].apply(lambda x:print(str(x)))
+            typed =  read_dataframe[read_location].apply(lambda x:eval_or_nan(x))
+            operating_dataframe[function_name] = typed
         
         if self.outputs is not None:
             #This just sets up the outputs so that the flow object can write to it with dot syntax
             for function_name, read_location in self.outputs.items():
-                operating_dataframe[function_name] = 0
+                operating_dataframe[function_name] = pd.Series(dtype=object)
        
         return operating_dataframe
 
@@ -182,5 +144,9 @@ class PandasStrategy(DataStrategy):
         else:
             raise RuntimeError("Can't call write_data on an atom with no outputs defined")
         
-        
-
+    
+def eval_or_nan(val):
+    if str(val) == "nan":
+        return val
+    else:
+        return ast.literal_eval(str(val))

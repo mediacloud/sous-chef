@@ -56,7 +56,7 @@ class CountItemsInput():
     to_count:list
 
 class CountItemsOutput():
-    count:int
+    counted:int
         
 @FlowAtom.register("CountItemsTask")
 class CountItems(FlowAtom):
@@ -73,10 +73,11 @@ class CountItems(FlowAtom):
         output = []
         for l in data.to_count:
             output.append(len(l))
-        data.count = output
+        print(f"output = {output}")
+        data.counted = output
+        print(data)
         self.write_data(data)
 
-    
         
 class PrintFieldInput():
     to_print:True
