@@ -28,10 +28,34 @@ class DataStrategy(object):
         return _register
     
     def __init__(self, config, _input, _output):
-        self._function_inputs = inspect.get_annotations(_input)
-        self._function_outputs = inspect.get_annotations(_output)
+
         
         if config is not None:
+            if INPUTS in config and config[INPUTS] is not None:
+                config_inputs = config[INPUTS].keys()
+                function_inputs = inspect.get_annotations(_input).keys()
+                for i in config_inputs:
+                    if i not in function_inputs:
+                        raise RuntimeError(f"Configuration Error: Atom has no input named {i}")
+                
+                for i in function_inputs:
+                    if i not in config_inputs:
+                        raise RuntimeError(f"Configuration Error: Atom expects input named {i}")
+                
+                
+                
+            if OUTPUTS in config and config[OUTPUTS] is not None:
+                config_outputs = config[OUTPUTS].keys()
+                function_outputs = inspect.get_annotations(_output).keys()
+                for i in config_outputs:
+                    if i not in function_outputs:
+                        raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
+                
+                for i in function_outputs:
+                    if i not in config_outputs:
+                        raise RuntimeError(f"Configuration Error: Atom expects output named {i}")
+            
+            
             for key, value in config.items():
                 setattr(self, key, value)
 

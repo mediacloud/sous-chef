@@ -81,7 +81,7 @@ class FlowAtom(object):
             strat_name = data_config[DATASTRATEGY]
         self.__data_strategy_name = strat_name
         if strat_name in available_strategies:
-            self.__data_strategy = available_strategies[strat_name](data_config, self.f_input(), self.f_output())
+            self.__data_strategy = available_strategies[strat_name](data_config, self.inputs, self.outputs)
         else:
             raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             
@@ -98,11 +98,6 @@ class FlowAtom(object):
         raise RunTimeError("task_body is Unimplimented")
     
     
-    def f_input(self):
-        return _input
-    
-    def f_output(self):
-        return _output
     
     def inputs(self): pass
     
