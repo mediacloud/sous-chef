@@ -4,19 +4,9 @@ import inspect
 import os
 import ast
 
-ID = "id"
-STEPS = "steps"
-DATA = "_data"
-DATASTRATEGY = "data_strategy"
-DATALOCATION = "data_location"
-READLOCATION = "read_location"
-WRITELOCATION = "write_location"
-INPUTS = "inputs"
-OUTPUTS = "outputs"
-PARAMS = "params"
-RUNNAME = "name"
+from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
+    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT)
 
-NOSTRAT = "NoStrategy"
 
 #There should be one data strategy per pipeline
 #Each impliments three methods:

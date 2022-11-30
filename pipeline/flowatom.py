@@ -1,16 +1,13 @@
 import inspect
 from pydantic import BaseModel
 from prefect import flow
-from .datastrategy import DataStrategy, DATA, DATASTRATEGY, NOSTRAT
-
+from .datastrategy import DataStrategy
+from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS
 """
 This is the magic class which performs most of the mucking about with python innards
 in order to specify a nice encapsulated and validatable confuguration vocabulary
 """
 
-DEFAULTS = "_defaults"
-INPUTS = "_inputs"
-OUTPUT = "_outputs"
 
 class FlowAtom(object):
     #Silly singleton pattern lets us register subclasses to this parameter

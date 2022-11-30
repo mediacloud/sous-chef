@@ -16,7 +16,7 @@ NOSTRAT = "NoStrategy"
 #FLOW ATOM INTERNALS
 DEFAULTS = "_defaults" #key for default param values
 INPUTS = "inputs" #key for functional input mapping 
-OUTPUT = "outputs" #key for functional output mapping
+OUTPUTS = "outputs" #key for functional output mapping
 DATA = "_data" #key for data configuration 
 
 

@@ -1,12 +1,9 @@
 from prefect import flow
 from .flowatom import FlowAtom
-from .datastrategy import DataStrategy, DATASTRATEGY, NOSTRAT, DATA
+from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS
+from .datastrategy import DataStrategy
 from .tasks import *
 
-
-ID = "id"
-STEPS = "steps"
-PARAMS = "params"
 
 #This guy manages the overall pacing of the pipeline.
 #Environment setup, variables, data strategies, etc. 
