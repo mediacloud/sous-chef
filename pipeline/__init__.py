@@ -3,12 +3,16 @@ from .flowatom import FlowAtom
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS
 from .datastrategy import DataStrategy
 from .tasks import *
+from typing import List
 
 
 #This guy manages the overall pacing of the pipeline.
 #Environment setup, variables, data strategies, etc. 
 @flow()
 class Pipeline():
+    
+    self.steps:List[FlowAtom]
+    
     def __init__(self, config):
         self.config = config
         self.__validate_and_setup_data()

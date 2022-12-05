@@ -138,12 +138,6 @@ class FlowAtom(object):
         self.__post_task()
         
 
-        
-class _input():
-    pass
-
-class _output():
-    pass
 
     
     

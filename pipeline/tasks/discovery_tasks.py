@@ -1,8 +1,11 @@
-import mcproviders as providers
 from ..flowatom import FlowAtom
 from datetime import datetime
 import pandas as pd
-'media_name', 'media_url', 'id', 'title', 'publish_date', 'url', 'last_updated', 'author', 'language', 'retweet_count', 'reply_count', 'like_count', 'quote_count', 'content'
+
+from .utils import lazy_import
+#import mcproviders as providers
+
+providers = lazy_import("mcproviders")
 
 @FlowAtom.register("SampleTwitter")
 class sample_twitter(FlowAtom):
