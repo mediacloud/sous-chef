@@ -51,9 +51,9 @@ class DataStrategy(object):
                     if i not in function_outputs:
                         raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
                 
-                for i in function_outputs:
-                    if i not in config_outputs:
-                        raise RuntimeError(f"Configuration Error: Atom expects output named {i}")
+                #for i in function_outputs:
+                #    if i not in config_outputs:
+                #        raise RuntimeError(f"Configuration Error: Atom expects output named {i}")
             
             
             for key, value in config.items():
