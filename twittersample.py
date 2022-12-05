@@ -1,6 +1,8 @@
 from pipeline import RunPipeline
 
-#And of course eventually we can define these guys as yaml or whatever
+#OK a thing worth noting here is that
+#WE DO NOT CARE about all of the outputs to the sampletwitter task.
+#It should be the case that task inputs are compulsory, but task outputs are not!
 config = {
     "name":"TwitterProcessingSample",
     "data_strategy":{
