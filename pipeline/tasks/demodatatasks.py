@@ -78,7 +78,11 @@ class PrintField(FlowAtom):
         print(self.post_message)
                
 
-        
+@FlowAtom.register("PrintStringTask")
+class PrintString(PrintField):
+    def inputs(self, to_print:str): pass
+            
+            
 @FlowAtom.register("DivisibleByNTask")
 class DivisibleByNTask(FlowAtom):
     

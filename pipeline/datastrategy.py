@@ -60,6 +60,8 @@ class DataStrategy(object):
                 setattr(self, key, value)
 
         self.config = config
+        self.function_inputs = function_inputs
+        self.function_outputs = function_outputs
     
     # a class method update_config which reads a pipeline configuration 
     #and backfills each step with the information the strategy will need at each step
@@ -135,10 +137,12 @@ class PandasStrategy(DataStrategy):
         operating_dataframe = pd.DataFrame()
         
         for function_name, read_location in self.inputs.items():
-            #apply literal eval so that types are preserved
-            #read_dataframe[read_location].apply(lambda x:print(str(x)))
-            typed =  read_dataframe[read_location].apply(lambda x:eval_or_nan(x))
-            operating_dataframe[function_name] = typed
+            #apply literal eval so that types are preserved, if we're not just loading a string
+            expected_dtype = self.function_inputs[function_name]
+
+            value =  read_dataframe[read_location].apply(lambda x:eval_or_nan(x, expected_dtype))
+
+            operating_dataframe[function_name] = value
         
         if self.outputs is not None:
             #This just sets up the outputs so that the flow object can write to it with dot syntax
@@ -159,7 +163,10 @@ class PandasStrategy(DataStrategy):
             raise RuntimeError("Can't call write_data on an atom with no outputs defined")
         
 #Apply this to csvs when read from disk to restore pythonic types contained within
-def eval_or_nan(val):
+def eval_or_nan(val, expected_dtype):
+    if expected_dtype == str:
+        return val
+    
     if str(val) == "nan":
         return val
     else:
