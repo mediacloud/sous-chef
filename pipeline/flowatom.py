@@ -27,7 +27,6 @@ class FlowAtom(object):
     #Easy Access to the subclass registry 
     @classmethod
     def get_atoms(cls):
-
         return cls._REGISTERED_ATOMS
     
     #This takes care of registering the atom locally for our pipeline project,
@@ -119,23 +118,27 @@ class FlowAtom(object):
         else:
             return self.__data_strategy.write_data(data)
     
+    def apply_filter(self, keep_filter):
+        if self.__data_strategy == None:
+            raise RuntimeError("Cannot Use apply_filter if No Datastrategy Is Specified")
+        else:
+            return self.__data_strategy.apply_filter(keep_filter)
+    
     #This loads specified data to self.data as a dataframe
-    def __pre_task(self):
-        if self.__data_strategy_name is not None:
-            if self.__data_strategy.inputs is not None:
+    def pre_task(self):
+        if self.__data_strategy.inputs is not None:
                 self.data = self.get_data()
         
     #Task finish- write self.data to the dataframe
-    def __post_task(self):
-        if self.__data_strategy_name is not None:
-            if self.__data_strategy.outputs is not None:
-                self.write_data(self.data)
+    def post_task(self):
+        if self.__data_strategy.outputs is not None:
+            self.write_data(self.data)
 
     
     def __call__(self):
-        self.__pre_task()
+        self.pre_task()
         self.task_body()
-        self.__post_task()
+        self.post_task()
         
 
 

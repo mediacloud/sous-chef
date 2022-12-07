@@ -155,12 +155,28 @@ class PandasStrategy(DataStrategy):
         if self.outputs is not None:
 
             write_dataframe = pd.read_csv(self.data_location)
+            
             for function_name, write_location in self.outputs.items():
                 write_dataframe[write_location] = operating_dataframe[function_name]
             write_dataframe.to_csv(self.data_location)
         
         else:
             raise RuntimeError("Can't call write_data on an atom with no outputs defined")
+    
+    def apply_filter(self, keep_column):
+        #keep_column should be a column of bools, where "true" means the row will be kept, and 'false' that it will be dropped
+        dataframe = pd.read_csv(self.data_location)
+        
+        dataframe["_KEEP"] = keep_column
+        post_filter_dataframe = dataframe[dataframe["_KEEP"]]
+        
+        post_filter_dataframe.drop('_KEEP', axis=1, inplace=True)
+        
+        post_filter_dataframe.to_csv(self.data_location)
+        
+        
+        
+        
         
 #Apply this to csvs when read from disk to restore pythonic types contained within
 def eval_or_nan(val, expected_dtype):

@@ -11,7 +11,7 @@ from typing import List
 @flow()
 class Pipeline():
     
-    self.steps:List[FlowAtom]
+    
     
     def __init__(self, config):
         self.config = config
