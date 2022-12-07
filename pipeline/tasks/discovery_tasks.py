@@ -27,10 +27,8 @@ class sample_twitter(FlowAtom):
         SearchInterface = providers.provider_by_name("twitter-twitter")
         start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
         end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
-        results = SearchInterface.sample(self.query, start_date, end_date)
+        results = SearchInterface.sample(self.query, start_date, end_date, limit=self.max_results)
         print(len(results))
-        
-        #print(results[0].keys())
         self.data = pd.json_normalize(results)
         self.data["media_id"] = self.data["id"]
         

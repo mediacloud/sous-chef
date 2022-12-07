@@ -14,7 +14,8 @@ config = {
                 "task_name":"Generate",
                 "query":"#FIFAWorldCup",
                 "start_date":"2022-11-30",
-                "end_date":"2022-12-01"
+                "end_date":"2022-12-01",
+                "max_results":100
             },
             "outputs":{
                 'title':'title', 
@@ -31,6 +32,18 @@ config = {
             },
             "inputs":{
                 "to_print":"content"
+            }
+        },
+        {
+            "id":"TweetSentimentTask",
+            "params":{
+                "task_name":"Sentiment Task"
+            },
+            "inputs":{
+                "tweets":"content"
+            },
+            "outputs":{
+                "sentiment_label":"sentiment"
             }
         }
     ]
