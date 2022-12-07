@@ -7,9 +7,9 @@ import requests
 from transformers import pipeline as hf_pipeline
 
 
-HF_API_BEARER_TOKEN = os.getenv('HF_API_BEARER_TOKEN', None)
+HF_API_BEARER_TOKEN = os.getenv('HUGGINGFACE_API_BEARER_TOKEN', None)
 
-#Reccomended step for demangling twitter links and usernames
+#Recomended step for demangling twitter links and usernames
 def preprocess_tweet(text):
     new_text = []
     for t in text.split(" "):
@@ -21,6 +21,7 @@ def preprocess_tweet(text):
 def apply_pipeline(pipeline, tweet):
     text = preprocess(tweet)
     return pipeline(text)
+    
     
 #Downloads and applies the given model locally!
 @FlowAtom.register("TweetSentimentTask")
