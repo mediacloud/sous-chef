@@ -2,9 +2,9 @@ from ..flowatom import FlowAtom
 
 
 class ReduceFilterAtom(FlowAtom):
-    #Atoms which subclass this can specify a 'filter_keep_mask'
+    #Atoms which subclass this can specify a 'filter_keep_mask' instead of standard outputs. 
     #Documents which are tagged as 'false' in this mask will be fully dropped
-    #from the underlying datastore. THIS THROWS OUT data which fails a filter.
+    #from the underlying datastore. THIS THROWS OUT DATA WHICH FAILS A FILTER. 
     #Some other solution will be needed if we ever want to, say, apply a pipeline step only to a filtered
     #subset of the data that we want to keep around
     
@@ -14,7 +14,6 @@ class ReduceFilterAtom(FlowAtom):
     
     def post_task(self):
         self.apply_filter(self.filter_keep_mask)
-
 
 
 @FlowAtom.register("FilterBelowN")
@@ -29,5 +28,4 @@ class FilterBelowNTask(ReduceFilterAtom):
         self.filter_keep_mask = [dp > self.n for dp in self.data.to_compare]
         
 
-    
     

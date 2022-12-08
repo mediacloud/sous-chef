@@ -22,7 +22,8 @@ config = {
                 'publish_date':'publish_date', 
                 'url':'url', 
                 'author':'author', 
-                'content':'content'
+                'content':'content',
+                'language':'tweet_language'
             }
         },
         {
@@ -34,17 +35,31 @@ config = {
                 "to_print":"content"
             }
         },
+    #    {
+    #        "id":"TweetSentimentTask",
+    #        "params":{
+    #            "task_name":"Sentiment Task"
+    #        },
+    #        "inputs":{
+    #            "tweets":"content"
+    #        },
+    #        "outputs":{
+    #            "sentiment_label":"sentiment"
+    #        }
+    #    },
         {
-            "id":"TweetSentimentTask",
+            "id":"APIEntityExtraction",
             "params":{
-                "task_name":"Sentiment Task"
+                "task_name":"EntityExtraction"
             },
             "inputs":{
-                "tweets":"content"
+                "text":"content",
+                "language":"tweet_language"
             },
             "outputs":{
-                "sentiment_label":"sentiment"
+                "entities":"entities"
             }
+            
         }
     ]
 }
