@@ -23,9 +23,11 @@ def apply_pipeline(pipeline, tweet):
     return pipeline(text)
     
     
-#Downloads and applies the given model locally!
 @FlowAtom.register("TweetSentimentTask")
 class TweetSentimentTask(FlowAtom):
+    """
+    Use a local instance of a huggingface transformer to calculate sentiment values and scores on tweets
+    """
     
     hf_model_name:str
         
@@ -63,7 +65,9 @@ class TweetSentimentTask(FlowAtom):
 #so we don't have to manage local MLOps
 @FlowAtom.register("APITweetSentimentTask")
 class ApiTweetSentimentTask(FlowAtom):
-    
+    """
+    Use a huggingface API endpoint to apply a transformer to calculate sentiment values and scores on tweets
+    """
     hf_model_name:str
         
     _defaults:{

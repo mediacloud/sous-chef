@@ -16,11 +16,12 @@ class OutputAtom(FlowAtom):
         self.data = self.get_columns(self.columns)
 
 
-#Output CSV with selected columns
-#Render a default pandas graph of columns 
+
 @FlowAtom.register("OutputCSV")
 class OutputCSV(OutputAtom):
-    
+    """
+    Outputs a CSV which includes the given columns
+    """
     output_location:str
     
     def task_body(self):
@@ -35,7 +36,9 @@ class OutputCSV(OutputAtom):
 
 @FlowAtom.register("OutputFieldHistogram")
 class OutputFieldHist(OutputAtom):
-    
+    """
+    Outputs a histogram of values in a single column
+    """
     output_location:str
     
     def task_body(self):
@@ -43,8 +46,11 @@ class OutputFieldHist(OutputAtom):
         figure.savefig(self.output_location)
         
         
-@FlowAtom.register("OutputSeriesHistogram")
+@FlowAtom.register("OutputTimeSeriesHistogram")
 class OutputSeriesHistogram(OutputAtom):
+    """
+    Outputs a histogram of the values of a column over time- useful for displaying sentiment over time. 
+    """
     
     output_location:str
     date_index_column:str
@@ -60,10 +66,16 @@ class OutputSeriesHistogram(OutputAtom):
         df["__date"] = df[self.date_index_column].astype("datetime64")
         df.set_index('__date', inplace=True)
         
+        
+        _max = 0
         ax = matplotlib.pyplot.gca()
         values = set(df[self.values_column].values)
         for val in values:
             df.where(df[self.values_column]==val).resample(self.resample_str)[self.values_column].count().plot(kind="line", ax=ax)
+            m = df.where(df[self.values_column]==val).resample("T")[self.values_column].count().max()
+            if m > _max:
+                _max = m 
         
+        ax.set_ylim([-10, _max+10])
         matplotlib.pyplot.legend(values)
         matplotlib.pyplot.savefig(self.output_location)

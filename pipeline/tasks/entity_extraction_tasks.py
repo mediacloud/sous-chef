@@ -6,6 +6,10 @@ from ..flowatom import FlowAtom
 
 @FlowAtom.register("APIEntityExtraction")
 class ApiEntityExtraction(FlowAtom):
+    """
+    Use an external news-entity-server API endpoint to extract all the entities from an input text.
+    """
+    
     
     def inputs(self, text:str, language:str):pass
     def outputs(self, entities:List[Dict]):pass

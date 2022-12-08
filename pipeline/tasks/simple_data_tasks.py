@@ -7,7 +7,10 @@ import numpy as np
 
 @FlowAtom.register("GenerateRandomSeriesTask")
 class GenerateRandomSeriesTask(FlowAtom):
-    
+    """
+    Populate a row of 'sample_size' random values in between zero and the provided 'rand-range'
+    A Demo Task for datastorage validation
+    """
     sample_size:int
     rand_range:int
     _defaults:{
@@ -24,7 +27,11 @@ class GenerateRandomSeriesTask(FlowAtom):
 
 @FlowAtom.register("ListPrimeFactorsTask")
 class ListPrimeFactorsTask(FlowAtom):
-
+    """
+    Calculate the list of prime factors of an input number. 
+    A Demo Task for datastorage validation
+    """
+    
     def inputs(self, to_factor:int): pass
     def outputs(self, factors:list): pass
     
@@ -47,7 +54,10 @@ def factorize(num):
         
 @FlowAtom.register("CountItemsTask")
 class CountItems(FlowAtom):
-    
+    """
+    Count the number of items stored in a list
+    A Demo Task for datastorage validation
+    """
     def inputs(self, to_count:list): pass
     def outputs(self, counted:int): pass
     
@@ -61,7 +71,10 @@ class CountItems(FlowAtom):
         
 @FlowAtom.register("PrintFieldTask")
 class PrintField(FlowAtom):
-    
+    """
+    Print a summary of the contents of a field to the console.
+    A useful utility task. 
+    """
     pre_message:str
     post_message:str
     _defaults:{
@@ -81,11 +94,19 @@ class PrintField(FlowAtom):
 
 @FlowAtom.register("PrintStringTask")
 class PrintString(PrintField):
+    """
+    Print a summary of the contents of a string field to the console.
+    A useful utility task. 
+    """
     def inputs(self, to_print:str): pass
             
             
 @FlowAtom.register("DivisibleByNTask")
 class DivisibleByNTask(FlowAtom):
+    """
+    Calculate whether or not a number is divisible by input parameter 'n'
+    A Demo Task for datastorage validation
+    """
     
     n:int
     _defaults:{

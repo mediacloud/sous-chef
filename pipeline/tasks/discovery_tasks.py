@@ -9,7 +9,8 @@ providers = lazy_import("mcproviders")
 
 @FlowAtom.register("SampleTwitter")
 class sample_twitter(FlowAtom):
-    """ Get a small sample of tweets matching a query using the mc-providers package
+    """ 
+    Get a small sample of tweets matching a query using the mc-providers package
     """
     
     query:str
@@ -38,8 +39,8 @@ class sample_twitter(FlowAtom):
         
 @FlowAtom.register("QueryTwitter")
 class query_twitter(FlowAtom):
-    """ Get all tweets matching a query using the mc-providers package. 
-    
+    """ 
+    Get all tweets matching a query using the mc-providers package. 
     """
     query:str
     start_date:str
