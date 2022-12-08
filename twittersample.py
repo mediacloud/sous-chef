@@ -12,9 +12,9 @@ config = {
             "id":"QueryTwitter",
             "params":{
                 "task_name":"Generate",
-                "query":"#FIFAWorldCup Japan USA",
-                "start_date":"2022-11-30",
-                "end_date":"2022-12-01",         
+                "query":"#FIFAWorldCup Netherlands USA",
+                "start_date":"2022-12-03",
+                "end_date":"2022-12-04",         
             },
             "outputs":{
                 'title':'title', 
@@ -34,31 +34,41 @@ config = {
                 "to_print":"content"
             }
         },
-    #    {
-    #        "id":"TweetSentimentTask",
-    #        "params":{
-    #            "task_name":"Sentiment Task"
-    #        },
-    #        "inputs":{
-    #            "tweets":"content"
-    #        },
-    #        "outputs":{
-    #            "sentiment_label":"sentiment"
-    #        }
-    #    },
         {
-            "id":"APIEntityExtraction",
+            "id":"TweetSentimentTask",
             "params":{
-                "task_name":"EntityExtraction"
+                "task_name":"Sentiment Task"
             },
             "inputs":{
-                "text":"content",
-                "language":"tweet_language"
+                "tweets":"content"
             },
             "outputs":{
-                "entities":"entities"
+                "sentiment_label":"sentiment"
             }
-            
+        },
+        {
+            "id":"OutputCSV",
+            "params":{
+                "task_name":"EntityExtraction",
+                "columns":["publish_date", "content", "sentiment"],
+                "output_location":"~/twitter_sample.csv"
+            }  
+        },
+        {
+            "id":"OutputFieldHistogram",
+            "params":{
+                "columns":["sentiment"],
+                "output_location":"./twitter_sample_sentiment.jpg"
+            }
+        },
+        {
+            "id":"OutputSeriesHistogram",
+            "params":{
+                "columns":["publish_date", "sentiment"],
+                "date_index_column":"publish_date",
+                "values_column":"sentiment",
+                "output_location":"./twitter_series_sentiment.jpg"
+            }
         }
     ]
 }

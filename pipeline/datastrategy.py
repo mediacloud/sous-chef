@@ -174,7 +174,10 @@ class PandasStrategy(DataStrategy):
         
         post_filter_dataframe.to_csv(self.data_location)
         
-        
+    def get_columns(self, columns):
+        dataframe = pd.read_csv(self.data_location)
+        subset = dataframe[columns]
+        return subset
         
         
         

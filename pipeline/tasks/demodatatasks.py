@@ -9,14 +9,16 @@ import numpy as np
 class GenerateRandomSeriesTask(FlowAtom):
     
     sample_size:int
+    rand_range:int
     _defaults:{
-        "sample_size":10
+        "sample_size":10,
+        "rand_range":100
     }
         
     def outputs(self, numbers:int): pass
     
     def task_body(self):
-        self.data = pd.DataFrame(np.random.randint(0,100,size=(self.sample_size)), columns=["numbers"])
+        self.data = pd.DataFrame(np.random.randint(0,self.rand_range,size=(self.sample_size)), columns=["numbers"])
 
     
 
@@ -41,7 +43,6 @@ def factorize(num):
         if num % i == 0:
             factors.append(i)
     return factors            
-
 
         
 @FlowAtom.register("CountItemsTask")

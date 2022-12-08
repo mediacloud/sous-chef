@@ -53,7 +53,7 @@ class TweetSentimentTask(FlowAtom):
             model_response.append(result)
             
         top_sentiment = [max(resp, key=lambda x: x['score']) for resp in model_response]
-        
+                  
         self.data.sentiment_label = [x["label"] for x in top_sentiment]
         self.data.sentiment_score = [x["score"] for x in top_sentiment]
         

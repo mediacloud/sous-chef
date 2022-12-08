@@ -124,6 +124,12 @@ class FlowAtom(object):
         else:
             return self.__data_strategy.apply_filter(keep_filter)
     
+    def get_columns(self, columns):
+        if self.__data_strategy == None:
+            raise RuntimeError("Cannot Use get_columns if No Datastrategy Is Specified")
+        else:
+            return self.__data_strategy.get_columns(columns)
+    
     #This loads specified data to self.data as a dataframe
     def pre_task(self):
         if self.__data_strategy.inputs is not None:
