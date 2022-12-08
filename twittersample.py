@@ -9,13 +9,12 @@ config = {
     },
     "steps":[
         {
-            "id":"SampleTwitter",
+            "id":"QueryTwitter",
             "params":{
                 "task_name":"Generate",
-                "query":"#FIFAWorldCup",
+                "query":"#FIFAWorldCup Japan USA",
                 "start_date":"2022-11-30",
-                "end_date":"2022-12-01",
-                "max_results":100
+                "end_date":"2022-12-01",         
             },
             "outputs":{
                 'title':'title', 

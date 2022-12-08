@@ -29,5 +29,5 @@ class ApiEntityExtraction(FlowAtom):
             else:
                 entities.append({"text":None, "type":None})
             
-        print(entities)
+        
         self.data.entities = entities
