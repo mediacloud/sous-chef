@@ -86,10 +86,12 @@ The following json (from `samples/basic_datastrategy_sample.py`) configures this
 - Flow Atoms should be able to return expected parameter types as documentation- this will enable easier config authoring, and eventually will make a hypothetical config authoring interface very straightforward. 
 - Real Tests, Good God Please.
 - YAML config parsing
-- Better Type Validation?
+- Better Type Validation, Custom Atom Validation for things like datestrings
+- Caching or Re-starting? Only really useful for my development I think, but...
+- Document tracking. Some atoms extend documents, some create new documents... current pattern only supports one doc per config, which excludes a good % of usecases. There is a way that the datastrategy could handle this detail under the hood, so the user doesn't really have to think about it. I'll have to brainstorm the whole thing a bit before digging in. 
+
 
 
 ### Questions
-1. What about when results aren't tabular- there isn't always going to be a 1-to-1 relationship between inputs and exports- will this mess things up? ... I guess that pandas will be fine.
-2. Relatedly- what about when we have more data than we want to hold in memory at any time? I suppose future DataStrategies could impliment things as generators instead. We really shouldn't have to load the entire data frame every time, also. This is an argument in favor of some kind of more robust datastore, but which one?
+1. Extensions vs Transformations. Right now all of the atoms simply extend an original discovery document. If we wanted to, say, sort the most common values from a field, we would end up with a transformation- a totally new document. We could just save this in an additional column of the dataframe, but this could mess things up if you then used this column the wrong way. Is this just an extra kind of type validation, or is some different mechanism required?
 3. Should it get a fancy name? I think it should get something better than 'mc_pipeline', but I know that MC's preference is for more straightforward names. 

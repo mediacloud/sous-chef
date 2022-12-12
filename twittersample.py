@@ -62,7 +62,7 @@ config = {
             }
         },
         {
-            "id":"OutputSeriesHistogram",
+            "id":"OutputTimeSeriesHistogram",
             "params":{
                 "columns":["publish_date", "sentiment"],
                 "date_index_column":"publish_date",

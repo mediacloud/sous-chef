@@ -10,7 +10,6 @@ class ApiEntityExtraction(FlowAtom):
     Use an external news-entity-server API endpoint to extract all the entities from an input text.
     """
     
-    
     def inputs(self, text:str, language:str):pass
     def outputs(self, entities:List[Dict]):pass
     
@@ -35,3 +34,50 @@ class ApiEntityExtraction(FlowAtom):
             
         
         self.data.entities = entities
+        
+@FlowAtom.register("TopNEntities")
+class TopNEntities(FlowAtom):
+    """
+    With an input of many list of dicts, output a list of the top N most commonly occuring entities.
+    Top_n limits the number of entities returned, and filter_type limits results to a specific entity-type (ie PER, OBJ, etc)
+    """
+    
+    top_n:int
+    filter_type:str
+    _defaults:{
+        "top_n":-1,
+        "filter_type":""
+    }
+    
+    def inputs(self, entities:List[Dict]):pass
+    def outputs(self, top_entities:list):pass
+    
+    def task_body(self):
+        
+        counter = {}
+        
+        for article_entities in self.data.entities:
+            for ent in article_entities:
+                if self.filter_type != "" and ent["type"] != self.filter_type:
+                    pass
+                
+                #ent_slug = f"{ent['text']}-{ent['type']}"
+                ent_slug = ent['text']
+                
+                if ent_slug in counter:
+                    counter[ent_slug] += 1
+                else: 
+                    counter[ent_slug] = 1
+        
+        top_entities = sorted(counter, reverse=True)
+        if self.top_n > 0:
+            top_entities = top_entities[:self.top_n]
+        
+        print(top_entities)
+        #This is not working yet- due to the document shape problem.
+        #Essentially, this is ALSO a kind of "generator" flow, since it creates 
+        #A NEW DOCUMENT- which in a pandas datastore example will have to be stored in a new pandas 
+        #dataframe. So we need a slightly upgraded strategy.
+        #self.data["top_entities"] = top_entities
+        
+        
