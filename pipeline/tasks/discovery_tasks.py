@@ -10,6 +10,7 @@ from pprint import pprint
 
 providers = lazy_import("mcproviders")
 
+#A helper function to apply to datestring config inputs
 def validate_datestr_form(datestr, name):
     time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M']
     good_form = None
@@ -25,8 +26,8 @@ def validate_datestr_form(datestr, name):
     else:
         return good_form
 
-#Idk I haven't implemented the MRO walk again
-class MediacloudDiscoveryAtom(FlowAtom):
+#All the discovery atoms impliment the same validation, so we should be able to just subclass this. 
+class DiscoveryAtom(FlowAtom):
     query:str
     start_date:str
     end_date:str
@@ -36,16 +37,12 @@ class MediacloudDiscoveryAtom(FlowAtom):
         self.end_date_form = validate_datestr_form(self.end_date, "end_date")
         
         
-        
 @FlowAtom.register("SampleTwitter")
-class sample_twitter(FlowAtom):
+class sample_twitter(DiscoveryAtom):
     """ 
     Get a small sample of tweets matching a query using the mc-providers package
     """
-    
-    query:str
-    start_date:str
-    end_date:str
+
     max_results:int
     _defaults:{
         "max_results":100
@@ -55,10 +52,6 @@ class sample_twitter(FlowAtom):
                 publish_date:object, url:str, last_updated:object, author:str, language:str, 
                 retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
                 content:str): pass
-    
-    def validate(self):
-        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
-        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
         
     def task_body(self):
         SearchInterface = providers.provider_by_name("twitter-twitter")
@@ -72,22 +65,15 @@ class sample_twitter(FlowAtom):
         
         
 @FlowAtom.register("QueryTwitter")
-class query_twitter(FlowAtom):
+class query_twitter(DiscoveryAtom):
     """ 
     Get all tweets matching a query using the mc-providers package. 
     """
-    query:str
-    start_date:str
-    end_date:str
-        
+
     def outputs(self, media_name:str, media_url:str, media_id:int, title:str, 
                 publish_date:object, url:str, last_updated:object, author:str, language:str, 
                 retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
                 content:str): pass
-    
-    def validate(self):
-        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
-        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
 
     def task_body(self):
         SearchInterface = providers.provider_by_name("twitter-twitter")
@@ -104,11 +90,8 @@ class query_twitter(FlowAtom):
         
         
 @FlowAtom.register("QueryOnlineNews")
-class query_onlinenews(FlowAtom):
+class query_onlinenews(DiscoveryAtom):
     
-    query:str
-    start_date:str
-    end_date:str
 
     def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
