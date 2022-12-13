@@ -15,6 +15,7 @@ class FlowAtom(object):
 
     task_name:str
     _defaults:{"task_name":"A placeholder name"}
+    _new_document:False
     
     def __init__(self, params, data_config):
         self.task_inputs = inspect.get_annotations(self.inputs)
@@ -40,6 +41,10 @@ class FlowAtom(object):
         
         return _register
     
+    @classmethod
+    def creates_new_document(self):
+        return False
+    
     #MRO = "Method Resolution Order" - basically the class inheritance tree. 
     #This walks the MRO and grabs all the annotations that are defined on it
     #Validates the provided parameters, and sets the values to the object
@@ -52,7 +57,7 @@ class FlowAtom(object):
             for name, value in inspect.get_annotations(cls).items():
                 if name == DEFAULTS:
                     all_defaults.update(value)
-                else:
+                elif name[0] != '_':
                     all_annotations.update({name:value})
         
         

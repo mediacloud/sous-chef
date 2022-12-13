@@ -1,6 +1,6 @@
 from prefect import flow
 from .flowatom import FlowAtom
-from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS
+from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT
 from .datastrategy import DataStrategy
 from .tasks import *
 from typing import List
@@ -10,18 +10,35 @@ from typing import List
 #Environment setup, variables, data strategies, etc. 
 @flow()
 class Pipeline():
-    
-    
+    """Core pipeline class. 
+    Initialize it with a configuration json, and it will run all of the pre-run validation.
+    Then call the class to run the pipeline
+    """
     
     def __init__(self, config):
         self.config = config
+        self.__get_atom_meta()
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
 
+        
+        
+    def __get_atom_meta(self):
+        #Some atom metadata (like- does it create or extend a document) is required
+        #at the datasetup step- which, is obligated to run before the atom instantiation 
+        #SO catch22- how can we get this information before we instantiate the atoms?
+        available_atoms = FlowAtom.get_atoms()
+        for task in self.config[STEPS]:
+            if task[ID] in available_atoms:
+                wrapped_class = available_atoms[task[ID]].__wrapped__
+                task[NEWDOCUMENT] = wrapped_class.creates_new_document()
+        
+        
     #In which we add the datastrategy specific config into the user supplied config
     def __validate_and_setup_data(self):
         available_strategies = DataStrategy.get_strats()
+        
         if DATASTRATEGY in self.config:
             strat_name = self.config[DATASTRATEGY][ID]
             if strat_name in available_strategies:
@@ -29,6 +46,7 @@ class Pipeline():
             else:
                 raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
         else:
+            #Use the backup nostrategy strategy
             self.config = available_strategies[NOSTRAT].update_config(self.config)
     
     #Do a top-level validation of the configuration parameters first, then initialize all the steps 

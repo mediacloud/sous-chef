@@ -5,7 +5,7 @@ import os
 import ast
 
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
-    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT)
+    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT)
 
 
 #There should be one data strategy per pipeline
@@ -79,7 +79,7 @@ class DataStrategy(object):
     
 @DataStrategy.register(NOSTRAT)
 class NoStrategy(DataStrategy):
-        
+    """Dummy empty strategy class, to be subsituted when no other strat is being used. """
     
     @classmethod
     def update_config(self, config):
@@ -100,6 +100,7 @@ class NoStrategy(DataStrategy):
 #so the config just has to say something like input_cols:[a,b], output_cols:[d]. 
 @DataStrategy.register("PandasStrategy")
 class PandasStrategy(DataStrategy):
+    """A strategy which uses CSVs on the filesystem, indexed with pandas, to store data in-between flow steps"""
     
     @classmethod
     def setup_config(self, config):
@@ -109,6 +110,16 @@ class PandasStrategy(DataStrategy):
         i = 0
         while os.path.exists(f"{data_location_root}_{i}.csv"):
             i += 1
+        
+        
+        #THIS is where some magic setting up the multi-document stuff will happen
+        #Essentially, we know that we need a different empty dataframe for every 
+        #case where NEWDOCUMENT is True
+        #AND THEN we also need some mapping to sort out which field belongs to which document
+        #- which may or may not be trivial- I need to pencil it out. 
+        for step in config[STEPS]:
+            print(step[ID])
+            print(step[NEWDOCUMENT])
         
         data_location = f"{data_location_root}_{i}.csv"
         

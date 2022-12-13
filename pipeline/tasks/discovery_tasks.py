@@ -31,7 +31,11 @@ class DiscoveryAtom(FlowAtom):
     query:str
     start_date:str
     end_date:str
-        
+    
+    @classmethod
+    def creates_new_document(self):
+        return True
+    
     def validate(self):
         self.start_date_form = validate_datestr_form(self.start_date, "start_date")
         self.end_date_form = validate_datestr_form(self.end_date, "end_date")

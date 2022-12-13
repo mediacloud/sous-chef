@@ -9,6 +9,8 @@ RUNNAME = "name"
 DATALOCATION = "data_location"
 READLOCATION = "read_location"
 WRITELOCATION = "write_location"
+NEWDOCUMENT = "creates_new_document"
+
 
 #default data strategy
 NOSTRAT = "NoStrategy"
