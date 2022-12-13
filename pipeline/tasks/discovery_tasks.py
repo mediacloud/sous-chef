@@ -4,12 +4,39 @@ import pandas as pd
 import requests
 from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
-#import mcproviders as providers
+
 from pprint import pprint
+
 
 providers = lazy_import("mcproviders")
 
+def validate_datestr_form(datestr, name):
+    time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M']
+    good_form = None
+    for form in time_formats:
+        try:
+            datetime.strptime(datestr, form)
+            good_form = form
+        except ValueError:
+            continue
+            
+    if good_form == None:
+        raise RuntimeError("Validation Error")
+    else:
+        return good_form
 
+#Idk I haven't implemented the MRO walk again
+class MediacloudDiscoveryAtom(FlowAtom):
+    query:str
+    start_date:str
+    end_date:str
+        
+    def validate(self):
+        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
+        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
+        
+        
+        
 @FlowAtom.register("SampleTwitter")
 class sample_twitter(FlowAtom):
     """ 
@@ -29,10 +56,14 @@ class sample_twitter(FlowAtom):
                 retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
                 content:str): pass
     
+    def validate(self):
+        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
+        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
+        
     def task_body(self):
         SearchInterface = providers.provider_by_name("twitter-twitter")
-        start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
+        start_date = datetime.strptime(self.start_date, self.start_date_form)
+        end_date = datetime.strptime(self.end_date, self.end_date_form)
         
         results = SearchInterface.sample(self.query, start_date, end_date, limit=self.max_results)
         
@@ -54,13 +85,17 @@ class query_twitter(FlowAtom):
                 retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
                 content:str): pass
     
+    def validate(self):
+        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
+        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
+
     def task_body(self):
         SearchInterface = providers.provider_by_name("twitter-twitter")
-        start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
+        start_date = datetime.strptime(self.start_date, self.start_date_form)
+        end_date = datetime.strptime(self.end_date, self.end_date_form)
         
         output = []
-        for result in SearchInterface.all_items(self.query, start_date, end_date, limit=self.max_results):
+        for result in SearchInterface.all_items(self.query, start_date, end_date):
             output.extend(result)
             
         self.data = pd.json_normalize(output)

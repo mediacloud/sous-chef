@@ -40,6 +40,7 @@ class FlowAtom(object):
         
         return _register
     
+    #MRO = "Method Resolution Order" - basically the class inheritance tree. 
     #This walks the MRO and grabs all the annotations that are defined on it
     #Validates the provided parameters, and sets the values to the object
     def __validate_and_apply(self, params):
@@ -73,7 +74,9 @@ class FlowAtom(object):
                     raise RuntimeError(f"Bad Configuration, missing required parameter {key}:{value}")
                 else:
                     setattr(self, key, all_defaults[key])
-      
+
+        self.validate()
+
     def __setup_strategy(self, data_config):
         available_strategies = DataStrategy.get_strats()
         
@@ -100,11 +103,18 @@ class FlowAtom(object):
     def task_body(self):
         raise RunTimeError("task_body is Unimplimented")
     
-    
+    def validate(self): pass 
+        #A method than can be called by a flow atom to perform more fine-grained validation than simple type-checking can do
     
     def inputs(self): pass
-    
+        #This might be un-pythonic, but we are using this function to define the input schema for the atom
+        #All values in the input schema for this function must be defined for a configuration to pass validation
+        
     def outputs(self): pass
+        #Same as above- this function defines the output schema for the atom. 
+        #No values that are not defined in this schema can be defined for a configuration to pass validation-
+        #ie- these are the many optional outputs
+    
     
     def get_data(self):
         if self.__data_strategy == None:
@@ -118,11 +128,13 @@ class FlowAtom(object):
         else:
             return self.__data_strategy.write_data(data)
     
+    
     def apply_filter(self, keep_filter):
         if self.__data_strategy == None:
             raise RuntimeError("Cannot Use apply_filter if No Datastrategy Is Specified")
         else:
             return self.__data_strategy.apply_filter(keep_filter)
+    
     
     def get_columns(self, columns):
         if self.__data_strategy == None:

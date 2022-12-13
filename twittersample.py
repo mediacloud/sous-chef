@@ -13,7 +13,7 @@ config = {
             "params":{
                 "task_name":"Generate",
                 "query":"#FIFAWorldCup Netherlands USA",
-                "start_date":"2022-12-03",
+                "start_date":"2022-12-03, 12:30",
                 "end_date":"2022-12-04",         
             },
             "outputs":{
