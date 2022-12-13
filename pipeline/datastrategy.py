@@ -112,14 +112,25 @@ class PandasStrategy(DataStrategy):
             i += 1
         
         
-        #THIS is where some magic setting up the multi-document stuff will happen
-        #Essentially, we know that we need a different empty dataframe for every 
-        #case where NEWDOCUMENT is True
-        #AND THEN we also need some mapping to sort out which field belongs to which document
-        #- which may or may not be trivial- I need to pencil it out. 
+        
+        #Iterate through the configuration to figure out which document each field belongs to
+        #If a field is output by a new_document atom, just use that 
+        #Otherwise, do a one-step backtrace to see where the previous input lives and use that. 
+        
+        field_to_document_map = {}
         for step in config[STEPS]:
-            print(step[ID])
-            print(step[NEWDOCUMENT])
+            if OUTPUTS in step:
+                if(step[NEWDOCUMENT]):
+                    for output in step[OUTPUTS].values():
+                        field_to_document_map[output] = step[ID]
+                else:
+                    if INPUTS in step:
+                        to_find = list(step[INPUTS].values())
+                        doc_match = field_to_document_map[to_find[0]]
+                        for output in step[OUTPUTS].values():
+                            field_to_document_map[output] = doc_match
+            
+        print(field_to_document_map)
         
         data_location = f"{data_location_root}_{i}.csv"
         

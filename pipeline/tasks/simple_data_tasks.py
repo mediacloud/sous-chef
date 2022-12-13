@@ -18,6 +18,11 @@ class GenerateRandomSeriesTask(FlowAtom):
         "rand_range":100
     }
         
+        
+    @classmethod
+    def creates_new_document(self):
+        return True   
+    
     def outputs(self, numbers:int): pass
     
     def task_body(self):
@@ -124,3 +129,34 @@ class DivisibleByNTask(FlowAtom):
         
         self.data.divisible = output
     
+@FlowAtom.register("MostCommonTask")
+class CommonElements(FlowAtom):
+    """ take a field of lists and return the top-n most common elements """
+    
+    top_n:int
+    _defaults:{
+        "top_n":5
+    }
+        
+    def inputs(self, to_count:list): pass
+    def outputs(self, top_elements:int):pass
+    
+    @classmethod
+    def creates_new_document(self):
+        return True
+    
+    def task_body(self):
+        elements = {}
+        for doc in self.data.to_count:
+            for item in doc:
+                if item in elements:
+                    elements[item] += 1
+                else:
+                    elements[item] = 1
+        
+        print(elements)
+        top_elements = sorted(elements)
+        if self.top_n > 0:
+            top_elements = top_elements[:self.top_n]
+        
+        print(top_elements)
