@@ -56,8 +56,8 @@ class TweetSentimentTask(FlowAtom):
             
         top_sentiment = [max(resp, key=lambda x: x['score']) for resp in model_response]
                   
-        self.data.sentiment_label = [x["label"] for x in top_sentiment]
-        self.data.sentiment_score = [x["score"] for x in top_sentiment]
+        self.results.sentiment_label = [x["label"] for x in top_sentiment]
+        self.results.sentiment_score = [x["score"] for x in top_sentiment]
         
         
 #This just uses the huggingface api!
@@ -90,7 +90,7 @@ class ApiTweetSentimentTask(FlowAtom):
         #model returns scores for all three possible labels, so let's just get the top one
         top_sentiment = [max(resp, key=lambda x: x['score']) for resp in model_response]
         
-        self.data.sentiment_label = [x["label"] for x in top_sentiment]
-        self.data.sentiment_score = [x["score"] for x in top_sentiment]
+        self.results.sentiment_label = [x["label"] for x in top_sentiment]
+        self.results.sentiment_score = [x["score"] for x in top_sentiment]
         
         

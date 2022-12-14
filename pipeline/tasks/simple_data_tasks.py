@@ -26,7 +26,7 @@ class GenerateRandomSeriesTask(FlowAtom):
     def outputs(self, numbers:int): pass
     
     def task_body(self):
-        self.data = pd.DataFrame(np.random.randint(0,self.rand_range,size=(self.sample_size)), columns=["numbers"])
+        self.results = pd.DataFrame(np.random.randint(0,self.rand_range,size=(self.sample_size)), columns=["numbers"])
 
     
 
@@ -45,7 +45,7 @@ class ListPrimeFactorsTask(FlowAtom):
         for num in self.data.to_factor:
             output.append(factorize(num))
         
-        self.data.factors = output
+        self.results.factors = output
         
 #Really dumb method to factorize a number
 @task()
@@ -70,7 +70,7 @@ class CountItems(FlowAtom):
         output = []
         for l in self.data.to_count:
             output.append(len(l))
-        self.data.counted = output
+        self.results.counted = output
 
 
         
@@ -127,7 +127,7 @@ class DivisibleByNTask(FlowAtom):
         for val in self.data.to_divide:
             output.append(val % self.n == 0)
         
-        self.data.divisible = output
+        self.results.divisible = output
     
 @FlowAtom.register("MostCommonTask")
 class CommonElements(FlowAtom):
@@ -160,3 +160,4 @@ class CommonElements(FlowAtom):
             top_elements = top_elements[:self.top_n]
         
         print(top_elements)
+        self.results.top_elements = top_elements

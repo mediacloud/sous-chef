@@ -5,7 +5,7 @@ import os
 import ast
 
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
-    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT)
+    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP)
 
 
 #There should be one data strategy per pipeline
@@ -51,6 +51,9 @@ class DataStrategy(object):
                     if i not in function_outputs:
                         raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
                 
+                #Commenting out this block allows for outputs to be optional- sometimes we want to provide
+                #outputs that not all applications will make use of- so don't hold the user to the standard
+                #of using all of them
                 #for i in function_outputs:
                 #    if i not in config_outputs:
                 #        raise RuntimeError(f"Configuration Error: Atom expects output named {i}")
@@ -104,19 +107,15 @@ class PandasStrategy(DataStrategy):
     
     @classmethod
     def setup_config(self, config):
-        data_location_root = f"{config[DATASTRATEGY][DATALOCATION]}{config[RUNNAME]}"
-        
-        #iterate so we don't overwrite old runs unintentionally
-        i = 0
-        while os.path.exists(f"{data_location_root}_{i}.csv"):
-            i += 1
-        
+
         
         
         #Iterate through the configuration to figure out which document each field belongs to
         #If a field is output by a new_document atom, just use that 
         #Otherwise, do a one-step backtrace to see where the previous input lives and use that. 
-        
+        #Basically, we always assume that the output matches the input, unless otherwise stated.
+        #In the case where an atom has two unlike inputs? Well fuck around and find out, I suppose:
+        #Probably just refer to that as a new document as well
         field_to_document_map = {}
         for step in config[STEPS]:
             if OUTPUTS in step:
@@ -129,13 +128,26 @@ class PandasStrategy(DataStrategy):
                         doc_match = field_to_document_map[to_find[0]]
                         for output in step[OUTPUTS].values():
                             field_to_document_map[output] = doc_match
+        #And use this mapping later on to make sure values are loaded/saved to the right place
+
+        #format is data_root/runname/documentname_output.csv
+        data_location_root = config[DATASTRATEGY][DATALOCATION]
+        runname = config[RUNNAME]
+        
+        #iterate so we don't overwrite old runs unintentionally
+        i = 0
+        while os.path.exists(f"{data_location_root}{runname}_{i}"):
+            i += 1
+        data_directory = f"{data_location_root}{runname}_{i}/"
+        os.mkdir(data_directory)
+        
+        #create the documents
+        documents = list(set(field_to_document_map.values()))
+        for doc in documents:
+            doc_loc = data_directory+doc+"_output.csv"
+            start_dataframe = pd.DataFrame()
+            start_dataframe.to_csv(doc_loc)
             
-        print(field_to_document_map)
-        
-        data_location = f"{data_location_root}_{i}.csv"
-        
-        start_dataframe = pd.DataFrame()
-        start_dataframe.to_csv(data_location)
         
         for i, step in enumerate(config[STEPS]):
             
@@ -144,9 +156,10 @@ class PandasStrategy(DataStrategy):
             #but for now we just go with this. 
             data_meta = {
                 DATASTRATEGY: config[DATASTRATEGY][ID],
-                DATALOCATION: data_location,
+                DATALOCATION: data_directory,
                 INPUTS: step[INPUTS] if INPUTS in step else None,
-                OUTPUTS: step[OUTPUTS] if OUTPUTS in step else None 
+                OUTPUTS: step[OUTPUTS] if OUTPUTS in step else None,
+                DOCUMENTMAP: field_to_document_map
             }
             
             step[DATA] = data_meta
@@ -155,36 +168,54 @@ class PandasStrategy(DataStrategy):
         return config
     
     def get_data(self):
-        read_dataframe = pd.read_csv(self.data_location)
-        operating_dataframe = pd.DataFrame()
+        document_map = self.config[DOCUMENTMAP]
+                 
         
-        for function_name, read_location in self.inputs.items():
-            #apply literal eval so that types are preserved, if we're not just loading a string
-            expected_dtype = self.function_inputs[function_name]
+        read_locations = [inputmap[1] for inputmap in self.inputs.items()]
+        documents = list(set([document_map[_in] for _in in read_locations]))
+        if len(documents) == 1:
+            doc_loc = self.data_location+documents[0]+"_output.csv"
+            read_dataframe = pd.read_csv(doc_loc)
+            operating_dataframe = pd.DataFrame()
 
-            value =  read_dataframe[read_location].apply(lambda x:eval_or_nan(x, expected_dtype))
+            for function_name, read_location in self.inputs.items():
+                #apply literal eval so that types are preserved, if we're not just loading a string
+                expected_dtype = self.function_inputs[function_name]
 
-            operating_dataframe[function_name] = value
-        
-        if self.outputs is not None:
-            #This just sets up the outputs so that the flow object can write to it with dot syntax
-            for function_name, read_location in self.outputs.items():
-                operating_dataframe[function_name] = pd.Series(dtype=object)
-       
-        return operating_dataframe
+                value =  read_dataframe[read_location].apply(lambda x:eval_or_nan(x, expected_dtype))
+
+                operating_dataframe[function_name] = value
+            
+            results_dataframe = pd.DataFrame()
+            if self.outputs is not None:
+                #This just sets up the outputs so that the flow object can write to it with dot syntax
+                for function_output_name in self.function_outputs.keys():
+                    results_dataframe[function_output_name] = pd.Series(dtype=object)
+   
+        else:
+            raise RuntimeError("Multidocument reads are not implimented yet")
+        return operating_dataframe, results_dataframe
 
     def write_data(self, operating_dataframe):
         if self.outputs is not None:
+            document_map = self.config[DOCUMENTMAP]
+            write_locations = [outputmap[1] for outputmap in self.outputs.items()]
+            documents = list(set([document_map[out] for out in write_locations]))
+            if len(documents) == 1:
+                doc_loc = self.data_location+documents[0]+"_output.csv"
+                        
+                write_dataframe = pd.read_csv(doc_loc)
 
-            write_dataframe = pd.read_csv(self.data_location)
-            
-            for function_name, write_location in self.outputs.items():
-                write_dataframe[write_location] = operating_dataframe[function_name]
-            write_dataframe.to_csv(self.data_location)
-        
+                for function_name, write_location in self.outputs.items():
+                    write_dataframe[write_location] = operating_dataframe[function_name]
+                
+                write_dataframe.to_csv(doc_loc)
+            else:
+                raise RuntimeError("Multidocument writes are not supported")
         else:
             raise RuntimeError("Can't call write_data on an atom with no outputs defined")
-    
+                         
+                         
     def apply_filter(self, keep_column):
         #keep_column should be a column of bools, where "true" means the row will be kept, and 'false' that it will be dropped
         dataframe = pd.read_csv(self.data_location)
@@ -197,8 +228,14 @@ class PandasStrategy(DataStrategy):
         post_filter_dataframe.to_csv(self.data_location)
         
     def get_columns(self, columns):
-        dataframe = pd.read_csv(self.data_location)
-        subset = dataframe[columns]
+        document_map = self.config[DOCUMENTMAP]
+        documents = list(set([document_map[_in] for _in in columns]))
+        if len(documents) == 1:
+            doc_loc = self.data_location+documents[0]+"_output.csv"
+            dataframe = pd.read_csv(doc_loc)
+            subset = dataframe[columns]
+        else:
+            raise RuntimeError("returning columns from multiple documents is not yet supported")
         return subset
         
         

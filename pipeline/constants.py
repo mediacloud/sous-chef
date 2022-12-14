@@ -10,7 +10,7 @@ DATALOCATION = "data_location"
 READLOCATION = "read_location"
 WRITELOCATION = "write_location"
 NEWDOCUMENT = "creates_new_document"
-
+DOCUMENTMAP = "document_map"
 
 #default data strategy
 NOSTRAT = "NoStrategy"

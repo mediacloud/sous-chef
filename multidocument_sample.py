@@ -2,7 +2,7 @@ from pipeline import RunPipeline
 
 #And of course eventually we can define these guys as yaml or whatever
 config = {
-    "name":"basic_datastrategy_sample",
+    "name":"multidocument_sample",
     "data_strategy":{
         "id":"PandasStrategy",
         "data_location":"data/"
@@ -31,10 +31,22 @@ config = {
             }
         },
         {
+            "id":"CountItemsTask",
+            "params":{
+                "task_name":"Count Factors"
+            },
+            "inputs":{
+                "to_count":"factors"
+            },
+            "outputs":{
+                "counted":"factor_count"
+            }
+        },
+        {
             "id":"MostCommonTask",
             "params":{
                 "task_name":"Most Common Factors",
-                "top_n":5
+                "top_n":10
             },
             "inputs":{
                 "to_count":"factors"
@@ -44,10 +56,18 @@ config = {
             }
         },
         {
+            "id":"OutputCSV",
+            "params":{
+                "task_name":"EntityExtraction",
+                "columns":["factors", "factor_count"],
+                "output_location":"~/simple_exporter.csv"
+            }  
+        },
+        {
             "id":"DivisibleByNTask",
             "params":{
                 "task_name":"idk man",
-                "n":3
+                "n":2
             },
             "inputs":{
                 "to_divide":"top_factors"
@@ -55,7 +75,8 @@ config = {
             "outputs":{
                 "divisible":"divisible"
             }
-        }
+        },
+        
     ]
 }
 

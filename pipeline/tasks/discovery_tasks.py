@@ -64,8 +64,8 @@ class sample_twitter(DiscoveryAtom):
         
         results = SearchInterface.sample(self.query, start_date, end_date, limit=self.max_results)
         
-        self.data = pd.json_normalize(results)
-        self.data["media_id"] = self.data["id"]
+        self.results = pd.json_normalize(results)
+        self.results["media_id"] = self.results["id"]
         
         
 @FlowAtom.register("QueryTwitter")
@@ -88,8 +88,8 @@ class query_twitter(DiscoveryAtom):
         for result in SearchInterface.all_items(self.query, start_date, end_date):
             output.extend(result)
             
-        self.data = pd.json_normalize(output)
-        self.data["media_id"] = self.data["id"]
+        self.results = pd.json_normalize(output)
+        self.results["media_id"] = self.results["id"]
         
         
         
@@ -100,6 +100,7 @@ class query_onlinenews(DiscoveryAtom):
     def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
         
+    
     def task_body(self):
         provider = "onlinenews-waybackmachine"
         
@@ -114,15 +115,16 @@ class query_onlinenews(DiscoveryAtom):
             output.extend(result)
 
         #print(output)
+        
         content = []
         for article in output:
             article_url = article["article_url"]
             article_info = requests.get(article["article_url"]).json()
             if "snippet" in article_info:
-                #print(article_info.keys())
+                print("Got Article")
                 content.append(article_info)
         
         if len(content) > 0:
-            self.data = pd.json_normalize(content)
-            self.data["text"] = self.data["snippet"]
+            self.results = pd.json_normalize(content)
+            self.results["text"] = self.results["snippet"]
         

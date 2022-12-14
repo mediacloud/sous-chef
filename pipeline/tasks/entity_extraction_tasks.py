@@ -33,7 +33,7 @@ class ApiEntityExtraction(FlowAtom):
                 entities.append({"text":None, "type":None})
             
         
-        self.data.entities = entities
+        self.results.entities = entities
         
 @FlowAtom.register("TopNEntities")
 class TopNEntities(FlowAtom):
@@ -78,6 +78,6 @@ class TopNEntities(FlowAtom):
         #Essentially, this is ALSO a kind of "generator" flow, since it creates 
         #A NEW DOCUMENT- which in a pandas datastore example will have to be stored in a new pandas 
         #dataframe. So we need a slightly upgraded strategy.
-        #self.data["top_entities"] = top_entities
+        #self.results.top_entities = top_entities
         
         

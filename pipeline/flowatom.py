@@ -147,12 +147,12 @@ class FlowAtom(object):
     #This loads specified data to self.data as a dataframe
     def pre_task(self):
         if self.__data_strategy.inputs is not None:
-                self.data = self.get_data()
+                self.data, self.results = self.get_data()
         
     #Task finish- write self.data to the dataframe
     def post_task(self):
         if self.__data_strategy.outputs is not None:
-            self.write_data(self.data)
+            self.write_data(self.results)
 
     
     def __call__(self):
