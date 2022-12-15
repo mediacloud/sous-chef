@@ -13,8 +13,8 @@ config = {
             "params":{
                 "task_name":"Generate",
                 "query":"covid AND vaccine AND fauci",
-                "start_date":"2022-07-01",
-                "end_date":"2022-07-02",         
+                "start_date":"2022-09-01",
+                "end_date":"2022-09-02",         
             },
             "outputs":{
                 "text":"text",

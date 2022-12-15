@@ -2,10 +2,6 @@ from pipeline import RunPipeline
 
 #And of course eventually we can define these guys as yaml or whatever
 config = {
-    "data_strategy":{
-        "id":"CSVStrategy",
-        "data_location":"data/"
-    },
     "steps":[
     {
         "id":"TestParamAccessTask",

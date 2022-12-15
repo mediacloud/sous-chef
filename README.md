@@ -85,8 +85,6 @@ The following json (from `samples/basic_datastrategy_sample.py`) configures this
 ### Package TODO:
 - Flow Atoms should be able to return expected parameter types as documentation- this will enable easier config authoring, and eventually will make a hypothetical config authoring interface very straightforward. 
 - Real Tests, Good God Please.
-- YAML config parsing
-- Better Type Validation, Custom Atom Validation for things like datestrings
 - Caching or Re-starting? Only really useful for my development I think, but...
 - Document tracking. Some atoms extend documents, some create new documents... current pattern only supports one doc per config, which excludes a good % of usecases. There is a way that the datastrategy could handle this detail under the hood, so the user doesn't really have to think about it. I'll have to brainstorm the whole thing a bit before digging in. 
 

@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from ..flowatom import FlowAtom
 from .utils import lazy_import
-matplotlib = lazy_import("matplotlib")
+import matplotlib.pyplot as plt
 
 class OutputAtom(FlowAtom):
     """ 
@@ -68,7 +68,7 @@ class OutputSeriesHistogram(OutputAtom):
         
         
         _max = 0
-        ax = matplotlib.pyplot.gca()
+        ax = plt.gca()
         values = set(df[self.values_column].values)
         for val in values:
             df.where(df[self.values_column]==val).resample(self.resample_str)[self.values_column].count().plot(kind="line", ax=ax)
@@ -77,5 +77,5 @@ class OutputSeriesHistogram(OutputAtom):
                 _max = m 
         
         ax.set_ylim([-10, _max+10])
-        matplotlib.pyplot.legend(values)
-        matplotlib.pyplot.savefig(self.output_location)
+        plt.legend(values)
+        plt.savefig(self.output_location)

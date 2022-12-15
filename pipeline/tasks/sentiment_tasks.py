@@ -11,6 +11,7 @@ HF_API_BEARER_TOKEN = os.getenv('HUGGINGFACE_API_BEARER_TOKEN', None)
 
 #Recomended step for demangling twitter links and usernames
 def preprocess_tweet(text):
+    text = str(text)
     new_text = []
     for t in text.split(" "):
         t = '@user' if t.startswith('@') and len(t) > 1 else t

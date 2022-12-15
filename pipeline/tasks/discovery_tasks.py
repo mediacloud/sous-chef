@@ -12,7 +12,7 @@ providers = lazy_import("mcproviders")
 
 #A helper function to apply to datestring config inputs
 def validate_datestr_form(datestr, name):
-    time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M']
+    time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M', "%Y-%m-%d, %H:%M %p"]
     good_form = None
     for form in time_formats:
         try:
@@ -22,7 +22,7 @@ def validate_datestr_form(datestr, name):
             continue
             
     if good_form == None:
-        raise RuntimeError("Validation Error")
+        raise RuntimeError("Validation Error- invalid datetime provided")
     else:
         return good_form
 
