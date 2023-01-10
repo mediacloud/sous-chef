@@ -1,4 +1,4 @@
-name: BRAvCO_WorldcupTwitterSentiment
+name: MORvPOR_WorldcupTwitterSentiment
 data_strategy:
     id: PandasStrategy
     data_location: data/
@@ -6,19 +6,13 @@ steps:
     - QueryTwitter:
         params:
             task_name: Generate
-            query: "#CROBRA OR #BRACRO OR #BRA OR #CRO"
-            start_date: "2022-12-09, 9:30 AM"
-            end_date: "2022-12-09, 1:00 PM"
+            query: "#MORPOR OR #PORMOR OR #MOR OR #POR"
+            start_date: "2022-12-10, 9:30 AM"
+            end_date: "2022-12-10, 12:30 PM"
         outputs:
             content: content
             language: tweet_language
             publish_date: publish_date
-    
-    - PrintFieldTask:
-        params:
-            pre_message: "Printing Tweets"
-        inputs:
-            to_print: content
     
     - TweetSentimentTask:
         params:
@@ -35,7 +29,7 @@ steps:
                 - publish_date
                 - content
                 - sentiment
-            output_location: "./bra_co_tweets.csv"
+            output_location: "./mor_v_por_tweets.csv"
         
     - OutputTimeSeriesHistogram:
         params:
@@ -45,4 +39,4 @@ steps:
                 - sentiment
             values_column: sentiment
             date_index_column: publish_date
-            output_location: "./bra_co_tweet_sentiment.jpg"
+            output_location: "./mor_v_por_tweet_sentiment.jpg"

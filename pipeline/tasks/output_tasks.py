@@ -26,12 +26,12 @@ class OutputCSV(OutputAtom):
     
     def task_body(self):
         
-        location, filetype = self.output_location.split(".")
+        filetype = self.output_location.split(".")[-1]
         i = 0
-        while os.path.exists(f"{location}_{i}.{filetype}"):
+        while os.path.exists(f"{self.output_location[:-4]}_{i}.{filetype}"):
             i += 1
         
-        self.data.to_csv(f"{location}_{i}.{filetype}")
+        self.data.to_csv(f"{self.output_location[:-4]}_{i}.{filetype}")
 
 
 @FlowAtom.register("OutputFieldHistogram")

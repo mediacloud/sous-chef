@@ -1,10 +1,11 @@
 from prefect import flow
 from .flowatom import FlowAtom
-from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT
+from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT
 from .datastrategy import DataStrategy
 from .tasks import *
 from typing import List
 
+from pprint import pprint 
 
 #This guy manages the overall pacing of the pipeline.
 #Environment setup, variables, data strategies, etc. 
@@ -22,8 +23,7 @@ class Pipeline():
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
 
-        
-        
+                
     def __get_atom_meta(self):
         #Some atom metadata (like- does it create or extend a document) is required
         #at the datasetup step- which, is obligated to run before the atom instantiation 
@@ -43,6 +43,7 @@ class Pipeline():
             strat_name = self.config[DATASTRATEGY][ID]
             if strat_name in available_strategies:
                 self.config = available_strategies[strat_name].setup_config(self.config)
+                
             else:
                 raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
         else:
@@ -55,7 +56,6 @@ class Pipeline():
         for task in self.config[STEPS]:
             if task[ID] not in available_atoms:
                 raise RuntimeError(f"{task[ID]} is not a registered Flow Atom")
-         
         #Then create all the lower-level validation things
         self.steps = [available_atoms[task[ID]](task[PARAMS], task[DATA]) for task in self.config[STEPS]]
         
@@ -64,7 +64,6 @@ class Pipeline():
     def __validate_whole_flow(self):
         #Iterate through the config, and get the expected type for each column name at each step. 
         output_type_map = {}
-        
         #Note all the output types
         for i, step in enumerate(self.steps):
             if OUTPUTS in self.config[STEPS][i]:

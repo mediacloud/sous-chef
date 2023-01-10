@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
+import re
 
 from pprint import pprint
 
@@ -25,6 +26,11 @@ def validate_datestr_form(datestr, name):
         raise RuntimeError("Validation Error- invalid datetime provided")
     else:
         return good_form
+
+#Maybe carrage returns fuck it up... 
+#Can add other preprocessing here as needed
+def clean_text(text):
+    return re.sub("\\n|\\r", " ", text)
 
 #All the discovery atoms impliment the same validation, so we should be able to just subclass this. 
 class DiscoveryAtom(FlowAtom):
@@ -65,6 +71,7 @@ class sample_twitter(DiscoveryAtom):
         results = SearchInterface.sample(self.query, start_date, end_date, limit=self.max_results)
         
         self.results = pd.json_normalize(results)
+        
         self.results["media_id"] = self.results["id"]
         
         
@@ -127,4 +134,3 @@ class query_onlinenews(DiscoveryAtom):
         if len(content) > 0:
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["snippet"]
-        

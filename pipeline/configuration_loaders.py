@@ -1,6 +1,5 @@
 import yaml
 
-conf_loc = "BRAvCO_WorldcupTwitterSentiment_config.yaml"
 
 def yaml_to_conf(yaml_stream):
     conf = yaml.safe_load(yaml_stream)

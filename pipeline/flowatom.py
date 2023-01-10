@@ -23,6 +23,8 @@ class FlowAtom(object):
         
         self.__setup_strategy(data_config)
         self.__validate_and_apply(params)
+        
+        self.setup_hook(params, data_config)
 
     
     #Easy Access to the subclass registry 
@@ -100,7 +102,10 @@ class FlowAtom(object):
         else:
             raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             
-            
+    def setup_hook(self, params, data_config):
+        #A hook for any task-specific overrides to the setup steps 
+        pass
+        
     #The details of the specific task are implimented here
     def task_body(self):
         raise RunTimeError("task_body is Unimplimented")

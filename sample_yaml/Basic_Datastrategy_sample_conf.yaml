@@ -36,6 +36,12 @@ steps:
 
     - PrintFieldTask:
         params:
-            pre_message: "Printing Divisiblity"
+            pre_message: "Printing Count Divisiblity"
         inputs:
             to_print: 5_divisible
+    
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Count"
+        inputs:
+            to_print: factor_count

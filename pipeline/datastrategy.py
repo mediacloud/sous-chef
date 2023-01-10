@@ -1,11 +1,13 @@
 import pandas as pd
+from pandas.errors import EmptyDataError
 import numpy as np
 import inspect
 import os
 import ast
-
+from pprint import pprint
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
-    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP)
+    WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP, 
+    USER_CONFIGURED_OUTPUT, USER_CONFIGURED_COLUMNS, STRING_TYPE_MAP)
 
 
 #There should be one data strategy per pipeline
@@ -46,10 +48,10 @@ class DataStrategy(object):
                 
             if OUTPUTS in config and config[OUTPUTS] is not None:
                 config_outputs = config[OUTPUTS].keys()
-                
-                for i in config_outputs:
-                    if i not in function_outputs:
-                        raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
+                if USER_CONFIGURED_OUTPUT not in function_outputs:
+                    for i in config_outputs:    
+                        if i not in function_outputs:
+                            raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
                 
                 #Commenting out this block allows for outputs to be optional- sometimes we want to provide
                 #outputs that not all applications will make use of- so don't hold the user to the standard
@@ -107,9 +109,14 @@ class PandasStrategy(DataStrategy):
     
     @classmethod
     def setup_config(self, config):
-
         
-        
+        #For when outputs are configured by runtime- look for a parameter named COLUMN and try to infer things from there
+        for step in config[STEPS]:
+            if OUTPUTS in step:
+                if USER_CONFIGURED_OUTPUT in step[OUTPUTS] :
+                    step[OUTPUTS] = step[PARAMS][USER_CONFIGURED_COLUMNS]
+                    for name, type_string in step[OUTPUTS].items():
+                        step[OUTPUTS][name] = name
         #Iterate through the configuration to figure out which document each field belongs to
         #If a field is output by a new_document atom, just use that 
         #Otherwise, do a one-step backtrace to see where the previous input lives and use that. 
@@ -169,13 +176,11 @@ class PandasStrategy(DataStrategy):
     
     def get_data(self):
         document_map = self.config[DOCUMENTMAP]
-                 
-        
         read_locations = [inputmap[1] for inputmap in self.inputs.items()]
         documents = list(set([document_map[_in] for _in in read_locations]))
         if len(documents) == 1:
             doc_loc = self.data_location+documents[0]+"_output.csv"
-            read_dataframe = pd.read_csv(doc_loc)
+            read_dataframe = read_or_empty_dataframe(doc_loc)
             operating_dataframe = pd.DataFrame()
 
             for function_name, read_location in self.inputs.items():
@@ -198,13 +203,14 @@ class PandasStrategy(DataStrategy):
 
     def write_data(self, operating_dataframe):
         if self.outputs is not None:
+            
             document_map = self.config[DOCUMENTMAP]
             write_locations = [outputmap[1] for outputmap in self.outputs.items()]
             documents = list(set([document_map[out] for out in write_locations]))
             if len(documents) == 1:
                 doc_loc = self.data_location+documents[0]+"_output.csv"
-                        
-                write_dataframe = pd.read_csv(doc_loc)
+                
+                write_dataframe = read_or_empty_dataframe(doc_loc)
 
                 for function_name, write_location in self.outputs.items():
                     write_dataframe[write_location] = operating_dataframe[function_name]
@@ -218,27 +224,43 @@ class PandasStrategy(DataStrategy):
                          
     def apply_filter(self, keep_column):
         #keep_column should be a column of bools, where "true" means the row will be kept, and 'false' that it will be dropped
-        dataframe = pd.read_csv(self.data_location)
         
-        dataframe["_KEEP"] = keep_column
-        post_filter_dataframe = dataframe[dataframe["_KEEP"]]
-        
-        post_filter_dataframe.drop('_KEEP', axis=1, inplace=True)
-        
-        post_filter_dataframe.to_csv(self.data_location)
+        documents = list(set([document_map[out] for out in write_locations]))
+        if len(documents) == 1:
+            doc_loc = self.data_location + documents[0] + "_output.csv"
+            
+            dataframe = read_or_empty_dataframe(doc_loc)
+
+            dataframe["_KEEP"] = keep_column
+            post_filter_dataframe = dataframe[dataframe["_KEEP"]]
+
+            post_filter_dataframe.drop('_KEEP', axis=1, inplace=True)
+
+            post_filter_dataframe.to_csv(self.data_location)
+        else:
+            raise RuntimeError("apply_filter to multiple documents is not yet supported")
         
     def get_columns(self, columns):
         document_map = self.config[DOCUMENTMAP]
         documents = list(set([document_map[_in] for _in in columns]))
         if len(documents) == 1:
             doc_loc = self.data_location+documents[0]+"_output.csv"
-            dataframe = pd.read_csv(doc_loc)
+            dataframe = read_or_empty_dataframe(doc_loc)
             subset = dataframe[columns]
         else:
             raise RuntimeError("returning columns from multiple documents is not yet supported")
         return subset
         
-        
+
+#The python engine, which is needed to read/write multilingual strings I think,
+#Doesn't like empty files. so just wrap the call to catch the exception
+def read_or_empty_dataframe(data_location):
+    try:
+        df = pd.read_csv(data_location, engine="python")
+        return df
+    except EmptyDataError:
+        return pd.DataFrame()
+
         
 #Apply this to csvs when read from disk to restore pythonic types contained within
 def eval_or_nan(val, expected_dtype):
@@ -247,5 +269,7 @@ def eval_or_nan(val, expected_dtype):
     
     if str(val) == "nan":
         return val
-    else:
+    if not isinstance(val, str):
         return ast.literal_eval(str(val))
+    else:
+        return val

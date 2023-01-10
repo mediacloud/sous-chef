@@ -3,6 +3,8 @@ import numpy as np
 from ..flowatom import FlowAtom
 import os
 import requests
+from requests.exceptions import JSONDecodeError
+import re
 
 from transformers import pipeline as hf_pipeline
 
@@ -12,6 +14,8 @@ HF_API_BEARER_TOKEN = os.getenv('HUGGINGFACE_API_BEARER_TOKEN', None)
 #Recomended step for demangling twitter links and usernames
 def preprocess_tweet(text):
     text = str(text)
+    #remove newlines with spaces
+    text = re.sub("//r|//n", " ", text)
     new_text = []
     for t in text.split(" "):
         t = '@user' if t.startswith('@') and len(t) > 1 else t
@@ -52,9 +56,14 @@ class TweetSentimentTask(FlowAtom):
         #Do this sequentially because logging
         for tweet in self.data.tweets:
             clean_tweet = preprocess_tweet(tweet)
-            result = sentiment_task(clean_tweet)
+            try:
+                result = sentiment_task(clean_tweet)
+            except:
+                print(clean_tweet)
+                result = [{"label":"ERR", 'score':0}]
             model_response.append(result)
-            
+        
+        print(model_response[0:10])
         top_sentiment = [max(resp, key=lambda x: x['score']) for resp in model_response]
                   
         self.results.sentiment_label = [x["label"] for x in top_sentiment]
@@ -86,7 +95,12 @@ class ApiTweetSentimentTask(FlowAtom):
         cleaned_tweets = [preprocess_tweet(t) for t in self.data.tweets]
         
         payload = dict(inputs=cleaned_tweets, options=dict(wait_for_model=True))
-        model_response = requests.post(API_URL, headers=headers, json=payload).json()
+        response = requests.post(API_URL, headers=headers, json=payload)
+        try:
+            model_response = response.json()
+        except JSONDecodeError:
+            print(response.content)
+            raise JSONDecodeError
         
         #model returns scores for all three possible labels, so let's just get the top one
         top_sentiment = [max(resp, key=lambda x: x['score']) for resp in model_response]
