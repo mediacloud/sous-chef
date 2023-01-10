@@ -1,6 +1,6 @@
 import inspect
 from pydantic import BaseModel
-from prefect import flow
+from prefect import flow, task
 from .datastrategy import DataStrategy
 from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS
 """
@@ -38,7 +38,7 @@ class FlowAtom(object):
     def register(cls, name):
         
         def _register(stepclass):
-            cls._REGISTERED_ATOMS[name] = flow(stepclass, name=name)
+            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"setup {name}")
             return stepclass 
         
         return _register

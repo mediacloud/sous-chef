@@ -1,4 +1,4 @@
-from prefect import flow
+from prefect import flow, task
 from .flowatom import FlowAtom
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT
 from .datastrategy import DataStrategy
@@ -22,17 +22,17 @@ class Pipeline():
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
-
+        self.run_pipeline()
                 
     def __get_atom_meta(self):
         #Some atom metadata (like- does it create or extend a document) is required
         #at the datasetup step- which, is obligated to run before the atom instantiation 
         #SO catch22- how can we get this information before we instantiate the atoms?
         available_atoms = FlowAtom.get_atoms()
-        for task in self.config[STEPS]:
-            if task[ID] in available_atoms:
-                wrapped_class = available_atoms[task[ID]].__wrapped__
-                task[NEWDOCUMENT] = wrapped_class.creates_new_document()
+        for flowatom in self.config[STEPS]:
+            if flowatom[ID] in available_atoms:
+                wrapped_class = available_atoms[flowatom[ID]].__wrapped__
+                flowatom[NEWDOCUMENT] = wrapped_class.creates_new_document()
         
         
     #In which we add the datastrategy specific config into the user supplied config
@@ -53,11 +53,11 @@ class Pipeline():
     #Do a top-level validation of the configuration parameters first, then initialize all the steps 
     def __validate_and_setup_steps(self):
         available_atoms = FlowAtom.get_atoms()
-        for task in self.config[STEPS]:
-            if task[ID] not in available_atoms:
-                raise RuntimeError(f"{task[ID]} is not a registered Flow Atom")
+        for flowatom in self.config[STEPS]:
+            if flowatom[ID] not in available_atoms:
+                raise RuntimeError(f"{flowatom[ID]} is not a registered Flow Atom")
         #Then create all the lower-level validation things
-        self.steps = [available_atoms[task[ID]](task[PARAMS], task[DATA]) for task in self.config[STEPS]]
+        self.steps = [available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA]) for flowatom in self.config[STEPS]]
         
     
     #Do a validation of the way the atoms are plugged into one another here. 
@@ -88,13 +88,14 @@ class Pipeline():
                     
         
     
-    def __call__(self):
+    def run_pipeline(self):
+        
         for step in self.steps:
+            #s = task(step) #I genuinely do not understand why this mucks up as it does. 
             step()
 
             
 #This is the main entrypoint for the whole thing            
-@flow()
 def RunPipeline(config):
     test_pipeline = Pipeline(config)
-    test_pipeline()
+ 

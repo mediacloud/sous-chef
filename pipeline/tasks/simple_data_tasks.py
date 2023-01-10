@@ -75,7 +75,7 @@ class CountItems(FlowAtom):
 
         
 @FlowAtom.register("PrintFieldTask")
-class PrintField(FlowAtom):
+class PrintFieldTask(FlowAtom):
     """
     Print a summary of the contents of a field to the console.
     A useful utility task. 
@@ -98,7 +98,7 @@ class PrintField(FlowAtom):
                
 
 @FlowAtom.register("PrintStringTask")
-class PrintString(PrintField):
+class PrintStringTask(PrintFieldTask):
     """
     Print a summary of the contents of a string field to the console.
     A useful utility task. 
