@@ -2,7 +2,7 @@ import inspect
 from pydantic import BaseModel
 from prefect import flow, task
 from .datastrategy import DataStrategy
-from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD
+from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE
 """
 This is the magic class which performs most of the mucking about with python innards
 in order to specify a nice encapsulated and validatable confuguration vocabulary
@@ -133,11 +133,11 @@ class FlowAtom(object):
         else:
             return self.__data_strategy.get_data(cache=cache)
     
-    def write_data(self, data):
+    def write_data(self, data, cache=False):
         if self.__data_strategy == None:
             raise RuntimeError("Cannot Use write_data if No Datastrategy Is Specified")
         else:
-            return self.__data_strategy.write_data(data)
+            return self.__data_strategy.write_data(data, cache=cache)
     
     
     def apply_filter(self, keep_filter):
@@ -156,15 +156,20 @@ class FlowAtom(object):
     #This loads specified data to self.data as a dataframe
     def pre_task(self):
         if self.__data_strategy.inputs is not None:
-            if self.cache_behavior is None:
-                self.data, self.results = self.get_data()
             if self.cache_behavior == CACHE_LOAD:
                 self.data, self.results = self.get_data(cache=True)
+            else:
+                self.data, self.results = self.get_data()
         
     #Task finish- write self.data to the dataframe
     def post_task(self):
         if self.__data_strategy.outputs is not None:
-            self.write_data(self.results)
+            if self.cache_behavior == CACHE_SAVE:
+                self.write_data(self.results, cache=True)
+            else:
+                self.write_data(self.results)
+            
+        
 
     
     def __call__(self):

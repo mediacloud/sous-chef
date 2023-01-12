@@ -5,7 +5,7 @@ data_strategy:
 steps:
     - GenerateRandomSeriesTask:
         params:
-            sample_size: 20
+            sample_size: 15
         outputs:
             numbers: numbers
         

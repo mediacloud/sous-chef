@@ -4,12 +4,14 @@ import numpy as np
 import inspect
 import os
 import ast
+import json
+import hashlib
 from pprint import pprint
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
     WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP, 
     USER_CONFIGURED_OUTPUT, USER_CONFIGURED_COLUMNS, STRING_TYPE_MAP, LOAD_IF_CACHED,
-    CACHE_STEP, CACHE_SKIP, CACHE_LOAD)
+    CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_HASHES, CACHE_SAVE)
 
 
 #There should be one data strategy per pipeline
@@ -119,6 +121,7 @@ class PandasStrategy(DataStrategy):
                     step[OUTPUTS] = step[PARAMS][USER_CONFIGURED_COLUMNS]
                     for name, type_string in step[OUTPUTS].items():
                         step[OUTPUTS][name] = name
+                        
         #Iterate through the configuration to figure out which document each field belongs to
         #If a field is output by a new_document atom, just use that 
         #Otherwise, do a one-step backtrace to see where the previous input lives and use that. 
@@ -142,6 +145,9 @@ class PandasStrategy(DataStrategy):
         #format is data_root/runname/documentname_output.csv
         data_location_root = config[DATASTRATEGY][DATALOCATION]
         runname = config[RUNNAME]
+        self.runname = runname
+        
+        
         
         #iterate so we don't overwrite old runs unintentionally
         run_number = 0
@@ -151,6 +157,7 @@ class PandasStrategy(DataStrategy):
         os.mkdir(data_directory)
         self.run_number = run_number
         
+        
         #create the documents
         documents = list(set(field_to_document_map.values()))
         for doc in documents:
@@ -158,15 +165,9 @@ class PandasStrategy(DataStrategy):
             start_dataframe = pd.DataFrame()
             start_dataframe.to_csv(doc_loc)
             
-        cache_index = None 
+        self.cache_index = None 
+        caching_params = []
         for i, step in enumerate(config[STEPS]):
-            
-            
-            if LOAD_IF_CACHED in step:
-                if cache_index is None:
-                    cache_index = i
-                else:
-                    raise ConfigValidationError("Only one cache point can be specified per configuration")
             
             data_meta = {
                 DATASTRATEGY: config[DATASTRATEGY][ID],
@@ -178,44 +179,75 @@ class PandasStrategy(DataStrategy):
                 
             }
             
+            #Build the caching hash
+            if self.cache_index is None:
+                caching_params.extend(
+                    [str(step[PARAMS]), str(data_meta[INPUTS]), str(data_meta[OUTPUTS])]
+                )
+                
+            
+            
+            if LOAD_IF_CACHED in step:
+                if self.cache_index is None:
+                    self.cache_index = i
+                else:
+                    raise ConfigValidationError("Only one cache point can be specified per configuration")
+            
             step[DATA] = data_meta
         
+        #Reset the caching params, if there are none to be found
+        if self.cache_index == None:
+            caching_params = []
         
+        self.cache_hash = hash_list_or_none(caching_params)
+        print(self.cache_hash)
         
-        #Set Cache behavior meta on each step
-        #We need some better heuristic for whether or not to attempt loading from cache.
-        #But idk exactly what it should be
+        #Load or instantiate the config metadata file
+        self.config_meta = f"{data_location_root}{runname}-meta.json"
+        if os.path.exists(self.config_meta):
+            config_metadata = json.load(open(self.config_meta, "r"))
+        else:
+            config_metadata = new_config_meta()
+            json.dump(config_metadata, open(self.config_meta, "w"))
         
-        if cache_index is not None and self.run_number > 0:
+        #if the params are empty, the config never calls for caching so just ignore it
+        if caching_params == []:                      
+            do_cache = False
+        #if the hash is not none but it isn't in the metadata, then there's no cache to load from
+        elif self.cache_hash not in config_metadata[CACHE_HASHES]:
+            do_cache = False
+        #otherwise, we cache. 
+        else:
+            do_cache = True
+           
+        #Set Cache behavior meta on each step- only needed if we are indeed caching
+        if do_cache: 
             for i, step in enumerate(config[STEPS]):
-                if i < cache_index:
+                if i < self.cache_index:
                     step[DATA][CACHE_STEP] = CACHE_SKIP
-                if i == cache_index:
+                elif i == self.cache_index:
                     step[DATA][CACHE_STEP] = CACHE_LOAD 
+                    
+        elif self.cache_index is not None:
+            config[STEPS][self.cache_index][DATA][CACHE_STEP] = CACHE_SAVE
             
         pprint(config)
         return config
     
-    def find_cached_output(self, document_name):
-        location, run_number = self.data_location.split("-")
-        run_number = int(run_number[:-1])
-
-       
-        if(run_number == 0):
-            return self.data_location+document_name+"_output.csv"
-        
-        else:
-            return f"{location}-{run_number - 1}/{document_name}_output.csv"
+                               
+    #This will get an overhaul once the cache-meta thing implimented
+    def find_cached_output(self):
+        config_metadata = json.load(open(self.config_meta, "r"))
+        return config_metadata[CACHE_HASHES][self.cache_hash]
         
         
-    
     def get_data(self, cache=False):
         document_map = self.config[DOCUMENTMAP]
         read_locations = [inputmap[1] for inputmap in self.inputs.items()]
         documents = list(set([document_map[_in] for _in in read_locations]))
         if len(documents) == 1:
             if cache:
-                doc_loc = self.find_cached_output(documents[0])
+                doc_loc = self.find_cached_output()
                 print("new data_loc")
                 print(doc_loc)
             else:
@@ -244,7 +276,7 @@ class PandasStrategy(DataStrategy):
 
     
     
-    def write_data(self, operating_dataframe):
+    def write_data(self, operating_dataframe, cache=False):
         if self.outputs is not None:
             
             document_map = self.config[DOCUMENTMAP]
@@ -259,6 +291,13 @@ class PandasStrategy(DataStrategy):
                     write_dataframe[write_location] = operating_dataframe[function_name]
                 
                 write_dataframe.to_csv(doc_loc)
+                               
+                if cache: #Confirm that we've written a reloadable cache now. 
+                    print("Caching output!")
+                    config_metadata = json.load(open(self.config_meta, "r"))
+                    config_metadata[CACHE_HASHES][self.cache_hash] = doc_loc
+                    print(config_metadata)
+                    json.dump(config_metadata, open(self.config_meta, "w"))
             else:
                 raise RuntimeError("Multidocument writes are not supported")
         else:
@@ -316,3 +355,18 @@ def eval_or_nan(val, expected_dtype):
         return ast.literal_eval(str(val))
     else:
         return val
+
+
+
+def hash_list_or_none(to_hash):
+    if to_hash is not None:
+        hashable = ",".join(i for i in to_hash)
+        hash_object = hashlib.sha1(hashable.encode())
+        return hash_object.hexdigest()
+    else:
+        return None
+    
+
+#Schema for the config metadata file
+def new_config_meta():
+    return {CACHE_HASHES:{}}
