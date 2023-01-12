@@ -2,7 +2,7 @@ import inspect
 from pydantic import BaseModel
 from prefect import flow, task
 from .datastrategy import DataStrategy
-from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS
+from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD
 """
 This is the magic class which performs most of the mucking about with python innards
 in order to specify a nice encapsulated and validatable confuguration vocabulary
@@ -25,6 +25,8 @@ class FlowAtom(object):
         self.__validate_and_apply(params)
         
         self.setup_hook(params, data_config)
+        
+
 
     
     #Easy Access to the subclass registry 
@@ -102,6 +104,8 @@ class FlowAtom(object):
         else:
             raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
             
+        self.cache_behavior = data_config[CACHE_STEP]
+            
     def setup_hook(self, params, data_config):
         #A hook for any task-specific overrides to the setup steps 
         pass
@@ -123,11 +127,11 @@ class FlowAtom(object):
         #ie- these are the many optional outputs
     
     
-    def get_data(self):
+    def get_data(self, cache=False):
         if self.__data_strategy == None:
             raise RuntimeError("Cannot Use get_data if No Datastrategy Is Specified")
         else:
-            return self.__data_strategy.get_data()
+            return self.__data_strategy.get_data(cache=cache)
     
     def write_data(self, data):
         if self.__data_strategy == None:
@@ -152,7 +156,10 @@ class FlowAtom(object):
     #This loads specified data to self.data as a dataframe
     def pre_task(self):
         if self.__data_strategy.inputs is not None:
+            if self.cache_behavior is None:
                 self.data, self.results = self.get_data()
+            if self.cache_behavior == CACHE_LOAD:
+                self.data, self.results = self.get_data(cache=True)
         
     #Task finish- write self.data to the dataframe
     def post_task(self):
@@ -161,9 +168,14 @@ class FlowAtom(object):
 
     
     def __call__(self):
-        self.pre_task()
-        self.task_body()
-        self.post_task()
+        #If an atom which runs AFTER this atom is marked load from cache,
+        #then we can safely skip this atom's execution
+        if self.cache_behavior == CACHE_SKIP:
+            pass
+        else:
+            self.pre_task()
+            self.task_body()
+            self.post_task()
         
 
 

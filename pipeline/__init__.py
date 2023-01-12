@@ -2,6 +2,7 @@ from prefect import flow, task
 from .flowatom import FlowAtom
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT
 from .datastrategy import DataStrategy
+from .exceptions import ConfigValidationError
 from .tasks import *
 from typing import List
 
@@ -45,7 +46,7 @@ class Pipeline():
                 self.config = available_strategies[strat_name].setup_config(self.config)
                 
             else:
-                raise RuntimeError(f"{strat_name} is not a registered Data Strategy")
+                raise ConfigValidationError(f"{strat_name} is not a registered Data Strategy")
         else:
             #Use the backup nostrategy strategy
             self.config = available_strategies[NOSTRAT].update_config(self.config)
@@ -55,7 +56,7 @@ class Pipeline():
         available_atoms = FlowAtom.get_atoms()
         for flowatom in self.config[STEPS]:
             if flowatom[ID] not in available_atoms:
-                raise RuntimeError(f"{flowatom[ID]} is not a registered Flow Atom")
+                raise ConfigValidationError(f"{flowatom[ID]} is not a registered Flow Atom")
         #Then create all the lower-level validation things
         self.steps = [available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA]) for flowatom in self.config[STEPS]]
         
@@ -78,13 +79,13 @@ class Pipeline():
                 inputs = self.config[STEPS][i][INPUTS]
                 for function_name, ds_name in inputs.items():
                     if ds_name not in output_type_map:
-                        raise RuntimeError(f"Configuration Error: input {ds_name} does not correspond to any defined outputs")
+                        raise ConfigValidationError(f"input {ds_name} does not correspond to any defined outputs")
                     
                     input_type = step.task_inputs[function_name]
                     output_type = output_type_map[ds_name]
                     
                     if input_type != output_type and input_type is not None:
-                        raise RuntimeError(f"Configuration Error: {name} input {ds_name} expects type {input_type}, but is {output_type}")
+                        raise ConfigValidationError(f"{name} input {ds_name} expects type {input_type}, but is {output_type}")
                     
         
     

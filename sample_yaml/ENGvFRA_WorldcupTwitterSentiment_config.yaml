@@ -1,0 +1,42 @@
+name: ENGvFRA_WorldcupTwitterSentiment
+data_strategy:
+    id: PandasStrategy
+    data_location: data/
+steps:
+    - QueryTwitter:
+        params:
+            task_name: Generate
+            query: "#ENGFRA OR #FRAENG OR #FRA OR #ENG"
+            start_date: "2022-12-10, 1:30 PM"
+            end_date: "2022-12-10, 4:30 PM"
+        outputs:
+            content: content
+            language: tweet_language
+            publish_date: publish_date
+    
+    - TweetSentimentTask:
+        params:
+            task_name: Sentiment
+        inputs:
+            tweets: content
+        outputs:
+            sentiment_label: sentiment
+    
+    - OutputCSV:
+        params:
+            task_name: "ExportCSV"
+            columns:
+                - publish_date
+                - content
+                - sentiment
+            output_location: "./eng_v_fra_tweets.csv"
+        
+    - OutputTimeSeriesHistogram:
+        params:
+            task_name: "Export Histogram"
+            columns:
+                - publish_date
+                - sentiment
+            values_column: sentiment
+            date_index_column: publish_date
+            output_location: "./eng_v_fra_tweet_sentiment.jpg"

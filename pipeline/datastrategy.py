@@ -5,9 +5,11 @@ import inspect
 import os
 import ast
 from pprint import pprint
+from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
     WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP, 
-    USER_CONFIGURED_OUTPUT, USER_CONFIGURED_COLUMNS, STRING_TYPE_MAP)
+    USER_CONFIGURED_OUTPUT, USER_CONFIGURED_COLUMNS, STRING_TYPE_MAP, LOAD_IF_CACHED,
+    CACHE_STEP, CACHE_SKIP, CACHE_LOAD)
 
 
 #There should be one data strategy per pipeline
@@ -38,11 +40,11 @@ class DataStrategy(object):
                 
                 for i in config_inputs:
                     if i not in function_inputs:
-                        raise RuntimeError(f"Configuration Error: Atom has no input named {i}")
+                        raise ConfigValidationError(f"Atom has no input named {i}")
                 
                 for i in function_inputs:
                     if i not in config_inputs:
-                        raise RuntimeError(f"Configuration Error: Atom expects input named {i}")
+                        raise ConfigValidationError(f"Atom expects input named {i}")
                 
                 
                 
@@ -51,7 +53,7 @@ class DataStrategy(object):
                 if USER_CONFIGURED_OUTPUT not in function_outputs:
                     for i in config_outputs:    
                         if i not in function_outputs:
-                            raise RuntimeError(f"Configuration Error: Atom has no output named {i}")
+                            raise ConfigValidationError(f"Atom has no output named {i}")
                 
                 #Commenting out this block allows for outputs to be optional- sometimes we want to provide
                 #outputs that not all applications will make use of- so don't hold the user to the standard
@@ -142,11 +144,12 @@ class PandasStrategy(DataStrategy):
         runname = config[RUNNAME]
         
         #iterate so we don't overwrite old runs unintentionally
-        i = 0
-        while os.path.exists(f"{data_location_root}{runname}_{i}"):
-            i += 1
-        data_directory = f"{data_location_root}{runname}_{i}/"
+        run_number = 0
+        while os.path.exists(f"{data_location_root}{runname}-{run_number}"):
+            run_number += 1
+        data_directory = f"{data_location_root}{runname}-{run_number}/"
         os.mkdir(data_directory)
+        self.run_number = run_number
         
         #create the documents
         documents = list(set(field_to_document_map.values()))
@@ -155,31 +158,69 @@ class PandasStrategy(DataStrategy):
             start_dataframe = pd.DataFrame()
             start_dataframe.to_csv(doc_loc)
             
-        
+        cache_index = None 
         for i, step in enumerate(config[STEPS]):
             
-            #We could have some method of inferring inputs and outputs, if none are given
-            #and also maybe we should have some method of making sure the input/outputs are unique.
-            #but for now we just go with this. 
+            
+            if LOAD_IF_CACHED in step:
+                if cache_index is None:
+                    cache_index = i
+                else:
+                    raise ConfigValidationError("Only one cache point can be specified per configuration")
+            
             data_meta = {
                 DATASTRATEGY: config[DATASTRATEGY][ID],
                 DATALOCATION: data_directory,
                 INPUTS: step[INPUTS] if INPUTS in step else None,
                 OUTPUTS: step[OUTPUTS] if OUTPUTS in step else None,
-                DOCUMENTMAP: field_to_document_map
+                DOCUMENTMAP: field_to_document_map,
+                CACHE_STEP: None
+                
             }
             
             step[DATA] = data_meta
-                
+        
+        
+        
+        #Set Cache behavior meta on each step
+        #We need some better heuristic for whether or not to attempt loading from cache.
+        #But idk exactly what it should be
+        
+        if cache_index is not None and self.run_number > 0:
+            for i, step in enumerate(config[STEPS]):
+                if i < cache_index:
+                    step[DATA][CACHE_STEP] = CACHE_SKIP
+                if i == cache_index:
+                    step[DATA][CACHE_STEP] = CACHE_LOAD 
             
+        pprint(config)
         return config
     
-    def get_data(self):
+    def find_cached_output(self, document_name):
+        location, run_number = self.data_location.split("-")
+        run_number = int(run_number[:-1])
+
+       
+        if(run_number == 0):
+            return self.data_location+document_name+"_output.csv"
+        
+        else:
+            return f"{location}-{run_number - 1}/{document_name}_output.csv"
+        
+        
+    
+    def get_data(self, cache=False):
         document_map = self.config[DOCUMENTMAP]
         read_locations = [inputmap[1] for inputmap in self.inputs.items()]
         documents = list(set([document_map[_in] for _in in read_locations]))
         if len(documents) == 1:
-            doc_loc = self.data_location+documents[0]+"_output.csv"
+            if cache:
+                doc_loc = self.find_cached_output(documents[0])
+                print("new data_loc")
+                print(doc_loc)
+            else:
+                doc_loc = self.data_location+documents[0]+"_output.csv"
+            
             read_dataframe = read_or_empty_dataframe(doc_loc)
             operating_dataframe = pd.DataFrame()
 
@@ -201,6 +242,8 @@ class PandasStrategy(DataStrategy):
             raise RuntimeError("Multidocument reads are not implimented yet")
         return operating_dataframe, results_dataframe
 
+    
+    
     def write_data(self, operating_dataframe):
         if self.outputs is not None:
             

@@ -8,6 +8,7 @@ steps:
             sample_size: 20
         outputs:
             numbers: numbers
+        
     
     - ListPrimeFactorsTask:
         params:
@@ -24,6 +25,8 @@ steps:
             to_count: factors
         outputs:
             counted: factor_count
+            
+        load_if_cached: True
         
     - DivisibleByNTask:
         params:

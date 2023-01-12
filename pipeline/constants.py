@@ -13,7 +13,12 @@ NEWDOCUMENT = "creates_new_document"
 DOCUMENTMAP = "document_map"
 USER_CONFIGURED_OUTPUT = "configured__"
 USER_CONFIGURED_COLUMNS = "columns"
+LOAD_IF_CACHED = "load_if_cached"
+CACHE_STEP = "cache_step"
+CACHE_SKIP = "cache_skip"
+CACHE_LOAD = "cache_load"
 
+#Useful for configured input columns
 STRING_TYPE_MAP = {
     "float": float,
     "int": int,
