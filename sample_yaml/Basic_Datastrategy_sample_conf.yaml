@@ -30,7 +30,7 @@ steps:
         
     - DivisibleByNTask:
         params:
-            n: 5
+            n: 6
         inputs:
             to_divide: factor_count
         outputs:
@@ -48,3 +48,9 @@ steps:
             pre_message: "Printing Count"
         inputs:
             to_print: factor_count
+            
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Original Numbers"
+        inputs:
+            to_print: numbers

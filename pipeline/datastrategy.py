@@ -6,6 +6,7 @@ import os
 import ast
 import json
 import hashlib
+import shutil
 from pprint import pprint
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
@@ -184,8 +185,7 @@ class PandasStrategy(DataStrategy):
                 caching_params.extend(
                     [str(step[PARAMS]), str(data_meta[INPUTS]), str(data_meta[OUTPUTS])]
                 )
-                
-            
+                  
             
             if LOAD_IF_CACHED in step:
                 if self.cache_index is None:
@@ -200,7 +200,6 @@ class PandasStrategy(DataStrategy):
             caching_params = []
         
         self.cache_hash = hash_list_or_none(caching_params)
-        print(self.cache_hash)
         
         #Load or instantiate the config metadata file
         self.config_meta = f"{data_location_root}{runname}-meta.json"
@@ -219,23 +218,38 @@ class PandasStrategy(DataStrategy):
         #otherwise, we cache. 
         else:
             do_cache = True
-           
-        #Set Cache behavior meta on each step- only needed if we are indeed caching
+        
+        #pprint(config_metadata)
+        #pprint(config)
+        #data_directory
+       
         if do_cache: 
+            
+            cached_documents = []
+            #Set Cache behavior meta on each step
             for i, step in enumerate(config[STEPS]):
+                cached_documents.extend(step[DATA][DOCUMENTMAP].values())
                 if i < self.cache_index:
                     step[DATA][CACHE_STEP] = CACHE_SKIP
                 elif i == self.cache_index:
                     step[DATA][CACHE_STEP] = CACHE_LOAD 
-                    
+            #Also copy the cached documents into the new data_directory
+            cache_location = config_metadata[CACHE_HASHES][self.cache_hash]
+            cache_directory = "/".join(cache_location.split("/")[:-1])
+            cached_documents = list(set(cached_documents))
+            for location in cached_documents:
+                original = cache_directory + "/" + location + "_output.csv"
+                new = data_directory + location + "_output.csv"
+                shutil.copy(original, new)
+            
+        #Then, if we're not loading from cache but a cache_index is set, then we need that step to save its output to a cache
         elif self.cache_index is not None:
             config[STEPS][self.cache_index][DATA][CACHE_STEP] = CACHE_SAVE
             
-        pprint(config)
         return config
     
                                
-    #This will get an overhaul once the cache-meta thing implimented
+    #Just read from the metadata file
     def find_cached_output(self):
         config_metadata = json.load(open(self.config_meta, "r"))
         return config_metadata[CACHE_HASHES][self.cache_hash]
@@ -357,7 +371,6 @@ def eval_or_nan(val, expected_dtype):
         return val
 
 
-
 def hash_list_or_none(to_hash):
     if to_hash is not None:
         hashable = ",".join(i for i in to_hash)
@@ -367,6 +380,7 @@ def hash_list_or_none(to_hash):
         return None
     
 
-#Schema for the config metadata file
+#Schema for the config metadata file. If this ends up ever doing any more work than just managing cache data
+# I should consider just implimenting it as a class so I don't have to read/write so often. 
 def new_config_meta():
     return {CACHE_HASHES:{}}
