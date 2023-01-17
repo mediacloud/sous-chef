@@ -228,10 +228,12 @@ class PandasStrategy(DataStrategy):
             cached_documents = []
             #Set Cache behavior meta on each step
             for i, step in enumerate(config[STEPS]):
-                cached_documents.extend(step[DATA][DOCUMENTMAP].values())
+                #cached_documents.extend(step[DATA][DOCUMENTMAP].values())
                 if i < self.cache_index:
+                    cached_documents.extend(step[DATA][DOCUMENTMAP].values())
                     step[DATA][CACHE_STEP] = CACHE_SKIP
                 elif i == self.cache_index:
+                    cached_documents.extend(step[DATA][DOCUMENTMAP].values())
                     step[DATA][CACHE_STEP] = CACHE_LOAD 
             #Also copy the cached documents into the new data_directory
             cache_location = config_metadata[CACHE_HASHES][self.cache_hash]

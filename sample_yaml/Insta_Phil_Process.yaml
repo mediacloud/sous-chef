@@ -1,0 +1,23 @@
+name: basic_datastrategy_sample
+data_strategy:
+    id: PandasStrategy
+    data_location: data/
+steps:
+    - ReadCSV:
+        params:
+            location: "~/SampleMCData/Billionaire Philanthropy - Instagram.csv"
+            columns:
+                User Name1: str
+                Account1: str
+                Description1: str
+                Image Text1: str
+                URL1: str
+                Likes1: int
+                Comments1: int
+        outputs: configured__
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing  User Name1"
+        inputs:
+            to_print: User Name1
+    

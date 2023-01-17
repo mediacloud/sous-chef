@@ -52,6 +52,10 @@ class TopNEntities(FlowAtom):
     def inputs(self, entities:List[Dict]):pass
     def outputs(self, top_entities:list):pass
     
+    @classmethod
+    def creates_new_document(self):
+        return True   
+    
     def task_body(self):
         
         counter = {}
