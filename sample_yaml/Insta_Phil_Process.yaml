@@ -20,4 +20,16 @@ steps:
             pre_message: "Printing  User Name1"
         inputs:
             to_print: User Name1
+    - LanguageDetectionTask:
+        inputs:
+            text: Image Text1
+        outputs:
+            language: language
+    - APIEntityExtraction:
+        inputs:
+            text: Image Text1
+            language: language
+        outputs:
+            entities: entities
+            
     

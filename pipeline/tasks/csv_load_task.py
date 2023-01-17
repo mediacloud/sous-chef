@@ -1,6 +1,8 @@
 from ..flowatom import FlowAtom
+from ..constants import STRING_TYPE_MAP
 import pandas as pd
 import itertools
+from pprint import pprint
 
 encodings = ["utf-8", "utf-16" ]
 seps = [",", "\t"]
@@ -15,8 +17,12 @@ class read_csv(FlowAtom):
     def creates_new_document(self):
         return True
     
+    #Sets the atom outputs to the values set in the configuration parameters
     def setup_hook(self, params, data_config):
-        self.task_outputs = params["columns"]
+        
+        typed_params = {k: STRING_TYPE_MAP[v] for k, v in params['columns'].items()}
+
+        self.task_outputs = typed_params
     
     def outputs(self, configured__:None):pass
     
@@ -43,4 +49,4 @@ def try_load_permutations(location):
     if loaded:
         return df
     else:
-        raise RuntimeError(f"Could not load {location}- encoding not supported")
+        raise RuntimeError(f"Could not load {location}- encoding not supported. Contact mantainer for support")

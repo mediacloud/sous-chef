@@ -17,13 +17,14 @@ class Pipeline():
     Then call the class to run the pipeline
     """
     
-    def __init__(self, config):
+    def __init__(self, config, run=True):
         self.config = config
         self.__get_atom_meta()
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
-        self.run_pipeline()
+        if run:
+            self.run_pipeline()
                 
     def __get_atom_meta(self):
         #Some atom metadata (like- does it create or extend a document) is required

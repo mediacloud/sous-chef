@@ -7,6 +7,7 @@ import ast
 import json
 import hashlib
 import shutil
+import copy
 from pprint import pprint
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
@@ -118,10 +119,11 @@ class PandasStrategy(DataStrategy):
         #For when outputs are configured by runtime- look for a parameter named COLUMN and try to infer things from there
         for step in config[STEPS]:
             if OUTPUTS in step:
-                if USER_CONFIGURED_OUTPUT in step[OUTPUTS] :
-                    step[OUTPUTS] = step[PARAMS][USER_CONFIGURED_COLUMNS]
+                if USER_CONFIGURED_OUTPUT in step[OUTPUTS]:
+                    step[OUTPUTS] = copy.copy(step[PARAMS][USER_CONFIGURED_COLUMNS])
                     for name, type_string in step[OUTPUTS].items():
                         step[OUTPUTS][name] = name
+                   
                         
         #Iterate through the configuration to figure out which document each field belongs to
         #If a field is output by a new_document atom, just use that 
