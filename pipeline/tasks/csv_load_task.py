@@ -9,7 +9,11 @@ seps = [",", "\t"]
 
 @FlowAtom.register("ReadCSV")
 class read_csv(FlowAtom):
+    """ Read in the contents of a CSV file. Set "location" to the relative location of your input file, 
+    and "columns" to the names and types of the columns you want to load into the pipeline.
+    REQUIRES the unique "outputs: configured__" tag, since we need to overwrite the standard config behavior
     
+    """
     location:str
     columns:dict
     

@@ -61,27 +61,34 @@ class TopNEntities(FlowAtom):
         counter = {}
         
         for article_entities in self.data.entities:
+            print(article_entities)
+            if isinstance(article_entities, dict):
+                article_entities = [article_entities]
             for ent in article_entities:
+                print(ent)
+                
                 if self.filter_type != "" and ent["type"] != self.filter_type:
+                    pass
+                
+                if not isinstance(ent, dict):
                     pass
                 
                 #ent_slug = f"{ent['text']}-{ent['type']}"
                 ent_slug = ent['text']
+                if ent_slug is not None:
                 
-                if ent_slug in counter:
-                    counter[ent_slug] += 1
-                else: 
-                    counter[ent_slug] = 1
+                    if ent_slug in counter:
+                        counter[ent_slug] += 1
+                    else: 
+                        counter[ent_slug] = 1
         
-        top_entities = sorted(counter, reverse=True)
+
+        top_entities = sorted(counter)
         if self.top_n > 0:
             top_entities = top_entities[:self.top_n]
         
-        print(top_entities)
-        #This is not working yet- due to the document shape problem.
-        #Essentially, this is ALSO a kind of "generator" flow, since it creates 
-        #A NEW DOCUMENT- which in a pandas datastore example will have to be stored in a new pandas 
-        #dataframe. So we need a slightly upgraded strategy.
-        #self.results.top_entities = top_entities
+        
+        self.results.top_entities = top_entities
+       
         
         

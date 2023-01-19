@@ -2,7 +2,7 @@ import inspect
 from pydantic import BaseModel
 from prefect import flow, task
 from .datastrategy import DataStrategy
-from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE
+from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP
 """
 This is the magic class which performs most of the mucking about with python innards
 in order to specify a nice encapsulated and validatable confuguration vocabulary
@@ -17,15 +17,19 @@ class FlowAtom(object):
     _defaults:{"task_name":"A placeholder name"}
     _new_document:False
     
-    def __init__(self, params, data_config):
-        self.task_inputs = inspect.get_annotations(self.inputs)
-        self.task_outputs = inspect.get_annotations(self.outputs)
+    def __init__(self, params, data_config, document=False):
+        if not document:
+            self.task_inputs = inspect.get_annotations(self.inputs)
+            self.task_outputs = inspect.get_annotations(self.outputs)
         
-        self.__setup_strategy(data_config)
-        self.__validate_and_apply(params)
+            self.__setup_strategy(data_config)
+            self.__validate_and_apply(params)
         
-        self.setup_hook(params, data_config)
-        
+            self.setup_hook(params, data_config)
+        else:
+            print("THIS IS ONLY USED FOR OFFLINE DOCUMENTATION GENERATION")
+            self.docs = self.document()
+            
 
 
     
@@ -48,6 +52,7 @@ class FlowAtom(object):
     @classmethod
     def creates_new_document(self):
         return False
+    
     
     #MRO = "Method Resolution Order" - basically the class inheritance tree. 
     #This walks the MRO and grabs all the annotations that are defined on it
@@ -170,7 +175,34 @@ class FlowAtom(object):
                 self.write_data(self.results)
             
         
-
+    def document(self):
+        #Gather all annotations and defaults from the MRO
+        TYPE_STRING_MAP = {y:x for x,y in STRING_TYPE_MAP.items()}
+        
+        all_annotations = {}
+        all_defaults = {}
+        for cls in type(self).mro():
+            for name, value in inspect.get_annotations(cls).items():
+                if name == DEFAULTS:
+                    all_defaults.update(value)
+                elif name[0] != '_':
+                    all_annotations.update({name:TYPE_STRING_MAP[value]}) 
+        docstring = self.__doc__
+        outputs_ = inspect.get_annotations(self.outputs)
+        outputs = {}
+        for name, type_ in outputs_.items():
+            if type_ in TYPE_STRING_MAP:
+                outputs[name] = TYPE_STRING_MAP[type_]
+            else:
+                outputs[name] = type_.__repr__()
+        inputs_ = inspect.get_annotations(self.inputs)
+        inputs = {}
+        for name, type_ in inputs_.items():
+            if type_ in TYPE_STRING_MAP:
+                inputs[name] = TYPE_STRING_MAP[type_]
+            else:
+                inputs[name] = type_.__repr__()
+        return {"docstring":docstring, "params":all_annotations, "defaults":all_defaults, "inputs":inputs, "outputs":outputs}
     
     def __call__(self):
         #If an atom which runs AFTER this atom is marked load from cache,
@@ -181,7 +213,7 @@ class FlowAtom(object):
             self.pre_task()
             self.task_body()
             self.post_task()
-        
+    
 
 
     

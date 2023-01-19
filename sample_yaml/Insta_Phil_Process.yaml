@@ -15,21 +15,45 @@ steps:
                 Likes1: int
                 Comments1: int
         outputs: configured__
+    
     - PrintFieldTask:
         params:
             pre_message: "Printing  User Name1"
         inputs:
             to_print: User Name1
+    
     - LanguageDetectionTask:
         inputs:
             text: Image Text1
         outputs:
             language: language
+            
     - APIEntityExtraction:
         inputs:
             text: Image Text1
             language: language
         outputs:
             entities: entities
+        
+        load_if_cached: True
             
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Entities"
+        inputs:
+            to_print: entities
+    
+    - TopNEntities:
+        params:
+            top_n: 10
+        inputs:
+            entities: entities
+        outputs:
+            top_entities: top_10_entities
+            
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Top Entities"
+        inputs:
+            to_print: top_10_entities
     

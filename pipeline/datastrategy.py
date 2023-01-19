@@ -8,6 +8,7 @@ import json
 import hashlib
 import shutil
 import copy
+from typing import List, Dict
 from pprint import pprint
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
@@ -226,7 +227,7 @@ class PandasStrategy(DataStrategy):
         #data_directory
        
         if do_cache: 
-            
+            print("Loading from Cache!")
             cached_documents = []
             #Set Cache behavior meta on each step
             for i, step in enumerate(config[STEPS]):
@@ -314,7 +315,7 @@ class PandasStrategy(DataStrategy):
                     print("Caching output!")
                     config_metadata = json.load(open(self.config_meta, "r"))
                     config_metadata[CACHE_HASHES][self.cache_hash] = doc_loc
-                    print(config_metadata)
+         
                     json.dump(config_metadata, open(self.config_meta, "w"))
             else:
                 raise RuntimeError("Multidocument writes are not supported")
@@ -364,15 +365,19 @@ def read_or_empty_dataframe(data_location):
         
 #Apply this to csvs when read from disk to restore pythonic types contained within
 def eval_or_nan(val, expected_dtype):
+    if expected_dtype == None:
+        return val
     if expected_dtype == str:
         return val
     
     if str(val) == "nan":
         return val
     if not isinstance(val, str):
+        #print("isinstance")
+        #print(ast.literal_eval(val))
         return ast.literal_eval(str(val))
     else:
-        return val
+        return ast.literal_eval(val)
 
 
 def hash_list_or_none(to_hash):

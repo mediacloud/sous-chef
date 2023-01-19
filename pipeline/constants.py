@@ -1,3 +1,5 @@
+
+
 #CONFIGURATION_KEYS
 ID = "id"
 STEPS = "steps"
@@ -24,7 +26,12 @@ CACHE_HASHES = "cache_hashes"
 STRING_TYPE_MAP = {
     "float": float,
     "int": int,
-    "str": str
+    "str": str,
+    "dict": dict,
+    "list": list,
+    "none": None,
+    "object": object,
+    "bool": bool
 }
 
 #default data strategy

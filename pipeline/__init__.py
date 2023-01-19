@@ -93,11 +93,22 @@ class Pipeline():
     def run_pipeline(self):
         
         for step in self.steps:
-            #s = task(step) #I genuinely do not understand why this mucks up as it does. 
+            s = task(step) #I genuinely do not understand why this mucks up as it does. 
             step()
 
             
 #This is the main entrypoint for the whole thing            
 def RunPipeline(config):
     test_pipeline = Pipeline(config)
+    
+    
+
+@flow()
+def get_documentation():
+    all_docs = {}
+    for name, atom in FlowAtom.get_atoms().items():
+        
+        docs = atom(None, None, document=True).docs
+        all_docs[name] = docs
+    return all_docs
  

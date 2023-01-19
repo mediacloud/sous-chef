@@ -154,10 +154,9 @@ class CommonElements(FlowAtom):
                 else:
                     elements[item] = 1
         
-        print(elements)
         top_elements = sorted(elements)
         if self.top_n > 0:
             top_elements = top_elements[:self.top_n]
         
-        print(top_elements)
+       
         self.results.top_elements = top_elements
