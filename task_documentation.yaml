@@ -1,0 +1,369 @@
+APIEntityExtraction:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Use an external news-entity-server API endpoint to extract all\
+    \ the entities from an input text.\n    "
+  inputs:
+    language: str
+    text: str
+  outputs:
+    entities: typing.List[typing.Dict]
+  params:
+    task_name: str
+    
+    
+APITweetSentimentTask:
+  defaults:
+    hf_model_name: cardiffnlp/twitter-roberta-base-sentiment-latest
+    task_name: A placeholder name
+  docstring: "\n    Use a huggingface API endpoint to apply a transformer to calculate\
+    \ sentiment values and scores on tweets\n    "
+  inputs:
+    tweets: str
+  outputs:
+    sentiment_label: str
+    sentiment_score: float
+  params:
+    hf_model_name: str
+    task_name: str
+    
+CountItemsTask:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Count the number of items stored in a list\n    A Demo Task for\
+    \ datastorage validation\n    "
+  inputs:
+    to_count: list
+  outputs:
+    counted: int
+  params:
+    task_name: str
+    
+    
+DivisibleByNTask:
+  defaults:
+    n: 2
+    task_name: A placeholder name
+  docstring: "\n    Calculate whether or not a number is divisible by input parameter\
+    \ 'n'\n    A Demo Task for datastorage validation\n    "
+  inputs:
+    to_divide: int
+  outputs:
+    divisible: bool
+  params:
+    n: int
+    task_name: str
+    
+    
+FilterBelowN:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Filter out rows where the input 'to_compare' is below the parameter\
+    \ n\n    "
+  inputs:
+    to_compare: int
+  outputs: {}
+  params:
+    n: int
+    task_name: str
+    
+    
+GenerateRandomSeriesTask:
+  defaults:
+    rand_range: 100
+    sample_size: 10
+    task_name: A placeholder name
+  docstring: "\n    Populate a row of 'sample_size' random values in between zero\
+    \ and the provided 'rand-range'\n    A Demo Task for datastorage validation\n\
+    \    "
+  inputs: {}
+  outputs:
+    numbers: int
+  params:
+    rand_range: int
+    sample_size: int
+    task_name: str
+    
+    
+LanguageDetectionTask:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Use mc-providers language estimator to estimate the language of\
+    \ a piece of text\n    "
+  inputs:
+    text: str
+  outputs:
+    language: str
+  params:
+    task_name: str
+    
+    
+ListPrimeFactorsTask:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Calculate the list of prime factors of an input number. \n   \
+    \ A Demo Task for datastorage validation\n    "
+  inputs:
+    to_factor: int
+  outputs:
+    factors: list
+  params:
+    task_name: str
+    
+    
+MostCommonTask:
+  defaults:
+    task_name: A placeholder name
+    top_n: 5
+  docstring: ' take a field of lists and return the top-n most common elements '
+  inputs:
+    to_count: list
+  outputs:
+    top_elements: int
+  params:
+    task_name: str
+    top_n: int
+    
+    
+OutputCSV:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Outputs a CSV which includes the given columns\n    "
+  inputs: {}
+  outputs: {}
+  params:
+    columns: list
+    output_location: str
+    task_name: str
+    
+    
+OutputFieldHistogram:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Outputs a histogram of values in a single column\n    "
+  inputs: {}
+  outputs: {}
+  params:
+    columns: list
+    output_location: str
+    task_name: str
+    
+    
+OutputTimeSeriesHistogram:
+  defaults:
+    resample_str: T
+    task_name: A placeholder name
+  docstring: "\n    Outputs a histogram of the values of a column over time- useful\
+    \ for displaying sentiment over time. \n    "
+  inputs: {}
+  outputs: {}
+  params:
+    columns: list
+    date_index_column: str
+    output_location: str
+    resample_str: str
+    task_name: str
+    values_column: str
+    
+    
+PrintFieldTask:
+  defaults:
+    post_message: Print Field Task End
+    pre_message: Print Field Task Start
+    task_name: A placeholder name
+  docstring: "\n    Print a summary of the contents of a field to the console.\n \
+    \   A useful utility task. \n    "
+  inputs:
+    to_print: none
+  outputs: {}
+  params:
+    post_message: str
+    pre_message: str
+    task_name: str
+    
+    
+PrintParamsWithDefaults:
+  defaults:
+    a: 1
+    b: 2
+    c: 3
+    task_name: A placeholder name
+  docstring: "\n    Print the three provided values to the console. \n    A default\
+    \ value will be provided if none if given at config time. \n    A Demo Task for\
+    \ testing atom validation\n    "
+  inputs: {}
+  outputs: {}
+  params:
+    a: int
+    b: int
+    c: int
+    task_name: str
+    
+    
+PrintRandomValuesTask:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Print a random value to the console the number of times specified\n\
+    \    A Demo Task for testing atom validation\n    "
+  inputs: {}
+  outputs: {}
+  params:
+    iterations: int
+    task_name: str
+    
+    
+PrintStringTask:
+  defaults:
+    post_message: Print Field Task End
+    pre_message: Print Field Task Start
+    task_name: A placeholder name
+  docstring: "\n    Print a summary of the contents of a string field to the console.\n\
+    \    A useful utility task. \n    "
+  inputs:
+    to_print: str
+  outputs: {}
+  params:
+    post_message: str
+    pre_message: str
+    task_name: str
+    
+    
+QueryOnlineNews:
+  defaults:
+    task_name: A placeholder name
+  docstring: null
+  inputs: {}
+  outputs:
+    domain: str
+    language: str
+    original_capture_url: str
+    publication_date: object
+    text: str
+    title: str
+  params:
+    end_date: str
+    query: str
+    start_date: str
+    task_name: str
+    
+    
+QueryTwitter:
+  defaults:
+    task_name: A placeholder name
+  docstring: " \n    Get all tweets matching a query using the mc-providers package.\
+    \ \n    "
+  inputs: {}
+  outputs:
+    author: str
+    content: str
+    language: str
+    last_updated: object
+    like_count: int
+    media_id: int
+    media_name: str
+    media_url: str
+    publish_date: object
+    quote_count: int
+    reply_count: int
+    retweet_count: int
+    title: str
+    url: str
+  params:
+    end_date: str
+    query: str
+    start_date: str
+    task_name: str
+    
+    
+ReadCSV:
+  defaults:
+    task_name: A placeholder name
+  docstring: " Read in the contents of a CSV file. Set \"location\" to the relative\
+    \ location of your input file, \n    and \"columns\" to the names and types of\
+    \ the columns you want to load into the pipeline.\n    REQUIRES the unique \"\
+    outputs: configured__\" tag, since we need to overwrite the standard config behavior\n\
+    \    \n    "
+  inputs: {}
+  outputs:
+    configured__: none
+  params:
+    columns: dict
+    location: str
+    task_name: str
+    
+    
+SampleTwitter:
+  defaults:
+    max_results: 100
+    task_name: A placeholder name
+  docstring: " \n    Get a small sample of tweets matching a query using the mc-providers\
+    \ package\n    "
+  inputs: {}
+  outputs:
+    author: str
+    content: str
+    language: str
+    last_updated: object
+    like_count: int
+    media_id: int
+    media_name: str
+    media_url: str
+    publish_date: object
+    quote_count: int
+    reply_count: int
+    retweet_count: int
+    title: str
+    url: str
+  params:
+    end_date: str
+    max_results: int
+    query: str
+    start_date: str
+    task_name: str
+    
+    
+TestParamAccessTask:
+  defaults:
+    task_name: A placeholder name
+  docstring: "\n    Print the value of the provided parameter to the console\n   \
+    \ A Demo Task for testing atom validation\n    "
+  inputs: {}
+  outputs: {}
+  params:
+    task_name: str
+    value: str
+    
+    
+TopNEntities:
+  defaults:
+    filter_type: ''
+    task_name: A placeholder name
+    top_n: -1
+  docstring: "\n    With an input of many list of dicts, output a list of the top\
+    \ N most commonly occuring entities.\n    Top_n limits the number of entities\
+    \ returned, and filter_type limits results to a specific entity-type (ie PER,\
+    \ OBJ, etc)\n    "
+  inputs:
+    entities: typing.List[typing.Dict]
+  outputs:
+    top_entities: list
+  params:
+    filter_type: str
+    task_name: str
+    top_n: int
+    
+    
+TweetSentimentTask:
+  defaults:
+    hf_model_name: cardiffnlp/twitter-roberta-base-sentiment-latest
+    task_name: A placeholder name
+  docstring: "\n    Use a local instance of a huggingface transformer to calculate\
+    \ sentiment values and scores on tweets\n    "
+  inputs:
+    tweets: str
+  outputs:
+    sentiment_label: str
+    sentiment_score: float
+  params:
+    hf_model_name: str
+    task_name: str

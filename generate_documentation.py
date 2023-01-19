@@ -6,4 +6,5 @@ import yaml
 doc_data = pipeline.get_documentation()
 pprint(doc_data)
 
-print(yaml.dump(doc_data))
+stream = open('task_documentation.yaml', 'w')
+yaml.dump(doc_data, stream)
