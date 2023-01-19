@@ -1,7 +1,7 @@
 import requests
 from typing import List, Dict
 from ..flowatom import FlowAtom
-
+import re
 
 
 @FlowAtom.register("APIEntityExtraction")
@@ -61,12 +61,12 @@ class TopNEntities(FlowAtom):
         counter = {}
         
         for article_entities in self.data.entities:
-            print(article_entities)
+            
             if isinstance(article_entities, dict):
+                #This covers the case where we have just a single entity
                 article_entities = [article_entities]
-            for ent in article_entities:
-                print(ent)
-                
+            
+            for ent in article_entities:              
                 if self.filter_type != "" and ent["type"] != self.filter_type:
                     pass
                 
@@ -89,6 +89,89 @@ class TopNEntities(FlowAtom):
         
         
         self.results.top_entities = top_entities
-       
+
+@FlowAtom.register("SimpleTokenizeTask")
+class SimpleTokens(FlowAtom):
+    """
+    Split strings into a list of tokens. "seps" defines what separators in addition to spaces to use as delimiters.
+    Tokens in "exclude" are not returned
+    """
+    
+    seps:str
+    exclude:list
+    _defaults:{
+        "seps":",.?!",
+        "exclude": ["", '"', "'"]
+    }
+    
+    def inputs(self, text:str):pass
+    def outputs(self, tokens:list):pass
+    
+    def task_body(self):
         
+        tokens = []
+        for string_to_split in self.data.text:
+            if string_to_split is not None:
+                string_to_split = str(string_to_split) #just in case
+                these_tokens = string_to_split.replace(self.seps, " ").split(" ")
+                these_tokens = list(filter(lambda x:x not in self.exclude, these_tokens))
+                tokens.append(these_tokens)
+            else:
+                tokens.append([])
+            
+        self.results.tokens = tokens
+    
+
+@FlowAtom.register("ExtractByRegex")
+class ExtractRegexMatch(FlowAtom):
+    """
+    General Regex matching class. Subclassed for various specialized extractors
+    """
+    regex:str
+
+    _defaults:{
+        'regex':"",
+
+    }
         
+    def inputs(self, text:str):pass
+    def outputs(self, matches:list):pass
+
+    def get_regex(self):
+        return None
+    
+    def task_body(self):
+        if self.get_regex() is not None:
+            self.regex = self.get_regex()
+            
+        matches = []
+        for string_to_search in self.data.text:
+            if string_to_search is not None:
+                string_to_search = str(string_to_search)
+                these_matches = re.findall(self.regex, string_to_search)
+                matches.append(these_matches)
+            else:
+                matches.append([])
+        
+        self.results.matches = matches
+
+#Extract hashtags
+@FlowAtom.register("ExtractHashtags")
+class ExtractHashtags(ExtractRegexMatch):
+    """
+    Extract all hashtags from provided strings
+    """
+    def get_regex(self):
+        return '[#]{1}[\S]+'
+    
+
+#Extract URLS
+@FlowAtom.register("ExtractURLS")
+class ExtractURLS(ExtractRegexMatch):
+    """
+    Extract all URLS from provided strings
+    """
+    #This is just the most straightforward url regex I've ever come across- still a monster, though. 
+    def get_regex(self):
+        url_regex = "(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
+        return url_regex

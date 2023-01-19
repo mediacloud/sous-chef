@@ -139,7 +139,7 @@ class CommonElements(FlowAtom):
     }
         
     def inputs(self, to_count:list): pass
-    def outputs(self, top_elements:int):pass
+    def outputs(self, top_elements:None):pass
     
     @classmethod
     def creates_new_document(self):
