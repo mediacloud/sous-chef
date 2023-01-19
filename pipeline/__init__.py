@@ -93,7 +93,7 @@ class Pipeline():
     def run_pipeline(self):
         
         for step in self.steps:
-            s = task(step) #I genuinely do not understand why this mucks up as it does. 
+            #s = task(step) #I genuinely do not understand why this mucks up as it does. 
             step()
 
             

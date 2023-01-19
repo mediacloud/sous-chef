@@ -226,8 +226,9 @@ class PandasStrategy(DataStrategy):
         #pprint(config)
         #data_directory
        
-        if do_cache: 
+        if do_cache:
             print("Loading from Cache!")
+            
             cached_documents = []
             #Set Cache behavior meta on each step
             for i, step in enumerate(config[STEPS]):
@@ -267,8 +268,6 @@ class PandasStrategy(DataStrategy):
         if len(documents) == 1:
             if cache:
                 doc_loc = self.find_cached_output()
-                print("new data_loc")
-                print(doc_loc)
             else:
                 doc_loc = self.data_location+documents[0]+"_output.csv"
             

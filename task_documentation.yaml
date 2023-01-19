@@ -10,8 +10,6 @@ APIEntityExtraction:
     entities: typing.List[typing.Dict]
   params:
     task_name: str
-    
-    
 APITweetSentimentTask:
   defaults:
     hf_model_name: cardiffnlp/twitter-roberta-base-sentiment-latest
@@ -26,7 +24,6 @@ APITweetSentimentTask:
   params:
     hf_model_name: str
     task_name: str
-    
 CountItemsTask:
   defaults:
     task_name: A placeholder name
@@ -38,8 +35,6 @@ CountItemsTask:
     counted: int
   params:
     task_name: str
-    
-    
 DivisibleByNTask:
   defaults:
     n: 2
@@ -53,8 +48,43 @@ DivisibleByNTask:
   params:
     n: int
     task_name: str
-    
-    
+ExtractByRegex:
+  defaults:
+    regex: ''
+    task_name: A placeholder name
+  docstring: "\n    General Regex matching class. Subclassed for various specialized\
+    \ extractors\n    "
+  inputs:
+    text: str
+  outputs:
+    matches: list
+  params:
+    regex: str
+    task_name: str
+ExtractHashtags:
+  defaults:
+    regex: ''
+    task_name: A placeholder name
+  docstring: "\n    Extract all hashtags from provided strings\n    "
+  inputs:
+    text: str
+  outputs:
+    matches: list
+  params:
+    regex: str
+    task_name: str
+ExtractURLS:
+  defaults:
+    regex: ''
+    task_name: A placeholder name
+  docstring: "\n    Extract all URLS from provided strings\n    "
+  inputs:
+    text: str
+  outputs:
+    matches: list
+  params:
+    regex: str
+    task_name: str
 FilterBelowN:
   defaults:
     task_name: A placeholder name
@@ -66,8 +96,6 @@ FilterBelowN:
   params:
     n: int
     task_name: str
-    
-    
 GenerateRandomSeriesTask:
   defaults:
     rand_range: 100
@@ -83,8 +111,6 @@ GenerateRandomSeriesTask:
     rand_range: int
     sample_size: int
     task_name: str
-    
-    
 LanguageDetectionTask:
   defaults:
     task_name: A placeholder name
@@ -96,8 +122,6 @@ LanguageDetectionTask:
     language: str
   params:
     task_name: str
-    
-    
 ListPrimeFactorsTask:
   defaults:
     task_name: A placeholder name
@@ -109,8 +133,6 @@ ListPrimeFactorsTask:
     factors: list
   params:
     task_name: str
-    
-    
 MostCommonTask:
   defaults:
     task_name: A placeholder name
@@ -119,12 +141,10 @@ MostCommonTask:
   inputs:
     to_count: list
   outputs:
-    top_elements: int
+    top_elements: none
   params:
     task_name: str
     top_n: int
-    
-    
 OutputCSV:
   defaults:
     task_name: A placeholder name
@@ -135,8 +155,6 @@ OutputCSV:
     columns: list
     output_location: str
     task_name: str
-    
-    
 OutputFieldHistogram:
   defaults:
     task_name: A placeholder name
@@ -147,8 +165,6 @@ OutputFieldHistogram:
     columns: list
     output_location: str
     task_name: str
-    
-    
 OutputTimeSeriesHistogram:
   defaults:
     resample_str: T
@@ -164,8 +180,6 @@ OutputTimeSeriesHistogram:
     resample_str: str
     task_name: str
     values_column: str
-    
-    
 PrintFieldTask:
   defaults:
     post_message: Print Field Task End
@@ -180,8 +194,6 @@ PrintFieldTask:
     post_message: str
     pre_message: str
     task_name: str
-    
-    
 PrintParamsWithDefaults:
   defaults:
     a: 1
@@ -198,8 +210,6 @@ PrintParamsWithDefaults:
     b: int
     c: int
     task_name: str
-    
-    
 PrintRandomValuesTask:
   defaults:
     task_name: A placeholder name
@@ -210,8 +220,6 @@ PrintRandomValuesTask:
   params:
     iterations: int
     task_name: str
-    
-    
 PrintStringTask:
   defaults:
     post_message: Print Field Task End
@@ -226,8 +234,6 @@ PrintStringTask:
     post_message: str
     pre_message: str
     task_name: str
-    
-    
 QueryOnlineNews:
   defaults:
     task_name: A placeholder name
@@ -245,8 +251,6 @@ QueryOnlineNews:
     query: str
     start_date: str
     task_name: str
-    
-    
 QueryTwitter:
   defaults:
     task_name: A placeholder name
@@ -273,8 +277,6 @@ QueryTwitter:
     query: str
     start_date: str
     task_name: str
-    
-    
 ReadCSV:
   defaults:
     task_name: A placeholder name
@@ -290,8 +292,6 @@ ReadCSV:
     columns: dict
     location: str
     task_name: str
-    
-    
 SampleTwitter:
   defaults:
     max_results: 100
@@ -320,8 +320,25 @@ SampleTwitter:
     query: str
     start_date: str
     task_name: str
-    
-    
+SimpleTokenizeTask:
+  defaults:
+    exclude:
+    - ''
+    - '"'
+    - ''''
+    seps: ',.?!'
+    task_name: A placeholder name
+  docstring: "\n    Split strings into a list of tokens. \"seps\" defines what separators\
+    \ in addition to spaces to use as delimiters.\n    Tokens in \"exclude\" are not\
+    \ returned\n    "
+  inputs:
+    text: str
+  outputs:
+    tokens: list
+  params:
+    exclude: list
+    seps: str
+    task_name: str
 TestParamAccessTask:
   defaults:
     task_name: A placeholder name
@@ -332,8 +349,6 @@ TestParamAccessTask:
   params:
     task_name: str
     value: str
-    
-    
 TopNEntities:
   defaults:
     filter_type: ''
@@ -351,8 +366,6 @@ TopNEntities:
     filter_type: str
     task_name: str
     top_n: int
-    
-    
 TweetSentimentTask:
   defaults:
     hf_model_name: cardiffnlp/twitter-roberta-base-sentiment-latest

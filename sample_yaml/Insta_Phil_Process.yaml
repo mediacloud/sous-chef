@@ -1,4 +1,4 @@
-name: basic_datastrategy_sample
+name: Insta_Phil_Process
 data_strategy:
     id: PandasStrategy
     data_location: data/
@@ -56,4 +56,64 @@ steps:
             pre_message: "Printing Top Entities"
         inputs:
             to_print: top_10_entities
+            
+    - SimpleTokenizeTask:
+        inputs:
+            text: Image Text1
+        outputs:
+            tokens: tokens
+            
+    - MostCommonTask:
+        params:
+            top_n: 20 
+        inputs:
+            to_count: tokens
+        outputs:
+            top_elements: top_tokens
+            
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Top Tokens"
+        inputs:
+            to_print: top_tokens
+            
+    - ExtractHashtags:
+        inputs:
+            text: Image Text1
+        outputs: 
+            matches: hashtags
+    
+    - MostCommonTask:
+        params:
+            top_n: 20
+        inputs:
+            to_count: hashtags
+        outputs:
+            top_elements: top_hashtags
+    
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Top Hashtags"
+        inputs:
+            to_print: top_hashtags
+            
+    - ExtractURLS:
+        inputs:
+            text: Image Text1
+        outputs: 
+            matches: urls
+    
+    - MostCommonTask:
+        params:
+            top_n: 10
+        inputs:
+            to_count: urls
+        outputs:
+            top_elements: top_urls
+        
+    - PrintFieldTask:
+        params:
+            pre_message: "Printing Top URLS"
+        inputs:
+            to_print: top_urls
     
