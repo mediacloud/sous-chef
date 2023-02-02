@@ -8,5 +8,9 @@ if __name__ == "__main__":
     with open(args.config_yaml, "r") as config_yaml:
         json_conf = configuration_loaders.yaml_to_conf(config_yaml)
         
+    if "name" not in json_conf:
+        name = config_yaml.split(".")[0]
+        json_conf["name"] = name
+        
     print(f"Loaded configuration file at {args.config_yaml}, Running pipeline:")
     RunPipeline(json_conf)

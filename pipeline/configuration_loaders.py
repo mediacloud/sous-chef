@@ -1,6 +1,12 @@
 import yaml
-from .constants import PARAMS, STEPS
+from .constants import PARAMS, STEPS, DATASTRATEGY
 from pprint import pprint
+
+DATASTRAT_DEFAULT = {
+    "id": "PandasStrategy",
+    "data_location": "data/"
+}
+
 
 def yaml_to_conf(yaml_stream):
     conf = yaml.safe_load(yaml_stream)
@@ -18,4 +24,8 @@ def yaml_to_conf(yaml_stream):
         clean_steps.append(step_conf)
 
     conf[STEPS] = clean_steps
+    
+    if DATASTRATEGY not in conf:
+        conf[DATASTRATEGY] = DATASTRAT_DEFAULT
+        
     return conf
