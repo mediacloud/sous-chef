@@ -1,3 +1,0 @@
-[submodule "mc-providers"]
-	path = mc-providers
-	url = git@github.com:mediacloud/mc-providers.git
