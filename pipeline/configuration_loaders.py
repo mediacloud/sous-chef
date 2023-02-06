@@ -15,7 +15,7 @@ def yaml_to_conf(yaml_stream):
     #So that the YAML can use the task name as the dict key, we have to 
     #do a little bit of shuffling 
     for step in conf[STEPS]:
-
+        
         step_conf = list(step.values())[0]
         step_id = list(step.keys())[0]
         step_conf["id"] = step_id
@@ -27,5 +27,5 @@ def yaml_to_conf(yaml_stream):
     
     if DATASTRATEGY not in conf:
         conf[DATASTRATEGY] = DATASTRAT_DEFAULT
-        
+    
     return conf

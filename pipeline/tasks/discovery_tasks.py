@@ -32,6 +32,13 @@ def validate_datestr_form(datestr, name):
 def clean_text(text):
     return re.sub("\\n|\\r", " ", text)
 
+
+
+def get_collection_query(coll_id):
+    pass
+
+
+
 #All the discovery atoms impliment the same validation, so we should be able to just subclass this. 
 class DiscoveryAtom(FlowAtom):
     query:str

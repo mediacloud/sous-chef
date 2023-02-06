@@ -35,6 +35,8 @@ class Pipeline():
             if flowatom[ID] in available_atoms:
                 wrapped_class = available_atoms[flowatom[ID]].__wrapped__
                 flowatom[NEWDOCUMENT] = wrapped_class.creates_new_document()
+            else:
+                raise ConfigValidationError(f"{flowatom[ID]} is not a registered Flow Atom")
         
         
     #In which we add the datastrategy specific config into the user supplied config

@@ -222,9 +222,6 @@ class PandasStrategy(DataStrategy):
         else:
             do_cache = True
         
-        #pprint(config_metadata)
-        #pprint(config)
-        #data_directory
        
         if do_cache:
             print("Loading from Cache!")
