@@ -3,7 +3,7 @@ from typing import List, Dict
 from ..flowatom import FlowAtom
 from .utils import lazy_import
 
-language = lazy_import("mcproviders.language")
+language = lazy_import("mc_providers.language")
 
 @FlowAtom.register("LanguageDetectionTask")
 class LanguageDetection(FlowAtom):

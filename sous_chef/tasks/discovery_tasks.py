@@ -9,7 +9,7 @@ import re
 from pprint import pprint
 
 #import mcproviders as providers
-providers = lazy_import("mcproviders")
+providers = lazy_import("mc_providers")
 
 #A helper function to apply to datestring config inputs
 def validate_datestr_form(datestr, name):
