@@ -1,5 +1,5 @@
-import pipeline
-from pipeline.constants import STRING_TYPE_MAP
+import sous_chef
+from sous_chef.constants import STRING_TYPE_MAP
 from pprint import pprint
 import yaml
 
@@ -18,7 +18,7 @@ class MyDumper(yaml.SafeDumper):
 def get_yaml_docs():
     #save out a YAML file with all of the task documentation present.
     # - Nothing too fancy.
-    doc_data = pipeline.get_documentation()
+    doc_data = sous_chef.get_documentation()
     stream = open('task_documentation.yaml', 'w')
     yaml.dump(doc_data, stream, Dumper=MyDumper)
     

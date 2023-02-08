@@ -1,7 +1,6 @@
 ## Discovery
 
 [] Articles from ONA selected via keywords/collection/dates
-[] Mediacloud explorer api by query
 [] Sitemap ingestion
 [] Generally any other API 
 
@@ -26,7 +25,6 @@
 [] Country-level tagging- what region is this about? 
 
 ## Outputs
-[] CSV with specified metadata
 [] Network Maps
 [] Kibana Instance Export
 [] Custom Tooling...?

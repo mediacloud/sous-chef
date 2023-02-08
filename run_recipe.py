@@ -1,6 +1,6 @@
 from pprint import pprint
 import argparse
-from pipeline import RunPipeline, configuration_loaders
+from sous_chef import RunPipeline, configuration_loaders
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -44,6 +44,7 @@ class DiscoveryAtom(FlowAtom):
     query:str
     start_date:str
     end_date:str
+
     
     @classmethod
     def creates_new_document(self):
@@ -119,7 +120,7 @@ class query_onlinenews(DiscoveryAtom):
         provider = "onlinenews-waybackmachine"
         
         SearchInterface = WaybackSearchClient("mediacloud")
-
+        #SearchInterface = providers.provider_by_name(provider)
         
         start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
         end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
@@ -128,15 +129,16 @@ class query_onlinenews(DiscoveryAtom):
         for result in SearchInterface.all_articles(self.query, start_date, end_date):
             output.extend(result)
 
-        #print(output)
         
         content = []
         for article in output:
             article_url = article["article_url"]
             article_info = requests.get(article["article_url"]).json()
             if "snippet" in article_info:
-                print("Got Article")
                 content.append(article_info)
+        
+        print(f"Matches:{len(output)}, With Article: {len(content)}")
+        
         
         if len(content) > 0:
             self.results = pd.json_normalize(content)
