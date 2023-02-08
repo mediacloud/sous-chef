@@ -1,29 +1,29 @@
-# MC Pipeline Tool 
+# Sous-Chef
 
 UNDER CONSTRUCTION! 
-We're having fun here!
 
-A package which wraps prefect up in a little easily configurable bow, for self-validating and freely configurable data pipelines
+A package which wraps prefect up in a little easily configurable bow, for self-validating and freely configurable data pipelines.
 
-All you need to do to run a pipeline is:
+We call a pipeline configuration a "recipe". This is a YAML file which specifies a set of atoms and connections between them. 
 
-```
-from pipeline import RunPipeline
+To invoke a recipe, just run:
 
-config = {...}
+` python run_recipe.py ./path/to/recipe.yaml `
 
-RunPipeline(config)
-```
 
-#### Samples
-Right now I have two sample pipelines- one with and one without a datastrategy layer. These are here in lieu of tests- all the major features of the package are demonstrated, but there's nothing that really tests the validation components. 
+
+#### Recipes
+The available atoms right now can be seen in `docs/task_documentation.yaml` - if this is out of date, regenerate it by running `python generate_docs.py` 
+
+All of the recipes I've been writing for this tool live at a [different repository](https://github.com/mediacloud/SousChef-Recipes)
+
+the 'tests' folder there contains recipes which demonstrate the basic shape and functionality of the tool 
 
 #### Installation
-I make no claims about the build! A setup.py exists, but don't rely on a system level installation of this at this point. Samples can be run from the root directory. 
+Right now just clone via github and run at root. This is not quite ready for primetime yet, so there's no packaging solution. 
 
 
-
-### Classes:
+### Under The Hood:
 
 #### Pipeline (in `__init__`)
 Main Pipeline Author Class- validates and runs the pipeline configuration
@@ -38,58 +38,14 @@ Subclassed for different kinds of data interfaces, also registered to a parent s
 PandasStrategy is a good default right now- it creates a pandas dataframe and saves it as a CSV in between steps. FlowAtom Access to input and output columns is managed under the hood. 
  
  
-### Example
-
-This is an example implementation of a simple flowatom subclass
-```python
-@FlowAtom.register("DivisibleByNTask")
-class DivisibleByNTask(FlowAtom):
-    
-    n:int
-    _defaults:{
-        "n": 2
-    }
-            
-    def inputs(self, to_divide:int): pass
-    def outputs(self, divisible:bool): pass
-    
-    def task_body(self):
-        output = []
-        
-        for val in self.data.to_divide:
-            output.append(val % self.n == 0)
-        
-        self.data.divisible = output
-```
-
-The following json (from `samples/basic_datastrategy_sample.py`) configures this atom to test divisibility by 5 of values loaded from a column named `factor_count` and to place the result in a column named `5_divisible`. 
-```python
-...
-    {
-        "id":"DivisibleByNTask",
-        "params":{
-            "task_name":"is count divisible by five?",
-            "n":5
-        }, 
-        "inputs":{
-            "to_divide":"factor_count"
-        },
-        "outputs":{
-            "divisible":"5_divisible"
-        }
-    },
-...
-```
-
 
 ### Package TODO:
-- Flow Atoms should be able to return expected parameter types as documentation- this will enable easier config authoring, and eventually will make a hypothetical config authoring interface very straightforward. 
 - Real Tests, Good God Please.
-- Caching or Re-starting? Only really useful for my development I think, but...
-- Document tracking. Some atoms extend documents, some create new documents... current pattern only supports one doc per config, which excludes a good % of usecases. There is a way that the datastrategy could handle this detail under the hood, so the user doesn't really have to think about it. I'll have to brainstorm the whole thing a bit before digging in. 
+- Recipe Variables- to make reuse easier. 
+- Multidocument Inputs
+- "Menus" - ie, ets of recipes with variables 
 
+### Longer term plan:
+- Task name normalization
+- Better documentation
 
-
-### Questions
-1. Extensions vs Transformations. Right now all of the atoms simply extend an original discovery document. If we wanted to, say, sort the most common values from a field, we would end up with a transformation- a totally new document. We could just save this in an additional column of the dataframe, but this could mess things up if you then used this column the wrong way. Is this just an extra kind of type validation, or is some different mechanism required?
-3. Should it get a fancy name? I think it should get something better than 'mc_pipeline', but I know that MC's preference is for more straightforward names. 

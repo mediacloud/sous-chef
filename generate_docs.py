@@ -4,7 +4,6 @@ from pprint import pprint
 import yaml
 
 
-
 class MyDumper(yaml.SafeDumper):
     # HACK: insert blank lines between top-level objects
     # inspired by https://stackoverflow.com/a/44284819/3786245,
