@@ -4,12 +4,16 @@ import pandas as pd
 import requests
 from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
+import mediacloud.api
 import re
+import os
 
 from pprint import pprint
 
 #import mcproviders as providers
 providers = lazy_import("mc_providers")
+mcmetadata = lazy_import("mcmetadata")
+
 
 #A helper function to apply to datestring config inputs
 def validate_datestr_form(datestr, name):
@@ -31,11 +35,6 @@ def validate_datestr_form(datestr, name):
 #Can add other preprocessing here as needed
 def clean_text(text):
     return re.sub("\\n|\\r", " ", text)
-
-
-
-def get_collection_query(coll_id):
-    pass
 
 
 
@@ -106,27 +105,68 @@ class query_twitter(DiscoveryAtom):
         self.results = pd.json_normalize(output)
         self.results["media_id"] = self.results["id"]
         
+
         
+
+def get_onlinenews_collection_domains(collection_ids, **kwargs):
+    
+    ApiKey = os.getenv("MC_API_KEY")
+    
+    if ApiKey is None:
+        raise RuntimeError("No Mediacloud API Key (MC_API_KEY) is provided")
+        
+    PROXY_API_URL = "https://opkexf7ro364ruzcxushs7kqmq0jtews.lambda-url.us-east-1.on.aws/api/"
+   
+    directory = mediacloud.api.DirectoryApi(ApiKey)
+    directory.BASE_API_URL = PROXY_API_URL
+    domains = []
+    for collection in collection_ids:
+        
+        sources = directory.source_list(collection_id=collection, **kwargs)
+        
+        for res in sources["results"]:
+            if "http://" in res["homepage"]:
+                domains.append(res["homepage"][7:])
+            elif "https://" in res["homepage"]:
+                domains.append(res["homepage"][8:])
+            else:
+                domains.append(res["homepage"])
+            
+       
+    return domains
+
         
 @FlowAtom.register("QueryOnlineNews")
 class query_onlinenews(DiscoveryAtom):
     
-
+    """
+    Query mediacloud's onlinenews collection at waybackmachine
+    """
+    
+    collections:list
+    _defaults:{
+        "collection_id":[]
+    }
+    
     def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
-        
+    
     
     def task_body(self):
         provider = "onlinenews-waybackmachine"
         
-        SearchInterface = WaybackSearchClient("mediacloud")
-        #SearchInterface = providers.provider_by_name(provider)
+        #SearchInterface = WaybackSearchClient("mediacloud")
+        SearchInterface = providers.provider_by_name(provider)
         
         start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
         end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
         
+        domains = []
+        if len(self.collections) > 0:
+            domains = get_onlinenews_collection_domains(self.collections)
+
         output = []
-        for result in SearchInterface.all_articles(self.query, start_date, end_date):
+        for result in SearchInterface.all_items(self.query, start_date, end_date, domains = domains):
             output.extend(result)
 
         
@@ -143,3 +183,36 @@ class query_onlinenews(DiscoveryAtom):
         if len(content) > 0:
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["snippet"]
+
+            
+            
+@FlowAtom.register("GetWebpageContent")
+class get_web_metadata(FlowAtom):
+    """
+    Use Mc-metadata to extract metadata content from a list of urls
+    """
+    
+    urls: list
+    _defaults:{
+        "urls":[]
+    }
+        
+    @classmethod
+    def creates_new_document(self):
+        return True
+        
+    def outputs(self, url:str, article_title: str, text_content:str, language:str): pass
+    
+    def task_body(self):
+        
+        content = []
+        for url in self.urls:
+            
+            result = mcmetadata.extract(url)
+            content.append(result)
+        
+        if len(content) > 0:
+            self.results = pd.json_normalize(content)
+            
+        
+        
