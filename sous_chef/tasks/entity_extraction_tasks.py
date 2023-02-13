@@ -2,7 +2,9 @@ import requests
 from typing import List, Dict
 from ..flowatom import FlowAtom
 import re
+from .utils import lazy_import
 
+yake = lazy_import("yake")
 
 @FlowAtom.register("APIEntityExtraction")
 class ApiEntityExtraction(FlowAtom):
@@ -101,7 +103,7 @@ class SimpleTokens(FlowAtom):
     exclude:list
     _defaults:{
         "seps":",.?!",
-        "exclude": ["", '"', "'"]
+        "exclude": ["", '"', "'", "$", "&"]
     }
     
     def inputs(self, text:str):pass
@@ -120,8 +122,46 @@ class SimpleTokens(FlowAtom):
                 tokens.append([])
             
         self.results.tokens = tokens
-    
 
+@FlowAtom.register("ExtractKeywords")
+class Keywords(FlowAtom):
+    """
+    Extract keywords from text
+    """
+    
+    top_n:int
+    ngram_max:int
+    dedup_limit:float
+    
+    _defaults:{
+        "top_n":50,
+        "ngram_max":3,
+        "dedup_limit":.9
+    }
+    
+    def inputs(self, text:str, language:str):pass
+    def outputs(self, keywords:list):pass
+    
+    def task_body(self):
+        
+        keywords = []
+        for row in self.data.itertuples():
+            lan = row.language
+           
+            extractor = yake.KeywordExtractor(lan=lan, 
+                                              n=self.ngram_max, 
+                                              dedupLim=self.dedup_limit, 
+                                              top=self.top_n, 
+                                              features=None)
+            
+            text = row.text
+            keywords.append([i[0] for i in extractor.extract_keywords(text)])
+            
+        
+        self.results.keywords = keywords
+    
+    
+    
 @FlowAtom.register("ExtractByRegex")
 class ExtractRegexMatch(FlowAtom):
     """

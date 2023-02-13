@@ -13,6 +13,5 @@ if __name__ == "__main__":
         name = args.config_yaml.split(".")[0].split("/")[-1]
         json_conf["name"] = name
     
-    pprint(json_conf)
     print(f"Loaded configuration file at {args.config_yaml}, Running pipeline:")
     RunPipeline(json_conf)
