@@ -1,6 +1,7 @@
 import inspect
 from pydantic import BaseModel
 from prefect import flow, task
+from uuid import uuid4
 from .datastrategy import DataStrategy
 from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP
 """
@@ -14,7 +15,7 @@ class FlowAtom(object):
     _REGISTERED_ATOMS = {}
 
     task_name:str
-    _defaults:{"task_name":"A placeholder name"}
+    _defaults:{"task_name":"default"}
     _new_document:False
     
     def __init__(self, params, data_config, document=False):
@@ -26,6 +27,10 @@ class FlowAtom(object):
             self.__validate_and_apply(params)
         
             self.setup_hook(params, data_config)
+            
+            self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:8]
+            
+            
         else:
             print("THIS IS ONLY USED FOR OFFLINE DOCUMENTATION GENERATION")
             self.docs = self.document()
