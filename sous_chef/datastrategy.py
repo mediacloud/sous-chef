@@ -9,6 +9,7 @@ import hashlib
 import shutil
 import copy
 from typing import List, Dict
+from prefect import get_run_logger
 from pprint import pprint
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
@@ -37,7 +38,7 @@ class DataStrategy(object):
         return _register
     
     def __init__(self, config, function_inputs, function_outputs):
-
+        self.logger = get_run_logger()
         
         if config is not None:
             if INPUTS in config and config[INPUTS] is not None:
@@ -59,13 +60,6 @@ class DataStrategy(object):
                     for i in config_outputs:    
                         if i not in function_outputs:
                             raise ConfigValidationError(f"Atom has no output named {i}")
-                
-                #Commenting out this block allows for outputs to be optional- sometimes we want to provide
-                #outputs that not all applications will make use of- so don't hold the user to the standard
-                #of using all of them
-                #for i in function_outputs:
-                #    if i not in config_outputs:
-                #        raise RuntimeError(f"Configuration Error: Atom expects output named {i}")
             
             
             for key, value in config.items():
@@ -116,7 +110,7 @@ class PandasStrategy(DataStrategy):
     
     @classmethod
     def setup_config(self, config):
-        
+        logger = get_run_logger()
         #For when outputs are configured by runtime- look for a parameter named COLUMN and try to infer things from there
         for step in config[STEPS]:
             if OUTPUTS in step:
@@ -224,7 +218,7 @@ class PandasStrategy(DataStrategy):
         
        
         if do_cache:
-            print("Loading from Cache!")
+            logger.warn("This run will use a cache")
             
             cached_documents = []
             #Set Cache behavior meta on each step
@@ -264,6 +258,7 @@ class PandasStrategy(DataStrategy):
         documents = list(set([document_map[_in] for _in in read_locations]))
         if len(documents) == 1:
             if cache:
+                self.logger.info("Loading input from cache")
                 doc_loc = self.find_cached_output()
             else:
                 doc_loc = self.data_location+documents[0]+"_output.csv"
@@ -308,7 +303,7 @@ class PandasStrategy(DataStrategy):
                 write_dataframe.to_csv(doc_loc)
                                
                 if cache: #Confirm that we've written a reloadable cache now. 
-                    print("Caching output!")
+                    self.logger.info("Writing output to cache")
                     config_metadata = json.load(open(self.config_meta, "r"))
                     config_metadata[CACHE_HASHES][self.cache_hash] = doc_loc
          

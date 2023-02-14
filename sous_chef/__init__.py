@@ -1,4 +1,4 @@
-from prefect import flow, task
+from prefect import flow, task, get_run_logger
 from .flowatom import FlowAtom
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT
 from .datastrategy import DataStrategy
@@ -18,12 +18,15 @@ class Pipeline():
     """
     
     def __init__(self, config, run=True):
+        self.logger = get_run_logger()
         self.config = config
         self.__get_atom_meta()
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
+        
         if run:
+            self.logger.info("Setup complete, beginning sous chef execution")
             self.run_pipeline()
                 
     def __get_atom_meta(self):

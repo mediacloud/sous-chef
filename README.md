@@ -48,8 +48,6 @@ PandasStrategy is a good default right now- it creates a pandas dataframe and sa
 
 ### Smaller fixes:
 - The CSV Input task is uselessly finnicky, since we need to use the csv header names throughout a recipe. A fix would let us give new internal names. 
-- Better defaults on the universal task_name parameter
-- More fully integrated prefect logging. 
 
 ### Longer term plan:
 - Task name normalization

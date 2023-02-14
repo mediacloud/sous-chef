@@ -155,7 +155,10 @@ class Keywords(FlowAtom):
                                               features=None)
             
             text = row.text
-            keywords.append([i[0] for i in extractor.extract_keywords(text)])
+            kws = extractor.extract_keywords(text)
+            print(kws)
+            words = [i[0] for i in kws]
+            keywords.append(words)
             
         
         self.results.keywords = keywords

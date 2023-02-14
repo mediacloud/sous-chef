@@ -1,6 +1,6 @@
 import inspect
 from pydantic import BaseModel
-from prefect import flow, task
+from prefect import flow, task, get_run_logger
 from uuid import uuid4
 from .datastrategy import DataStrategy
 from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP
@@ -28,11 +28,12 @@ class FlowAtom(object):
         
             self.setup_hook(params, data_config)
             
+            self.logger = get_run_logger()
             self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:8]
             
             
         else:
-            print("THIS IS ONLY USED FOR OFFLINE DOCUMENTATION GENERATION")
+            self.logger.warn("A pipeline constructed with document==True cannot be used for any data analasis task- this is only for generating documentation")
             self.docs = self.document()
             
 
@@ -49,7 +50,7 @@ class FlowAtom(object):
     def register(cls, name):
         
         def _register(stepclass):
-            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"setup {name}")
+            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"{name}")
             return stepclass 
         
         return _register
@@ -213,11 +214,14 @@ class FlowAtom(object):
         #If an atom which runs AFTER this atom is marked load from cache,
         #then we can safely skip this atom's execution
         if self.cache_behavior == CACHE_SKIP:
+            self.logger.info(f"Skipping {self.task_name} due to cache settings")  
             pass
         else:
+            self.logger.info(f"Starting {self.task_name}")
             self.pre_task()
             self.task_body()
             self.post_task()
+            self.logger.info(f"Completed {self.task_name}")
     
 
 
