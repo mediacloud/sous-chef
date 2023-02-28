@@ -15,7 +15,9 @@ class OutputAtom(FlowAtom):
     def pre_task(self):
         self.data = self.get_columns(self.columns)
 
-
+    #I guess this is a quick hack...
+    def post_task(self):
+        self.return_value = self.data 
 
 @FlowAtom.register("OutputCSV")
 class OutputCSV(OutputAtom):

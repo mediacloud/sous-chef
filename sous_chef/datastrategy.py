@@ -11,6 +11,7 @@ import copy
 from typing import List, Dict
 from prefect import get_run_logger
 from pprint import pprint
+from .datacollage import DataCollage
 from .exceptions import ConfigValidationError
 from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATION, 
     WRITELOCATION, INPUTS, OUTPUTS, PARAMS, RUNNAME, NOSTRAT, NEWDOCUMENT, DOCUMENTMAP, 
@@ -349,6 +350,7 @@ class PandasStrategy(DataStrategy):
 def read_or_empty_dataframe(data_location):
     try:
         df = pd.read_csv(data_location, engine="python")
+        dc = DataCollage({data_location:df})
         return df
     except EmptyDataError:
         return pd.DataFrame()

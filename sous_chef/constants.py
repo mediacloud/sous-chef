@@ -6,6 +6,7 @@ STEPS = "steps"
 PARAMS = "params"
 DATASTRATEGY = "data_strategy"
 RUNNAME = "name"
+VARS = "vars"
 
 #DATA STRATEGY INTERNALS
 DATALOCATION = "data_location"

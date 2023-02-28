@@ -19,6 +19,7 @@ class FlowAtom(object):
     _new_document:False
     
     def __init__(self, params, data_config, document=False):
+        self.return_value = None #Can be set by a task. 
         if not document:
             self.task_inputs = inspect.get_annotations(self.inputs)
             self.task_outputs = inspect.get_annotations(self.outputs)
@@ -213,6 +214,7 @@ class FlowAtom(object):
     def __call__(self):
         #If an atom which runs AFTER this atom is marked load from cache,
         #then we can safely skip this atom's execution
+        print("Calling")
         if self.cache_behavior == CACHE_SKIP:
             self.logger.info(f"Skipping {self.task_name} due to cache settings")  
             pass
@@ -222,6 +224,7 @@ class FlowAtom(object):
             self.task_body()
             self.post_task()
             self.logger.info(f"Completed {self.task_name}")
+            return self.return_value
     
 
 

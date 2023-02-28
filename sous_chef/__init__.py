@@ -19,11 +19,15 @@ class Pipeline():
     
     def __init__(self, config, run=True):
         self.logger = get_run_logger()
+        
         self.config = config
+        
         self.__get_atom_meta()
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
+        
+        self.return_value = []
         
         if run:
             self.logger.info("Setup complete, beginning sous chef execution")
@@ -98,14 +102,17 @@ class Pipeline():
     def run_pipeline(self):
         
         for step in self.steps:
-            #s = task(step) #I genuinely do not understand why this mucks up as it does. 
-            step()
+            rv = step()
+            if rv is not None:
+                self.return_value.append(rv)
+        
 
             
 #This is the main entrypoint for the whole thing            
 def RunPipeline(config):
-    test_pipeline = Pipeline(config)
+    pipeline = Pipeline(config)
     
+    return pipeline.return_value
     
 
 @flow()
