@@ -296,12 +296,16 @@ class PandasStrategy(DataStrategy):
             if len(documents) == 1:
                 doc_loc = self.data_location+documents[0]+"_output.csv"
                 
+                #Load the df to begin with. 
                 write_dataframe = read_or_empty_dataframe(doc_loc)
 
                 for function_name, write_location in self.outputs.items():
-                    write_dataframe[write_location] = operating_dataframe[function_name]
+                    write_dataframe.set_or_new_df(write_location, operating_dataframe[function_name], doc_loc)
+                    #write_dataframe[write_location] = operating_dataframe[function_name]
                 
-                write_dataframe.to_csv(doc_loc)
+                #Use the datacollage access point to get each df
+                for location, dataframe in write_dataframe.dataframes.items():
+                    dataframe.to_csv(location)
                                
                 if cache: #Confirm that we've written a reloadable cache now. 
                     self.logger.info("Writing output to cache")
@@ -351,9 +355,11 @@ def read_or_empty_dataframe(data_location):
     try:
         df = pd.read_csv(data_location, engine="python")
         dc = DataCollage({data_location:df})
-        return df
+        return dc
     except EmptyDataError:
-        return pd.DataFrame()
+        df =  pd.DataFrame()
+        dc = DataCollage({data_location:df})
+        return dc
 
         
 #Apply this to csvs when read from disk to restore pythonic types contained within

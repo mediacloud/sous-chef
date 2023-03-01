@@ -1,3 +1,5 @@
+import pandas as pd
+
 #A wrapper over multiple pandas dataframes that lets us transparently access individual documents. 
 
 class DataCollage(object):
@@ -46,4 +48,25 @@ class DataCollage(object):
                 setattr(self, col, self.dataframes[matching_dname][col] )
                 
         else:
-            raise RuntimeError(f"Cannot set {col} with this value, as No columns of length {new_value.shape[0]} exist")
+            raise RuntimeError(f"Cannot set {col} with this value, as No columns of length {new_value.shape[0]} exist. Try dc.set_or_new_df")
+            
+    def set_or_new_df(self, col, new_value, dname):
+        if len(new_value.shape) != 1:
+            raise RuntimeError("Cannot set new dataframe with multiple columns")
+        
+        try:
+            self[col] = new_value
+        except RuntimeError:
+            #Create the new dataframe, rename the first column as desired, and set the internal maps. 
+            new_df = pd.DataFrame(new_value)
+            
+            old_name = new_df.columns[0]
+            new_df.rename({old_name:col})
+            
+            self.dataframes[dname] = new_df
+        
+            self.col_dname_map[col] = dname
+            
+            input_length = new_value.shape[0]
+            self.len_dname_map[input_length] = dname
+            
