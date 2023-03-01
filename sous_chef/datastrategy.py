@@ -288,8 +288,8 @@ class PandasStrategy(DataStrategy):
     
     
     def write_data(self, operating_dataframe, cache=False):
+        
         if self.outputs is not None:
-            
             document_map = self.config[DOCUMENTMAP]
             write_locations = [outputmap[1] for outputmap in self.outputs.items()]
             documents = list(set([document_map[out] for out in write_locations]))
@@ -305,6 +305,7 @@ class PandasStrategy(DataStrategy):
                 
                 #Use the datacollage access point to get each df
                 for location, dataframe in write_dataframe.dataframes.items():
+                    print(dataframe)
                     dataframe.to_csv(location)
                                
                 if cache: #Confirm that we've written a reloadable cache now. 

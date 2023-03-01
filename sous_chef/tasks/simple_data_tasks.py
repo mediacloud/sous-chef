@@ -160,3 +160,20 @@ class CommonElements(FlowAtom):
         
        
         self.results.top_elements = top_elements
+        
+        
+@FlowAtom.register("Num Rows")
+class DocumentSize(FlowAtom):
+    """ Return the number of rows in a document """
+    
+    def inputs(self, to_count:None): pass
+    def outputs(self, count:int): pass
+    
+        
+    @classmethod
+    def creates_new_document(self):
+        return True
+    
+    def task_body(self):
+        size = self.data.to_count.shape[0]
+        self.results.count = size

@@ -33,8 +33,8 @@ def yaml_to_conf(yaml_stream):
     
     return conf
 
-
-def load_templated_yaml(yaml_stream, **kwargs):
+"templated_yaml -> t_yaml"
+def t_yaml_to_conf(yaml_stream, **kwargs):
     ###parse a templated yaml file into a 
     vars_ = set(re.findall("\$[\w\d]*", yaml_stream))
     
@@ -43,7 +43,7 @@ def load_templated_yaml(yaml_stream, **kwargs):
     if VARS in pre_subbed:
         var_reference = pre_subbed[VARS]
     
-    subbed_str = copy.copy(config)
+    subbed_str = copy.copy(yaml_stream)
     for v in vars_:
         var_name = v[1:]
         if var_name not in kwargs:
@@ -59,6 +59,7 @@ def load_templated_yaml(yaml_stream, **kwargs):
     
     #So that the YAML can use the task name as the dict key, we have to 
     #do a little bit of shuffling 
+    clean_steps = []
     for step in conf[STEPS]:
         
         step_conf = list(step.values())[0]
@@ -72,3 +73,5 @@ def load_templated_yaml(yaml_stream, **kwargs):
     
     if DATASTRATEGY not in conf:
         conf[DATASTRATEGY] = DATASTRAT_DEFAULT
+        
+    return conf

@@ -7,6 +7,7 @@ from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
 import mediacloud.api
 import re
 import os
+import ast
 
 from pprint import pprint
 
@@ -17,7 +18,8 @@ mcmetadata = lazy_import("mcmetadata")
 
 #A helper function to apply to datestring config inputs
 def validate_datestr_form(datestr, name):
-    time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M', "%Y-%m-%d, %H:%M %p"]
+    time_formats = ['%Y-%m-%d', '%Y-%m-%d, %H:%M', "%Y-%m-%d, %H:%M %p", 
+                    '%m-%d-%Y', '%m-%d-%Y, %H:%M', "%m-%d-%Y, %H:%M %p"]
     good_form = None
     for form in time_formats:
         try:
@@ -115,22 +117,18 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
     if ApiKey is None:
         raise RuntimeError("No Mediacloud API Key (MC_API_KEY) is provided")
         
-    PROXY_API_URL = "https://opkexf7ro364ruzcxushs7kqmq0jtews.lambda-url.us-east-1.on.aws/api/"
+    
    
     directory = mediacloud.api.DirectoryApi(ApiKey)
-    directory.BASE_API_URL = PROXY_API_URL
+    
     domains = []
     for collection in collection_ids:
         
         sources = directory.source_list(collection_id=collection, **kwargs)
         
         for res in sources["results"]:
-            if "http://" in res["homepage"]:
-                domains.append(res["homepage"][7:])
-            elif "https://" in res["homepage"]:
-                domains.append(res["homepage"][8:])
-            else:
-                domains.append(res["homepage"])
+            if "/" not in res["name"]:
+                domains.append(res["name"])
             
        
     return domains
@@ -145,8 +143,12 @@ class query_onlinenews(DiscoveryAtom):
     
     collections:list
     _defaults:{
-        "collection_id":[]
+        "collections":[]
     }
+        
+    def validate(self):
+        if "[" in self.collections:
+            self.collections = ast.literal_eval(self.collections)
     
     def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
@@ -158,8 +160,8 @@ class query_onlinenews(DiscoveryAtom):
         #SearchInterface = WaybackSearchClient("mediacloud")
         SearchInterface = providers.provider_by_name(provider)
         
-        start_date = datetime.strptime(self.start_date, '%Y-%m-%d')
-        end_date = datetime.strptime(self.end_date, '%Y-%m-%d')
+        start_date = datetime.strptime(self.start_date, self.start_date_form)
+        end_date = datetime.strptime(self.end_date, self.end_date_form)
         
         domains = []
         if len(self.collections) > 0:
@@ -177,13 +179,48 @@ class query_onlinenews(DiscoveryAtom):
             if "snippet" in article_info:
                 content.append(article_info)
         
-        print(f"Matches:{len(output)}, With Article: {len(content)}")
         
         
         if len(content) > 0:
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["snippet"]
 
+            
+@FlowAtom.register("CountOnlineNews")
+class count_onlinenews(DiscoveryAtom):
+    """
+    Gets the count as returned from onlinenews.count(query)
+    """
+    
+    collections:list
+    _defaults:{
+        "collections":[]
+    }
+        
+    def outputs(self, count:int):pass
+    
+    def validate(self):
+        if "[" in self.collections:
+            self.collections = ast.literal_eval(self.collections)
+            
+    
+    def task_body(self):
+        provider = "onlinenews-waybackmachine"
+        
+        
+        SearchInterface = providers.provider_by_name(provider)
+        
+        start_date = datetime.strptime(self.start_date, self.start_date_form)
+        end_date = datetime.strptime(self.end_date, self.end_date_form)
+    
+        domains = []
+        if len(self.collections) > 0:
+            domains = get_onlinenews_collection_domains(self.collections)
+            
+        count = SearchInterface.count(self.query, start_date, end_date, domains = domains)
+        self.results = pd.DataFrame()
+        self.results["count"] = [count]
+            
             
             
 @FlowAtom.register("GetWebpageContent")
