@@ -305,7 +305,6 @@ class PandasStrategy(DataStrategy):
                 
                 #Use the datacollage access point to get each df
                 for location, dataframe in write_dataframe.dataframes.items():
-                    print(dataframe)
                     dataframe.to_csv(location)
                                
                 if cache: #Confirm that we've written a reloadable cache now. 

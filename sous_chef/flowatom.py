@@ -2,6 +2,7 @@ import inspect
 from pydantic import BaseModel
 from prefect import flow, task, get_run_logger
 from uuid import uuid4
+import logging
 from .datastrategy import DataStrategy
 from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP
 """
@@ -18,18 +19,26 @@ class FlowAtom(object):
     _defaults:{"task_name":"default"}
     _new_document:False
     
-    def __init__(self, params, data_config, document=False):
+    def __init__(self, params, data_config, document=False, log_level=None):
         self.return_value = None #Can be set by a task. 
         if not document:
             self.task_inputs = inspect.get_annotations(self.inputs)
             self.task_outputs = inspect.get_annotations(self.outputs)
-        
+            
+            #Install the datastrategy, and validate our params
             self.__setup_strategy(data_config)
             self.__validate_and_apply(params)
         
+            #A place to define unique setup per flow atom
             self.setup_hook(params, data_config)
             
+            #configure logging
             self.logger = get_run_logger()
+            if log_level is not None:
+                self.log_level = log_level
+                self.logger.setLevel(self.log_level)
+            
+            #Give the task a unique name
             self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:8]
             
             

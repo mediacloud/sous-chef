@@ -5,7 +5,7 @@ from .datastrategy import DataStrategy
 from .exceptions import ConfigValidationError
 from .tasks import *
 from typing import List
-
+import logging
 from pprint import pprint 
 
 #This guy manages the overall pacing of the pipeline.
@@ -17,11 +17,18 @@ class Pipeline():
     Then call the class to run the pipeline
     """
     
-    def __init__(self, config, run=True):
-        self.logger = get_run_logger()
+    def __init__(self, config, run=True, log_level = "INFO"):
         
+        #Configure logging preferences
+        self.logger = get_run_logger()
+        self.log_level = getattr(logging, log_level.upper())        
+        self.logger.setLevel(self.log_level)
+
+        
+        #store the config file
         self.config = config
         
+        #Do setup
         self.__get_atom_meta()
         self.__validate_and_setup_data()
         self.__validate_and_setup_steps()
@@ -29,6 +36,7 @@ class Pipeline():
         
         self.return_value = []
         
+        #Run the thing
         if run:
             self.logger.info("Setup complete, beginning sous chef execution")
             self.run_pipeline()
@@ -68,7 +76,7 @@ class Pipeline():
             if flowatom[ID] not in available_atoms:
                 raise ConfigValidationError(f"{flowatom[ID]} is not a registered Flow Atom")
         #Then create all the lower-level validation things
-        self.steps = [available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA]) for flowatom in self.config[STEPS]]
+        self.steps = [available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA], log_level=self.log_level) for flowatom in self.config[STEPS]]
         
     
     #Do a validation of the way the atoms are plugged into one another here. 
@@ -109,8 +117,8 @@ class Pipeline():
 
             
 #This is the main entrypoint for the whole thing            
-def RunPipeline(config):
-    pipeline = Pipeline(config)
+def RunPipeline(config, **kwargs):
+    pipeline = Pipeline(config, **kwargs)
     
     return pipeline.return_value
     
