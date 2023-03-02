@@ -1,6 +1,6 @@
 from prefect import flow, task, get_run_logger
 from .flowatom import FlowAtom
-from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT
+from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT, RETURNS
 from .datastrategy import DataStrategy
 from .exceptions import ConfigValidationError
 from .tasks import *
@@ -34,7 +34,7 @@ class Pipeline():
         self.__validate_and_setup_steps()
         self.__validate_whole_flow()
         
-        self.return_value = []
+        self.return_value = {}
         
         #Run the thing
         if run:
@@ -75,8 +75,24 @@ class Pipeline():
         for flowatom in self.config[STEPS]:
             if flowatom[ID] not in available_atoms:
                 raise ConfigValidationError(f"{flowatom[ID]} is not a registered Flow Atom")
-        #Then create all the lower-level validation things
-        self.steps = [available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA], log_level=self.log_level) for flowatom in self.config[STEPS]]
+        
+        #Then create initialize the steps, triggering lower-level validation
+        all_return_names = []
+        self.steps = []
+        for flowatom in self.config[STEPS]:
+            if RETURNS not in flowatom:
+                returns = {}
+                
+            else:
+                returns = flowatom[RETURNS]
+                all_return_names.extend(returns.items())
+                
+            step = available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA], returns, log_level=self.log_level)
+            self.steps.append(step)
+            
+        if len(set(all_return_names)) != len(all_return_names):
+            raise ConfigValidationERror(f"There's a collision in the return value names")
+        
         
     
     #Do a validation of the way the atoms are plugged into one another here. 
@@ -110,10 +126,10 @@ class Pipeline():
     def run_pipeline(self):
         
         for step in self.steps:
-            rv = step()
-            if rv is not None:
-                self.return_value.append(rv)
-        
+            return_value = step()
+            if return_value:
+                for key, item in return_value.items():
+                    self.return_value[key] = item
 
             
 #This is the main entrypoint for the whole thing            

@@ -22,6 +22,7 @@ CACHE_SKIP = "cache_skip"
 CACHE_SAVE = "cache_save"
 CACHE_LOAD = "cache_load"
 CACHE_HASHES = "cache_hashes"
+RETURNS = "returns"
 
 #Useful for configured input columns
 STRING_TYPE_MAP = {

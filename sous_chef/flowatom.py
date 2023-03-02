@@ -3,8 +3,9 @@ from pydantic import BaseModel
 from prefect import flow, task, get_run_logger
 from uuid import uuid4
 import logging
+from .exceptions import ConfigValidationError
 from .datastrategy import DataStrategy
-from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP
+from .constants import DATA, DATASTRATEGY, NOSTRAT, DEFAULTS, CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_SAVE, STRING_TYPE_MAP, OUTPUTS, RETURNS
 """
 This is the magic class which performs most of the mucking about with python innards
 in order to specify a nice encapsulated and validatable confuguration vocabulary
@@ -19,15 +20,18 @@ class FlowAtom(object):
     _defaults:{"task_name":"default"}
     _new_document:False
     
-    def __init__(self, params, data_config, document=False, log_level=None):
-        self.return_value = None #Can be set by a task. 
+    def __init__(self, params, data_config, returns, document=False, log_level=None):
+        self.return_values = {} #Can be set by a task.
+        
         if not document:
             self.task_inputs = inspect.get_annotations(self.inputs)
             self.task_outputs = inspect.get_annotations(self.outputs)
             
-            #Install the datastrategy, and validate our params
+            #Install the datastrategy, and validate our params, and setup return values
             self.__setup_strategy(data_config)
             self.__validate_and_apply(params)
+            self.__validate_returns(returns)
+            
         
             #A place to define unique setup per flow atom
             self.setup_hook(params, data_config)
@@ -90,9 +94,9 @@ class FlowAtom(object):
         set_params = []
         for key, value in params.items():
             if key not in all_annotations.keys():
-                raise RuntimeError(f"Bad Configuration, {key} is not a valid configuration key. Options are: {all_annotations.keys()}")
+                raise ConfigValidationError(f"{key} is not a valid configuration key. Options are: {all_annotations.keys()}")
             if not isinstance(value, all_annotations[key]):
-                raise RuntimeError(f"Bad Configuration, {key} must be {all_annotations[key]}")
+                raise ConfigValidationError(f"Bad Configuration, {key} must be {all_annotations[key]}")
             
             set_params.append(key)    
             setattr(self, key, value)
@@ -101,7 +105,7 @@ class FlowAtom(object):
         for key, value in all_annotations.items():
             if key not in set_params:
                 if key not in all_defaults:
-                    raise RuntimeError(f"Bad Configuration, missing required parameter {key}:{value}")
+                    raise ConfigValidationError(f"Bad Configuration, missing required parameter {key}:{value}")
                 else:
                     setattr(self, key, all_defaults[key])
 
@@ -123,10 +127,19 @@ class FlowAtom(object):
         if strat_name in available_strategies:
             self.__data_strategy = available_strategies[strat_name](data_config, self.task_inputs, self.task_outputs)
         else:
-            raise RuntimeError(f"Bad Configuration: {strat_name} is not a valid data strategy")
-            
+            raise ConfigValidationError(f"Bad Configuration: {strat_name} is not a valid data strategy")
+        self.data_config = data_config
         self.cache_behavior = data_config[CACHE_STEP]
-            
+    
+    def __validate_returns(self, returns):
+        for val in returns:
+            if val not in self.data_config[OUTPUTS]:
+                raise ConfigValidationError(f"Bad Configuration, cannot return from uninitialized output {val}")
+
+        self.return_keys = returns
+    
+    
+    
     def setup_hook(self, params, data_config):
         #A hook for any task-specific overrides to the setup steps 
         pass
@@ -185,6 +198,10 @@ class FlowAtom(object):
     #Task finish- write self.data to the dataframe
     def post_task(self):
         if self.__data_strategy.outputs is not None:
+            #grab the value to return
+            for task_key, return_name in self.return_keys.items():
+                self.return_values[return_name] = self.results[task_key]
+                
             if self.cache_behavior == CACHE_SAVE:
                 self.write_data(self.results, cache=True)
             else:
@@ -232,7 +249,7 @@ class FlowAtom(object):
             self.task_body()
             self.post_task()
             self.logger.info(f"Completed {self.task_name}")
-            return self.return_value
+            return self.return_values
     
 
 
