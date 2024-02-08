@@ -8,8 +8,7 @@ from typing import List
 import logging
 from pprint import pprint 
 
-#This guy manages the overall pacing of the pipeline.
-#Environment setup, variables, data strategies, etc. 
+
 @flow()
 class Pipeline():
     """Core pipeline class. 

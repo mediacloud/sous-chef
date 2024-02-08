@@ -138,7 +138,7 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
 class query_onlinenews(DiscoveryAtom):
     
     """
-    Query mediacloud's onlinenews collection at waybackmachine
+    Query mediacloud's onlinenews collection
     """
     
     collections:list
@@ -155,10 +155,10 @@ class query_onlinenews(DiscoveryAtom):
     
     
     def task_body(self):
-        provider = "onlinenews-waybackmachine"
+        provider = "onlinenews-mediacloud"
         
         #SearchInterface = WaybackSearchClient("mediacloud")
-        SearchInterface = providers.provider_by_name(provider)
+        SearchInterface = providers.provider_by_name(provider, None, None)
         
         start_date = datetime.strptime(self.start_date, self.start_date_form)
         end_date = datetime.strptime(self.end_date, self.end_date_form)
@@ -171,7 +171,8 @@ class query_onlinenews(DiscoveryAtom):
         for result in SearchInterface.all_items(self.query, start_date, end_date, domains = domains):
             output.extend(result)
 
-        
+        print(len(output))
+        print("task_body")
         content = []
         for article in output:
             article_url = article["article_url"]
@@ -185,6 +186,8 @@ class query_onlinenews(DiscoveryAtom):
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["snippet"]
 
+        print(len(content))
+        print(self.results)
             
 @FlowAtom.register("CountOnlineNews")
 class count_onlinenews(DiscoveryAtom):
