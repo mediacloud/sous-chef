@@ -1,7 +1,7 @@
 matplotlib==3.8.2
 mediacloud==4.1.3
 mc-providers==0.5.4
-wayback-news-client=1.2.1
+wayback-news-search==1.2.*
 numpy==1.26.4
 pandas==2.2.0
 prefect==2.14.20

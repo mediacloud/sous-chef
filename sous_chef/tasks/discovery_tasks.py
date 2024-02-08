@@ -156,9 +156,9 @@ class query_onlinenews(DiscoveryAtom):
     
     def task_body(self):
         provider = "onlinenews-mediacloud"
-        
+        base_url = "http://ramos.angwin:8000/v1/" 
         #SearchInterface = WaybackSearchClient("mediacloud")
-        SearchInterface = providers.provider_by_name(provider, None, None)
+        SearchInterface = providers.provider_by_name(provider, None, base_url)
         
         start_date = datetime.strptime(self.start_date, self.start_date_form)
         end_date = datetime.strptime(self.end_date, self.end_date_form)
@@ -175,7 +175,7 @@ class query_onlinenews(DiscoveryAtom):
         print("task_body")
         content = []
         for article in output:
-            article_url = article["article_url"]
+            article_url = article["url"]
             article_info = requests.get(article["article_url"]).json()
             if "snippet" in article_info:
                 content.append(article_info)
