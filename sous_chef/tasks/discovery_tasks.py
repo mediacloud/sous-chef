@@ -150,7 +150,7 @@ class query_onlinenews(DiscoveryAtom):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
     
-    def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
+    def outputs(self, article_title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
     
     
@@ -177,12 +177,13 @@ class query_onlinenews(DiscoveryAtom):
             article_url = article["url"]
             article_info = SearchInterface.item(article["id"])
             #article_info = requests.get(article["article_url"]).json()
-            if "snippet" in article_info:
+            if "text_content" in article_info:
                 content.append(article_info)
         
         if len(content) > 0:
             self.results = pd.json_normalize(content)
-            self.results["text"] = self.results["snippet"]
+            self.results["text"] = self.results["text_content"]
+
 
         else:
             raise RuntimeError("Query produced no content")
