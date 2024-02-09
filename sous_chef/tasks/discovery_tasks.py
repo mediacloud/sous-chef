@@ -171,8 +171,7 @@ class query_onlinenews(DiscoveryAtom):
         for result in SearchInterface.all_items(self.query, start_date, end_date, domains = domains):
             output.extend(result)
 
-        print(len(output))
-        print("task_body")
+
         content = []
         for article in output:
             article_url = article["url"]
@@ -181,14 +180,13 @@ class query_onlinenews(DiscoveryAtom):
             if "snippet" in article_info:
                 content.append(article_info)
         
-        
-        
         if len(content) > 0:
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["snippet"]
 
-        print(len(content))
-        print(self.results)
+        else:
+            raise RuntimeError("Query produced no content")
+
             
 @FlowAtom.register("CountOnlineNews")
 class count_onlinenews(DiscoveryAtom):
