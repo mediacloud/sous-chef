@@ -146,7 +146,8 @@ class PandasStrategy(DataStrategy):
         runname = config[RUNNAME]
         self.runname = runname
         
-        
+        if not os.path.exists(data_location_root):
+            os.mkdir(data_location_root)
         
         #iterate so we don't overwrite old runs unintentionally
         run_number = 0
