@@ -39,7 +39,7 @@ if __name__ == "__main__":
         parameters={
             "config_location":"test_yaml/QueryOnlineNewsTest.yaml"
         },
-        job_variables={"env": {"EXTRA_PIP_PACKAGES": "boto3"} }
+        job_variables={"env": {"EXTRA_PIP_PACKAGES": reqs} }
 
     )
 
