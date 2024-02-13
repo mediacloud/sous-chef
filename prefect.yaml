@@ -11,7 +11,7 @@ build:
 - prefect_docker.deployments.steps.build_docker_image:
     id: build_image
     requires: prefect-docker>=0.3.1
-    image_name: sous-chef-test
+    image_name: graceworthy/sous_chef_test
     tag: b1
     dockerfile: auto
 
