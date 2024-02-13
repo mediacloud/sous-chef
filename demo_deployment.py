@@ -1,6 +1,7 @@
 from prefect import flow
 from prefect.runner.storage import GitRepository
 from prefect.blocks.system import Secret
+from sous_chef import RunPipeline, recipe_loader
 
 flow()
 def RunRecipe(config_location):
@@ -14,19 +15,16 @@ def RunRecipe(config_location):
     print(f"Loaded configuration file at {config_location}, Running pipeline:")
     RunPipeline(json_conf)
 
+
 if __name__ == "__main__":
     flow.from_source(
         source=GitRepository(
-            url="https://github.com/mediacloud/sous-chef",
+            url="https://github.com/mediacloud/sous-chef/tree/refresh",
             credentials={"access_token": Secret.load("sous-chef-pat")}
         ),
         entrypoint="demo_deployment:RunRecipe",
     ).serve()
 
 
-
-    #deploy(
-    #    name="sous-chef-test",
-    #    work_pool_name="Guerin",
-    #    cron="0 1 * * *",
-    #)
+RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
+    
