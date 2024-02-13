@@ -135,7 +135,7 @@ class Pipeline():
 def RunPipeline(config, **kwargs):
     pipeline = Pipeline(config, **kwargs)
     
-    return pipeline.return_value
+    #return pipeline.return_value
     
 
 @flow()

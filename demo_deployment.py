@@ -1,9 +1,9 @@
 from prefect import flow
 from prefect.runner.storage import GitRepository
 from prefect.blocks.system import Secret
-from sous_chef import RunPipeline, recipe_loader
+from sous_chef import Pipeline, recipe_loader
 
-flow()
+@flow()
 def RunRecipe(config_location):
     with open(config_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
@@ -13,20 +13,22 @@ def RunRecipe(config_location):
         json_conf["name"] = name
     
     print(f"Loaded configuration file at {config_location}, Running pipeline:")
-    RunPipeline(json_conf)
+    pipeline = Pipeline(config, **kwargs)
 
 
 
 if __name__ == "__main__":
-    flow.from_source(
+    f = flow.from_source(
         source=GitRepository(
             url="https://github.com/mediacloud/sous-chef",
             credentials={"access_token": Secret.load("sous-chef-pat")}
         ),
-        entrypoint="demo_deployment:RunRecipe",
-    ).serve()
+        entrypoint="demo_deployment.py:RunRecipe",
+    )
+
+    print(f)
 
 
-RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
+#RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
     
     
