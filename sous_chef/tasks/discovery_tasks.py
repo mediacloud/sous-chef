@@ -56,59 +56,6 @@ class DiscoveryAtom(FlowAtom):
         self.end_date_form = validate_datestr_form(self.end_date, "end_date")
         
         
-@FlowAtom.register("SampleTwitter")
-class sample_twitter(DiscoveryAtom):
-    """ 
-    Get a small sample of tweets matching a query using the mc-providers package
-    """
-
-    max_results:int
-    _defaults:{
-        "max_results":100
-    }
-        
-    def outputs(self, media_name:str, media_url:str, media_id:int, title:str, 
-                publish_date:object, url:str, last_updated:object, author:str, language:str, 
-                retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
-                content:str): pass
-        
-    def task_body(self):
-        SearchInterface = providers.provider_by_name("twitter-twitter")
-        start_date = datetime.strptime(self.start_date, self.start_date_form)
-        end_date = datetime.strptime(self.end_date, self.end_date_form)
-        
-        results = SearchInterface.sample(self.query, start_date, end_date, limit=self.max_results)
-        
-        self.results = pd.json_normalize(results)
-        
-        self.results["media_id"] = self.results["id"]
-        
-        
-@FlowAtom.register("QueryTwitter")
-class query_twitter(DiscoveryAtom):
-    """ 
-    Get all tweets matching a query using the mc-providers package. 
-    """
-
-    def outputs(self, media_name:str, media_url:str, media_id:int, title:str, 
-                publish_date:object, url:str, last_updated:object, author:str, language:str, 
-                retweet_count:int, reply_count:int, like_count:int, quote_count:int, 
-                content:str): pass
-
-    def task_body(self):
-        SearchInterface = providers.provider_by_name("twitter-twitter")
-        start_date = datetime.strptime(self.start_date, self.start_date_form)
-        end_date = datetime.strptime(self.end_date, self.end_date_form)
-        
-        output = []
-        for result in SearchInterface.all_items(self.query, start_date, end_date):
-            output.extend(result)
-            
-        self.results = pd.json_normalize(output)
-        self.results["media_id"] = self.results["id"]
-        
-
-        
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
@@ -138,7 +85,7 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
 class query_onlinenews(DiscoveryAtom):
     
     """
-    Query mediacloud's onlinenews collection at waybackmachine
+    Query mediacloud's onlinenews collection
     """
     
     collections:list
@@ -150,15 +97,15 @@ class query_onlinenews(DiscoveryAtom):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
     
-    def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
+    def outputs(self, article_title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
     
     
     def task_body(self):
-        provider = "onlinenews-waybackmachine"
+        provider = "onlinenews-mediacloud"
+        base_url = "http://ramos.angwin:8000/v1/" 
         
-        #SearchInterface = WaybackSearchClient("mediacloud")
-        SearchInterface = providers.provider_by_name(provider)
+        SearchInterface = providers.provider_by_name(provider, None, base_url)
         
         start_date = datetime.strptime(self.start_date, self.start_date_form)
         end_date = datetime.strptime(self.end_date, self.end_date_form)
@@ -171,19 +118,20 @@ class query_onlinenews(DiscoveryAtom):
         for result in SearchInterface.all_items(self.query, start_date, end_date, domains = domains):
             output.extend(result)
 
-        
+
         content = []
         for article in output:
-            article_url = article["article_url"]
-            article_info = requests.get(article["article_url"]).json()
-            if "snippet" in article_info:
+            article_url = article["url"]
+            article_info = SearchInterface.item(article["id"])
+            
+            if "text_content" in article_info:
                 content.append(article_info)
-        
-        
         
         if len(content) > 0:
             self.results = pd.json_normalize(content)
-            self.results["text"] = self.results["snippet"]
+            self.results["text"] = self.results["text_content"]
+        else:
+            raise RuntimeError("Query produced no content")
 
             
 @FlowAtom.register("CountOnlineNews")
@@ -205,8 +153,7 @@ class count_onlinenews(DiscoveryAtom):
             
     
     def task_body(self):
-        provider = "onlinenews-waybackmachine"
-        
+        provider = "onlinenews-mediacloud"
         
         SearchInterface = providers.provider_by_name(provider)
         

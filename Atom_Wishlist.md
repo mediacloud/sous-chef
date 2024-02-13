@@ -16,6 +16,7 @@
 
 - [] Entity Extraction
 - [] Byline Detection
+- [] N-Gram
 - [] Quote extraction, attribution
 - [] link extraction, network generation
 - [] NYT based topic/theme detection
