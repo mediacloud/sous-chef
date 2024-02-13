@@ -1,10 +1,13 @@
 from prefect import flow
 from prefect.runner.storage import GitRepository
 from prefect.blocks.system import Secret
+from prefect.deployments.steps import pip_install_requirements
 from sous_chef import Pipeline, recipe_loader
 
 @flow()
 def RunRecipe(config_location):
+    pip_install_requirements()
+
     with open(config_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
         
@@ -26,13 +29,18 @@ if __name__ == "__main__":
         ),
         entrypoint="demo_deployment.py:RunRecipe",
         
-    ).serve(
-        name="test_prefect_deployment"
+    ).deploy(
+        name="sous-chef-test",
+        work_pool_name="Guerin",
+        cron="0 1 * * *",
+        parameters={
+            "config_location":"test_yaml/QueryOnlineNewsTest.yaml"
+        }
     )
 
     
 
 
-#RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
+
     
     
