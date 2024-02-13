@@ -16,10 +16,11 @@ def RunRecipe(config_location):
     RunPipeline(json_conf)
 
 
+
 if __name__ == "__main__":
     flow.from_source(
         source=GitRepository(
-            url="https://github.com/mediacloud/sous-chef/tree/refresh",
+            url="https://github.com/mediacloud/sous-chef",
             credentials={"access_token": Secret.load("sous-chef-pat")}
         ),
         entrypoint="demo_deployment:RunRecipe",
@@ -27,4 +28,5 @@ if __name__ == "__main__":
 
 
 RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
+    
     
