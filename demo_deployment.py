@@ -13,7 +13,7 @@ def RunRecipe(config_location):
         json_conf["name"] = name
     
     print(f"Loaded configuration file at {config_location}, Running pipeline:")
-    pipeline = Pipeline(json_conf, **kwargs)
+    pipeline = Pipeline(json_conf)
     #pipeline.run()
 
 
