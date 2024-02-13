@@ -13,7 +13,8 @@ def RunRecipe(config_location):
         json_conf["name"] = name
     
     print(f"Loaded configuration file at {config_location}, Running pipeline:")
-    pipeline = Pipeline(config, **kwargs)
+    pipeline = Pipeline(json_conf, **kwargs)
+    #pipeline.run()
 
 
 
@@ -24,9 +25,12 @@ if __name__ == "__main__":
             credentials={"access_token": Secret.load("sous-chef-pat")}
         ),
         entrypoint="demo_deployment.py:RunRecipe",
+        
+    ).serve(
+        name="test_prefect_deployment"
     )
 
-    print(f)
+    
 
 
 #RunRecipe("test_yaml/QueryOnlineNewsTest.yaml")
