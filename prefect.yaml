@@ -27,10 +27,15 @@ push:
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
 - prefect.deployments.steps.git_clone:
-    id: clone-step
     repository: https://github.com/mediacloud/sous-chef.git
     branch: main
     credentials: "{{ prefect.blocks.github-credentials.sous-chef-read-only }}"
+
+- prefect.deployments.steps.get_clone:
+    repository: https://github.com/mediacloud/SousChef-Recipes
+    branch: main
+    credentials: "{{ prefect.blocks.github-credentials.sous-chef-read-only }}"
+
 
 
 # the deployments section allows you to provide configuration for deploying flows
