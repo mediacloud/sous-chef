@@ -1,8 +1,9 @@
 from pprint import pprint
 import argparse
+from prefect import flow
 from sous_chef import RunPipeline, recipe_loader
 
-
+@flow()
 def RunFilesystemRecipe(config_location):
     with open(config_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
