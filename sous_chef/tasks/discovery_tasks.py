@@ -1,5 +1,5 @@
 from ..flowatom import FlowAtom
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import requests
 from .utils import lazy_import
@@ -43,8 +43,18 @@ def clean_text(text):
 #All the discovery atoms impliment the same validation, so we should be able to just subclass this. 
 class DiscoveryAtom(FlowAtom):
     query:str
+    date_mode:str
     start_date:str
     end_date:str
+    window_size:int
+
+
+    _defaults:{
+        "date_mode":"direct"
+        "start_date":"",
+        "end_date":"",
+        "window_size":""
+    }
 
     
     @classmethod
@@ -52,18 +62,23 @@ class DiscoveryAtom(FlowAtom):
         return True
     
     def validate(self):
-        self.start_date_form = validate_datestr_form(self.start_date, "start_date")
-        self.end_date_form = validate_datestr_form(self.end_date, "end_date")
-        
-        
+        if self.date_mode=="direct":
+            self.start_date_form = validate_datestr_form(self.start_date, "start_date")
+            self.end_date_form = validate_datestr_form(self.end_date, "end_date")
+                
+            self.start_date = datetime.strptime(self.start_date, self.start_date_form)
+            self.end_date = datetime.strptime(self.end_date, self.end_date_form)
+
+        else if self.date_mode == "daily":
+            self.end_date = datetime.today()
+            self.start_date = datetime.today() - timedelta(days=self.window)
+
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
     ApiKey = os.getenv("MC_API_KEY")
-    
     if ApiKey is None:
         raise RuntimeError("No Mediacloud API Key (MC_API_KEY) is provided")
-        
     
    
     directory = mediacloud.api.DirectoryApi(ApiKey)
@@ -107,15 +122,15 @@ class query_onlinenews(DiscoveryAtom):
         
         SearchInterface = providers.provider_by_name(provider, None, base_url)
         
-        start_date = datetime.strptime(self.start_date, self.start_date_form)
-        end_date = datetime.strptime(self.end_date, self.end_date_form)
+        #start_date = datetime.strptime(self.start_date, self.start_date_form)
+        #end_date = datetime.strptime(self.end_date, self.end_date_form)
         
         domains = []
         if len(self.collections) > 0:
             domains = get_onlinenews_collection_domains(self.collections)
 
         output = []
-        for result in SearchInterface.all_items(self.query, start_date, end_date, domains = domains):
+        for result in SearchInterface.all_items(self.query, self.start_date, self.end_date, domains = domains):
             output.extend(result)
 
 

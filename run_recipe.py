@@ -3,6 +3,8 @@ import argparse
 from prefect import flow
 from sous_chef import RunPipeline, recipe_loader
 
+#Our main entrypoint. 
+
 @flow()
 def RunFilesystemRecipe(config_location):
     with open(config_location, "r") as config_yaml:
