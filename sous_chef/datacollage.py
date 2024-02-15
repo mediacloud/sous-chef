@@ -29,7 +29,10 @@ class DataCollage(object):
             
     def __getitem__(self, col):
         #Just go through the column index
-        matching_dname = self.col_dname_map[col]
+        if isinstance(col, list):
+            matching_dname = self.col_dname_map[col[0]]
+        else:
+            matching_dname = self.col_dname_map[col]
         return self.dataframes[matching_dname][col]
     
     def __setitem__(self, col, new_value):

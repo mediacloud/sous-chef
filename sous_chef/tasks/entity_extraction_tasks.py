@@ -1,5 +1,6 @@
 import requests
 from typing import List, Dict
+from collections import Counter
 from ..flowatom import FlowAtom
 import re
 from .utils import lazy_import
@@ -52,7 +53,7 @@ class TopNEntities(FlowAtom):
     }
     
     def inputs(self, entities:List[Dict]):pass
-    def outputs(self, top_entities:list):pass
+    def outputs(self, top_entities:str, entity_counts:int):pass
     
     @classmethod
     def creates_new_document(self):
@@ -60,14 +61,15 @@ class TopNEntities(FlowAtom):
     
     def task_body(self):
         
-        counter = {}
+        AllEntities = Counter()
         
         for article_entities in self.data.entities:
             
             if isinstance(article_entities, dict):
-                #This covers the case where we have just a single entity
+                #This covers the case where we have just a single entity in an article
                 article_entities = [article_entities]
             
+
             for ent in article_entities:              
                 if self.filter_type != "" and ent["type"] != self.filter_type:
                     pass
@@ -76,21 +78,16 @@ class TopNEntities(FlowAtom):
                     pass
                 
                 #ent_slug = f"{ent['text']}-{ent['type']}"
-                ent_slug = ent['text']
-                if ent_slug is not None:
-                
-                    if ent_slug in counter:
-                        counter[ent_slug] += 1
-                    else: 
-                        counter[ent_slug] = 1
+                if ent['text'] is not None:
+                    AllEntities.update(Counter({ent['text']:1}))
+               
         
 
-        top_entities = sorted(counter)
-        if self.top_n > 0:
-            top_entities = top_entities[:self.top_n]
+        top_entities, entity_counts = zip(*AllEntities.most_common(self.top_n))
         
-        
+    
         self.results.top_entities = top_entities
+        self.results.entity_counts = entity_counts
 
 @FlowAtom.register("SimpleTokenizeTask")
 class SimpleTokens(FlowAtom):
