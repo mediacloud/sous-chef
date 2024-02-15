@@ -58,7 +58,6 @@ class SpacyNER(FlowAtom):
         nlp = spacy_download.load_spacy(self.model)
         
         entities = []
-        
 
         for row in self.data.itertuples():
             text = row.text
@@ -70,8 +69,6 @@ class SpacyNER(FlowAtom):
             entities.append(doc_ents)
 
         self.results.entities = entities
-
-
   
 
 
@@ -79,15 +76,17 @@ class SpacyNER(FlowAtom):
 @FlowAtom.register("TopNEntities")
 class TopNEntities(FlowAtom):
     """
-    With an input of many list of dicts, output a list of the top N most commonly occuring entities.
+    With an input of many list of dicts, output a list of the top N most commonly occuring entities across all documents
     Top_n limits the number of entities returned, and filter_type limits results to a specific entity-type (ie PER, OBJ, etc)
     """
     
     top_n:int
-    filter_type:str
+    filter_type:str,
+    sort_by:str
     _defaults:{
         "top_n":-1,
-        "filter_type":""
+        "filter_type":"",
+        "sort_by":"total"
     }
     
     def inputs(self, entities:List[Dict]):pass
@@ -99,7 +98,10 @@ class TopNEntities(FlowAtom):
     
     def task_body(self):
         
-        AllEntities = Counter()
+        #Total count of entities found
+        EntitiesTotalCount = Counter()
+        #Only count one appearance of an entity per article, so we can get percentages
+        EntitiesAppearedCount = Counter()
         
         for article_entities in self.data.entities:
             
@@ -117,15 +119,23 @@ class TopNEntities(FlowAtom):
                 
                 #ent_slug = f"{ent['text']}-{ent['type']}"
                 if ent['text'] is not None:
-                    AllEntities.update(Counter({ent['text']:1}))
-               
-        
+                    EntitiesCount.update(Counter({ent['text']:1}))
+            
+            for ent_text in set([e["text"] for e in article_entities]):
+                EntitiesAppearedCount.update(Counter({ent_text:1}))
 
-        top_entities, entity_counts = zip(*AllEntities.most_common(self.top_n))
+        number_of_articles = len(self.data.entities)
+
+        if(self.sort_by == "total"):
+            top_entities_by_count, entity_counts = zip(*EntitiesCount.most_common(self.top_n))
+            self.results.top_entities = top_entities
+            self.results.entity_counts = entity_counts
         
-    
-        self.results.top_entities = top_entities
-        self.results.entity_counts = entity_counts
+        elif(self.sort_by == "percentage"):
+            top_entities, entity_counts = zip(*EntitiesAppearedCount.most_common(self.top_n))
+            self.results.top_entities = top_entities
+            self.results.entity_counts = entity_counts
+            
 
 @FlowAtom.register("SimpleTokenizeTask")
 class SimpleTokens(FlowAtom):
