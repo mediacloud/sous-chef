@@ -18,6 +18,6 @@ class ExportToS3(FlowAtom):
     def task_body(self):
         aws_credentials = AwsCredentials.load(self.credentials_block)
         s3_client = aws_credentials.get_boto3_session().client("s3")
-
+        print(os.listdir("."))
         with open(self.file_name, "rb") as f:
             s3_client.upload_fileobj(f, self.bucket_name, self.object_name)
