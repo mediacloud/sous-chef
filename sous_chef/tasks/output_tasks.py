@@ -15,7 +15,7 @@ class OutputAtom(FlowAtom):
     def pre_task(self):
         self.data = self.get_columns(self.columns)
 
-    #I guess this is a quick hack...
+    
     def post_task(self):
         self.return_value = self.data 
 
@@ -25,15 +25,25 @@ class OutputCSV(OutputAtom):
     Outputs a CSV which includes the given columns
     """
     output_location:str
+    overwrite:bool
+    _defaults:{
+        "overwrite":True
+    }
     
+
     def task_body(self):
         
-        filetype = self.output_location.split(".")[-1]
-        i = 0
-        while os.path.exists(f"{self.output_location[:-4]}_{i}.{filetype}"):
-            i += 1
+        if self.overwrite:
+            self.data.to_csv(self.output_location)
+        else:
+            filetype = self.output_location.split(".")[-1]
+            i = 0
+            while os.path.exists(f"{self.output_location[:-4]}_{i}.{filetype}"):
+                i += 1
+            
+            final_filename = f"{self.output_location[:-4]}_{i}.{filetype}"
+            self.data.to_csv(self.output_location)
         
-        self.data.to_csv(f"{self.output_location[:-4]}_{i}.{filetype}")
 
 
 @FlowAtom.register("OutputFieldHistogram")
