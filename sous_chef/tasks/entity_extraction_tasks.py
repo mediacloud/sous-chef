@@ -53,7 +53,7 @@ class TopNEntities(FlowAtom):
     }
     
     def inputs(self, entities:List[Dict]):pass
-    def outputs(self, top_entities:list, entity_counts:):pass
+    def outputs(self, top_entities:str, entity_counts:int):pass
     
     @classmethod
     def creates_new_document(self):
@@ -83,10 +83,11 @@ class TopNEntities(FlowAtom):
                
         
 
-        top_entities = AllEntities.most_common(top_n)
+        top_entities, entity_counts = zip(*AllEntities.most_common(self.top_n))
         
     
         self.results.top_entities = top_entities
+        self.results.entity_counts = entity_counts
 
 @FlowAtom.register("SimpleTokenizeTask")
 class SimpleTokens(FlowAtom):
