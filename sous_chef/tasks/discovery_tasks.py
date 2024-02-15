@@ -50,7 +50,7 @@ class DiscoveryAtom(FlowAtom):
 
 
     _defaults:{
-        "date_mode":"direct"
+        "date_mode":"direct",
         "start_date":"",
         "end_date":"",
         "window_size":""
@@ -69,10 +69,10 @@ class DiscoveryAtom(FlowAtom):
             self.start_date = datetime.strptime(self.start_date, self.start_date_form)
             self.end_date = datetime.strptime(self.end_date, self.end_date_form)
 
-        else if self.date_mode == "daily":
+        elif self.date_mode == "daily":
             self.end_date = datetime.today()
-            self.start_date = datetime.today() - timedelta(days=self.window)
-
+            self.start_date = datetime.today() - timedelta(days=self.window_size)
+        
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
@@ -122,8 +122,7 @@ class query_onlinenews(DiscoveryAtom):
         
         SearchInterface = providers.provider_by_name(provider, None, base_url)
         
-        #start_date = datetime.strptime(self.start_date, self.start_date_form)
-        #end_date = datetime.strptime(self.end_date, self.end_date_form)
+        self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
         domains = []
         if len(self.collections) > 0:
