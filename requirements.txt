@@ -5,9 +5,12 @@ wayback-news-search==1.2.*
 numpy==1.26.4
 pandas==2.2.0
 prefect==2.14.20
+prefect_aws
 pydantic==2.6.1
 pytest==8.0.0
 PyYAML==6.0.1
 Requests==2.31.0
 transformers==4.37.2
 yake==0.4.8
+boto3
+
