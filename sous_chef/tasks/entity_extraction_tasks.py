@@ -6,6 +6,8 @@ import re
 from .utils import lazy_import
 
 yake = lazy_import("yake")
+spacy = lazy_import("spacy")
+spacy_download = lazy_import("spacy_download")
 
 @FlowAtom.register("APIEntityExtraction")
 class ApiEntityExtraction(FlowAtom):
@@ -37,7 +39,43 @@ class ApiEntityExtraction(FlowAtom):
             
         
         self.results.entities = entities
+       
+
+@FlowAtom.register("SpacyNER")
+class SpacyNER(FlowAtom):
+    """
+    Use local Spacy instance to perform NER on text. 
+    """
+    model:str
+    _defaults:{
+        "model":"en_core_web_sm"
+    }
+
+    def inputs(self, text:str):pass
+    def outputs(self, entities:List[Dict]):pass
+
+    def task_body(self):
+        nlp = spacy_download.load_spacy(self.model)
         
+        entities = []
+        
+
+        for row in self.data.itertuples():
+            text = row.text
+            
+            document = nlp(text)
+
+            doc_ents = [{"text": ent.text, "type":ent.label_} for ent in document.ents]
+
+            entities.append(doc_ents)
+
+        self.results.entities = entities
+
+
+  
+
+
+
 @FlowAtom.register("TopNEntities")
 class TopNEntities(FlowAtom):
     """

@@ -8,15 +8,16 @@
 ## Filtering
 
 - [] Deduplication. 
-- [] sentence level de-duplication.
+- [] Sentence level de-duplication.
 - [] Classifier threshold
-- [] Metadata subsets for final return
+- [X] Metadata subsets for final return
 
 ## Data Augmentation
 
-- [] Entity Extraction
+- [X] Entity Extraction (via API)
+- [] Scrapy NER
+- [] N-Grams
 - [] Byline Detection
-- [] N-Gram
 - [] Quote extraction, attribution
 - [] link extraction, network generation
 - [] NYT based topic/theme detection
@@ -27,6 +28,8 @@
 - [] Country-level tagging- what region is this about? 
 
 ## Outputs
+- [X] CSV
 - [] Network Maps
 - [] Kibana Instance Export
 - [] Custom Tooling...?
+- [X] S3 buckets. 
