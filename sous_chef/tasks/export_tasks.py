@@ -1,5 +1,4 @@
 import os
-import boto3
 from datetime import date
 import re
 from ..flowatom import FlowAtom
