@@ -1,6 +1,6 @@
 import os
 import boto3
-from datetime import datetime
+from datetime import date
 import re
 from ..flowatom import FlowAtom
 from .utils import lazy_import
@@ -20,15 +20,15 @@ class ExportToS3(FlowAtom):
     object_name:str
     object_date_slug:bool
     _defaults:{
-        date_slug:False
+        "date_slug":False
     }
 
     def task_body(self):
         aws_credentials = AwsCredentials.load(self.credentials_block)
         s3_client = aws_credentials.get_boto3_session().client("s3")
-        if object_date_slug:
-            datestring = datetime.date.today().strftime("%Y-%M-%d")
-            object_name = object_string.replace("DATE", datestring)
+        if self.object_date_slug:
+            datestring = date.today().strftime("%Y-%m-%d")
+            self.object_name = self.object_name.replace("DATE", datestring)
 
         with open(self.file_name, "rb") as f:
             s3_client.upload_fileobj(f, self.bucket_name, self.object_name)
