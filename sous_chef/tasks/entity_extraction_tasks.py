@@ -78,6 +78,7 @@ class TopNEntities(FlowAtom):
     """
     With an input of many list of dicts, output a list of the top N most commonly occuring entities across all documents
     Top_n limits the number of entities returned, and filter_type limits results to a specific entity-type (ie PER, OBJ, etc)
+    Also calculated the percentage of articles each entity appears in of the total- optionally sort by that instead of total counts.
     """
     
     top_n:int
@@ -90,7 +91,7 @@ class TopNEntities(FlowAtom):
     }
     
     def inputs(self, entities:List[Dict]):pass
-    def outputs(self, top_entities:str, entity_counts:int):pass
+    def outputs(self, top_entities:str, entity_counts:int, entity_apperance_percent:float):pass
     
     @classmethod
     def creates_new_document(self):
@@ -119,7 +120,7 @@ class TopNEntities(FlowAtom):
                 
                 #ent_slug = f"{ent['text']}-{ent['type']}"
                 if ent['text'] is not None:
-                    EntitiesCount.update(Counter({ent['text']:1}))
+                    EntitiesTotalCount.update(Counter({ent['text']:1}))
             
             for ent_text in set([e["text"] for e in article_entities]):
                 EntitiesAppearedCount.update(Counter({ent_text:1}))
@@ -127,15 +128,19 @@ class TopNEntities(FlowAtom):
         number_of_articles = len(self.data.entities)
 
         if(self.sort_by == "total"):
-            top_entities_by_count, entity_counts = zip(*EntitiesCount.most_common(self.top_n))
-            self.results.top_entities = top_entities
-            self.results.entity_counts = entity_counts
+            sorted_entities, entity_counts = zip(*EntitiesTotalCount.most_common(self.top_n))
+            entity_apperances = [EntitiesAppearedCount[e] for e in sorted_entities]
         
         elif(self.sort_by == "percentage"):
-            top_entities, entity_counts = zip(*EntitiesAppearedCount.most_common(self.top_n))
-            self.results.top_entities = top_entities
-            self.results.entity_counts = entity_counts
-            
+            sorted_entities, entity_apperances = zip(*EntitiesAppearedCount.most_common(self.top_n))
+            entity_counts = [EntitiesTotalCount[e] for e in sorted_entities]
+           
+        entity_apperances = [e/number_of_articles for e in entity_apperances]
+
+        self.results.top_entities = top_entities
+        self.results.entity_counts = entity_counts
+        self.results.entity_apperance_percent = entity_apperances
+
 
 @FlowAtom.register("SimpleTokenizeTask")
 class SimpleTokens(FlowAtom):
