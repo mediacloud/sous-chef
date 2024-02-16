@@ -33,9 +33,9 @@ def RunFilesystemRecipe(recipe_location):
 @flow(flow_run_name=generate_run_name)
 def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
     with open(mixin_location, "r") as infile:
-        mixins = json.loads(infile.read())
+        mixins = recipe_loader.load_mixins(infile)
     
-    for template_params in mixins["mixins"]:
+    for template_params in mixins:
 
         with open(recipe_location, "r") as config_yaml:
             json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
@@ -51,8 +51,8 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("recipe_location", help="The YAML configuration file to load and run")
-    parser.add_argument("mixin_location", help="The JSON file which specifies parameter mixins")
+    parser.add_argument("recipe_location", help="The YAML configuration file which specifies a sous-chef recipe")
+    parser.add_argument("mixin_location", help="The YAML file which specifies parameter mixins")
     args = parser.parse_args()
     if args.mixin_location is None:
         RunFilesystemRecipe(args.recipe_location)
