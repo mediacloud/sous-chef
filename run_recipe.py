@@ -17,7 +17,7 @@ def generate_run_name():
     return f"run-{location}"
 
 
-@flow(flow_run_name="run-{recipe_location}")
+@flow(flow_run_name=generate_run_name)
 def RunFilesystemRecipe(recipe_location):
     with open(recipe_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
@@ -32,7 +32,6 @@ def RunFilesystemRecipe(recipe_location):
 
 @flow(flow_run_name=generate_run_name)
 def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
-    
     with open(mixin_location, "r") as infile:
         mixins = json.loads(infile.read())
     
@@ -42,11 +41,13 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
             json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
 
         if "name" not in json_conf:
-            name = config_location.split(".")[0].split("/")[-1]+template_params["NAME"]
+            name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
             json_conf["name"] = name
     
+        
         print(f"Loaded recipe at {recipe_location} with mixin {template_params["NAME"]}, Running pipeline:")
         RunPipeline(json_conf) 
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
