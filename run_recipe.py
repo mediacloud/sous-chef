@@ -51,8 +51,8 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("recipe_location", help="The YAML configuration file to load and run")
-    parser.add_argument("mixin_location", help="The JSON file which specifies parameter mixins")
+    parser.add_argument("-r", "--recipe_location", help="The YAML configuration file to load and run")
+    parser.add_argument("-m", "--mixin_location", help="The JSON file which specifies parameter mixins")
     args = parser.parse_args()
     if args.mixin_location is None:
         RunFilesystemRecipe(args.recipe_location)
