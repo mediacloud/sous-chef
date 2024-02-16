@@ -35,15 +35,16 @@ def yaml_to_conf(yaml_stream):
 
 "templated_yaml -> t_yaml"
 def t_yaml_to_conf(yaml_stream, **kwargs):
-    ###parse a templated yaml file into a 
-    vars_ = set(re.findall("\$[\w\d]*", yaml_stream))
+    ###parse a templated yaml file into a recipe
+    conf_str = yaml_stream.read()
+    vars_ = set(re.findall("\$[\w\d]*", conf_str))
     
-    pre_subbed = yaml.safe_load(yaml_stream)
-   
+    pre_subbed = yaml.safe_load(conf_str)
+    print(pre_subbed)
     if VARS in pre_subbed:
         var_reference = pre_subbed[VARS]
     
-    subbed_str = copy.copy(yaml_stream)
+    subbed_str = copy.copy(conf_str)
     for v in vars_:
         var_name = v[1:]
         if var_name not in kwargs:
