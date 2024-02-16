@@ -9,11 +9,7 @@ import json
 
 def generate_run_name():
     params = flow_run.parameters
-    print(params)
     location = params["recipe_location"].replace("/", "-").replace("..", "").split(".")[0]
-    
-    #location = location.replace("/", "-").replace("..", "").split(".")[0]
-    print(location)
     return f"run-{location}"
 
 
@@ -43,8 +39,7 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
         if "name" not in json_conf:
             name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
             json_conf["name"] = name
-    
-        
+
         print(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         RunPipeline(json_conf) 
 

@@ -38,12 +38,9 @@ def yaml_to_conf(yaml_stream):
 def load_mixins(yaml_stream):
     #Let's us name mixin sets directly in a yaml file
     mixins = yaml.safe_load(yaml_stream)
-    print(mixins)
     cleaned_up_mixins = []
     for template in mixins:
         name = list(template)[0]
-        print(name)
-        print(template)
         template[name]["NAME"] = name
         cleaned_up_mixins.append(template[name])
 
@@ -67,7 +64,8 @@ def t_yaml_to_conf(yaml_stream, **kwargs):
         if var_name not in kwargs:
             raise RuntimeError(f"Missing required configuration variable {var_name}")
         
-        value = {kwargs[v[1:]]}
+        value = str(kwargs[v[1:]])
+        
         reg = f"\\{v}"
         subbed_str = re.sub(reg, value, subbed_str)
     
