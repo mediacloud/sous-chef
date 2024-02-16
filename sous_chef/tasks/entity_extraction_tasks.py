@@ -110,6 +110,8 @@ class TopNEntities(FlowAtom):
                 #This covers the case where we have just a single entity in an article
                 article_entities = [article_entities]
             
+            if self.filter_type != "":
+                article_entities = [e for e in article_entities if e["type"] != self.filter_type]
 
             for ent in article_entities:              
                 if self.filter_type != "" and ent["type"] != self.filter_type:
