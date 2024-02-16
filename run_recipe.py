@@ -45,7 +45,7 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
             json_conf["name"] = name
     
         
-        print(f"Loaded recipe at {recipe_location} with mixin {template_params["NAME"]}, Running pipeline:")
+        print(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         RunPipeline(json_conf) 
 
 
