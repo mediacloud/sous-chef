@@ -82,7 +82,7 @@ class TopNEntities(FlowAtom):
     """
     
     top_n:int
-    filter_type:str,
+    filter_type:str
     sort_by:str
     _defaults:{
         "top_n":-1,
@@ -91,7 +91,7 @@ class TopNEntities(FlowAtom):
     }
     
     def inputs(self, entities:List[Dict]):pass
-    def outputs(self, top_entities:str, entity_counts:int, entity_apperance_percent:float):pass
+    def outputs(self, top_entities:str, entity_counts:int, entity_appearance_percent:float):pass
     
     @classmethod
     def creates_new_document(self):
@@ -137,9 +137,9 @@ class TopNEntities(FlowAtom):
            
         entity_apperances = [e/number_of_articles for e in entity_apperances]
 
-        self.results.top_entities = top_entities
+        self.results.top_entities = sorted_entities
         self.results.entity_counts = entity_counts
-        self.results.entity_apperance_percent = entity_apperances
+        self.results.entity_appearance_percent = entity_apperances
 
 
 @FlowAtom.register("SimpleTokenizeTask")
