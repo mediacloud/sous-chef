@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
+from prefect.blocks.system import Secret
 import mediacloud.api
 import re
 import os
@@ -76,12 +77,9 @@ class DiscoveryAtom(FlowAtom):
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
-    ApiKey = os.getenv("MC_API_KEY")
-    if ApiKey is None:
-        raise RuntimeError("No Mediacloud API Key (MC_API_KEY) is provided")
-    
+    mc_api = Secret.load("mediacloud-api-key")
    
-    directory = mediacloud.api.DirectoryApi(ApiKey)
+    directory = mediacloud.api.DirectoryApi(mc_api)
     
     domains = []
     for collection in collection_ids:
