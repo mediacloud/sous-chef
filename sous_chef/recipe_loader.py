@@ -40,7 +40,7 @@ def t_yaml_to_conf(yaml_stream, **kwargs):
     vars_ = set(re.findall("\$[\w\d]*", conf_str))
     
     pre_subbed = yaml.safe_load(conf_str)
-    print(pre_subbed)
+    
     if VARS in pre_subbed:
         var_reference = pre_subbed[VARS]
     
@@ -48,7 +48,7 @@ def t_yaml_to_conf(yaml_stream, **kwargs):
     for v in vars_:
         var_name = v[1:]
         if var_name not in kwargs:
-            raise RuntimeError(f"Missing required configuration variable {var_name}: {var_reference[v]}")
+            raise RuntimeError(f"Missing required configuration variable {var_name}")
         
         value = kwargs[v[1:]]
         reg = f"\\{v}"
