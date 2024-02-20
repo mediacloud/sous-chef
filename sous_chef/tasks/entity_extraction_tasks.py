@@ -178,7 +178,9 @@ class SimpleTokens(FlowAtom):
 @FlowAtom.register("ExtractKeywords")
 class Keywords(FlowAtom):
     """
-    Extract keywords from text
+    Extract keywords from text, using the YAKE keyword extractor. 
+    top_n, ngram_max, and dedup_limit are all hyperparameters which shouldn't really have to be tuned
+    from the provided defaults, but ymmv. Refer to the YAKE source for more details. 
     """
     
     top_n:int
@@ -208,15 +210,64 @@ class Keywords(FlowAtom):
             
             text = row.text
             kws = extractor.extract_keywords(text)
-            print(kws)
             words = [i[0] for i in kws]
             keywords.append(words)
             
         
         self.results.keywords = keywords
     
-    
-    
+@FlowAtom.register("TopKeywords")
+class TopNKeywords(FlowAtom):
+    """
+    Collate the top-n keywords from a list of keywords-per-article. 
+    Sort by either "total" or "percentage" 
+    """
+    top_n: int
+    sort_by: str
+    _defaults: {
+        "top_n":-1,
+        sort_by:"total"
+    }
+    def inputs(self, keywords:list):pass
+    def outputs(self, top_keywords:str, keyword_counts:int, keyword_appearance_percent:float):pass
+
+    def task_body(self):
+         #Total count of entities found
+        TotalCount = Counter()
+        #Only count one appearance of a keyword per article, so we can get percentages
+        AppearedCount = Counter()
+        
+        for article_keywords in self.data.keywords:
+            
+            if isinstance(article_entities, dict):
+                #This covers the case where we have just a single keyword in an article
+                article_entities = [article_entities]
+            
+
+            for keyword in article_keywords:              
+                TotalCount.update(Counter({keyword:1}))
+            
+            for kw in set(article_keywords):
+                AppearedCount.update(Counter({kw:1}))
+
+        number_of_articles = len(self.data.keywords)
+
+        if(self.sort_by == "total"):
+            sorted_kws, kw_counts = zip(*TotalCount.most_common(self.top_n))
+            kw_apperances = [AppearedCount[e] for e in sorted_kws]
+        
+        elif(self.sort_by == "percentage"):
+            sorted_kws, kw_apperances = zip(*AppearedCount.most_common(self.top_n))
+            kw_counts = [TotalCount[e] for e in sorted_kws]
+           
+        kw_apperances = [e/number_of_articles for e in kw_apperances]
+
+        self.results.top_kws = sorted_kws
+        self.results.kw_counts = kw_counts
+        self.results.kw__appearance_percent = kw_apperances
+
+
+
 @FlowAtom.register("ExtractByRegex")
 class ExtractRegexMatch(FlowAtom):
     """
