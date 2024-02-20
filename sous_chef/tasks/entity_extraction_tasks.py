@@ -215,7 +215,6 @@ class Keywords(FlowAtom):
             words = [i[0] for i in kws]
             keywords.append(words)
             
-        
         self.results.keywords = keywords
     
 @FlowAtom.register("TopKeywords")
@@ -259,9 +258,9 @@ class TopNKeywords(FlowAtom):
            
         kw_apperances = [e/number_of_articles for e in kw_apperances]
 
-        self.results.top_kws = sorted_kws
-        self.results.kw_counts = kw_counts
-        self.results.kw__appearance_percent = kw_apperances
+        self.results.top_keywords = sorted_kws
+        self.results.keyword_counts = kw_counts
+        self.results.keyword_appearance_percent = kw_apperances
 
 
 
