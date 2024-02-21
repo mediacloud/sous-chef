@@ -317,7 +317,7 @@ class ExtractURLS(ExtractRegexMatch):
         url_regex = "(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
         return url_regex
 
-@FlowAtom.register("NGrams")
+@FlowAtom.register("SpacyNGram")
 class NGrams(FlowAtom):
     """
     Obtains gram_size-grams from text
@@ -325,12 +325,12 @@ class NGrams(FlowAtom):
     model:str
     gram_size:int
     _defaults:{
-        "model":"en_core_web_sm"   
+        "model":"en_core_web_sm",   
         "gram_size":2
     }
 
     def inputs(self, text:str):pass
-    def outputs(self, unigrams: List, bigrams: List, trigrams: List):pass
+    def outputs(self, ngrams: list):pass
 
     def task_body(self):
         from spacy_ngram import NgramComponent
