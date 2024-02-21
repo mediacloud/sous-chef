@@ -11,7 +11,7 @@ from pprint import pprint
 
 def get_pipeline_runname():
     params = flow_run.parameters
-    if "config" in params and "NAME" in params["config"]:
+    if "config" in params and "name" in params["config"]:
             return f"{params['config']['name']}"
     else:
         return "Unnamed-Sous-Chef-Pipeline"
