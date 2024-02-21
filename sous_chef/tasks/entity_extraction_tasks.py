@@ -323,7 +323,7 @@ class NGrams(FlowAtom):
     Obtains gram_size-grams from text
     """
     model:str
-    gram_size:Union(int, str)
+    gram_size:int #For compatability with mixins while issue#10 is active
     _defaults:{
         "model":"en_core_web_sm",   
         "gram_size":2
@@ -339,7 +339,7 @@ class NGrams(FlowAtom):
         from spacy_ngram import NgramComponent
         nlp = spacy_download.load_spacy(self.model)
         nlp.add_pipe('spacy-ngram', config={
-            'ngrams': (self.gram_size)
+            'ngrams': (1, self.gram_size)
         })
         
         ngrams = []
