@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict
+from typing import List, Dict, Union
 from collections import Counter
 from ..flowatom import FlowAtom
 import re
@@ -323,7 +323,7 @@ class NGrams(FlowAtom):
     Obtains gram_size-grams from text
     """
     model:str
-    gram_size:int
+    gram_size:Union(int, str)
     _defaults:{
         "model":"en_core_web_sm"   
         "gram_size":2
@@ -331,6 +331,9 @@ class NGrams(FlowAtom):
 
     def inputs(self, text:str):pass
     def outputs(self, unigrams: List, bigrams: List, trigrams: List):pass
+
+    def validate(self):
+        self.gram_size = int(self.gram_size)
 
     def task_body(self):
         from spacy_ngram import NgramComponent
