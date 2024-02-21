@@ -11,11 +11,10 @@ from pprint import pprint
 
 def get_pipeline_runname():
     params = flow_run.parameters
-    print(params)
     if "config" in params and "NAME" in params["config"]:
-            return f"{params['config']['NAME']}-PIPELINE"
+            return f"{params['config']['NAME']}"
     else:
-        return "Sous-Chef-PIPELINE"
+        return "Unnamed-Sous-Chef-Pipeline"
 
 @flow(flow_run_name=get_pipeline_runname)
 class Pipeline():

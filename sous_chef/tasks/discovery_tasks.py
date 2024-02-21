@@ -143,6 +143,7 @@ class query_onlinenews(DiscoveryAtom):
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["text_content"]
         else:
+            print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
 
             
