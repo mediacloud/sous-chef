@@ -4,6 +4,7 @@ from prefect import flow
 from prefect.runtime import flow_run
 from sous_chef import RunPipeline, recipe_loader
 import json
+import os
 
 #Our main entrypoint. 
 
@@ -49,20 +50,11 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
 
 @flow(flow_run_name=generate_run_name_folder)
 def RunRecipeDirectory(recipe_directory:str):
-    with open(recipe_directory+"/mixins.yaml", "r") as infile:
-        mixins = recipe_loader.load_mixins(infile)
+    if "mixins.yaml" in os.listdir(recipe_directory):
+        RunTemplatedRecipe(recipe_directory+"/recipe.yaml", recipe_directory+"/mixins.yaml")
+    else:
+        RunFilesystemRecipe(recipe_directory+"/recipe.yaml")
 
-    for template_params in mixins:
-
-        with open(recipe_directory+"/recipe.yaml", "r") as config_yaml:
-            json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
-
-        if "name" not in json_conf:
-            name = recipe_directory.split(".")[0].split("/")[-1]+template_params["NAME"]
-            json_conf["name"] = name
-
-        print(f"Loaded recipe at {recipe_directory} with mixin {template_params['NAME']}, Running pipeline:")
-        RunPipeline(json_conf) 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -72,7 +64,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.recipe_directory is not None:
         RunRecipeDirectory(args.recipe_directory)
-    if args.mixin_location is None:
+    elif args.mixin_location is None:
         RunFilesystemRecipe(args.recipe_location)
     else:
         RunTemplatedRecipe(args.recipe_location, args.mixin_location)
