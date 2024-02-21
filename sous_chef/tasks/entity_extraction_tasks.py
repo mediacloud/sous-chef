@@ -213,8 +213,9 @@ class Keywords(FlowAtom):
             text = row.text
             kws = extractor.extract_keywords(text)
             words = [i[0] for i in kws]
+            print(f'{len(words)} kws') 
             keywords.append(words)
-            
+             
         self.results.keywords = keywords
     
 @FlowAtom.register("TopKeywords")
