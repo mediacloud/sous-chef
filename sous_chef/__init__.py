@@ -139,7 +139,7 @@ class Pipeline():
                 return_value = step()
             except NoDiscoveryError:
                 self.logger.warn("Discovery Atom found no content, no work to do!")
-                break:
+                break
             else:
                 if return_value:
                     for key, item in return_value.items():
