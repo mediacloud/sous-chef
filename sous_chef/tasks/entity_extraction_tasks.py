@@ -215,7 +215,6 @@ class Keywords(FlowAtom):
             words = [i[0] for i in kws]
             keywords.append(words)
             
-        
         self.results.keywords = keywords
     
 @FlowAtom.register("TopKeywords")
@@ -228,7 +227,7 @@ class TopNKeywords(FlowAtom):
     sort_by: str
     _defaults: {
         "top_n":-1,
-        sort_by:"total"
+        "sort_by":"total"
     }
     def inputs(self, keywords:list):pass
     def outputs(self, top_keywords:str, keyword_counts:int, keyword_appearance_percent:float):pass
@@ -241,11 +240,6 @@ class TopNKeywords(FlowAtom):
         
         for article_keywords in self.data.keywords:
             
-            if isinstance(article_entities, dict):
-                #This covers the case where we have just a single keyword in an article
-                article_entities = [article_entities]
-            
-
             for keyword in article_keywords:              
                 TotalCount.update(Counter({keyword:1}))
             
@@ -264,9 +258,9 @@ class TopNKeywords(FlowAtom):
            
         kw_apperances = [e/number_of_articles for e in kw_apperances]
 
-        self.results.top_kws = sorted_kws
-        self.results.kw_counts = kw_counts
-        self.results.kw__appearance_percent = kw_apperances
+        self.results.top_keywords = sorted_kws
+        self.results.keyword_counts = kw_counts
+        self.results.keyword_appearance_percent = kw_apperances
 
 
 
