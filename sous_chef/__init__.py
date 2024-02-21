@@ -1,15 +1,23 @@
 from prefect import flow, task, get_run_logger
 from .flowatom import FlowAtom
+from prefect.runtime import flow_run
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT, RETURNS
 from .datastrategy import DataStrategy
-from .exceptions import ConfigValidationError
+from .exceptions import ConfigValidationError, NoDiscoveryError
 from .tasks import *
 from typing import List
 import logging
 from pprint import pprint 
 
+def get_pipeline_runname():
+    params = flow_run.parameters
+    if "config" in params:
+        if "NAME" in params["config"]:
+            return f"{params["config"]["NAME"]}-PIPELINE"
+    else:
+        return "Sous-Chef-PIPELINE"
 
-@flow()
+@flow(flow_run_name=get_pipeline_runname)
 class Pipeline():
     """Core pipeline class. 
     Initialize it with a configuration json, and it will run all of the pre-run validation.
@@ -86,6 +94,8 @@ class Pipeline():
                 returns = flowatom[RETURNS]
                 all_return_names.extend(returns.items())
                 
+
+            #Instantiate flow atom
             step = available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA], returns, log_level=self.log_level)
             self.steps.append(step)
             
@@ -125,10 +135,15 @@ class Pipeline():
     def run_pipeline(self):
         
         for step in self.steps:
-            return_value = step()
-            if return_value:
-                for key, item in return_value.items():
-                    self.return_value[key] = item
+            try:
+                return_value = step()
+            except NoDiscoveryError:
+                self.logger.warn("Discovery Atom found no content, no work to do!")
+                break:
+            else:
+                if return_value:
+                    for key, item in return_value.items():
+                        self.return_value[key] = item
 
             
 #This is the main entrypoint for the whole thing            

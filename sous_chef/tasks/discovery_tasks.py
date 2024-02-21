@@ -1,4 +1,5 @@
 from ..flowatom import FlowAtom
+from ..exceptions import NoDiscoveryException
 from datetime import datetime, timedelta
 import pandas as pd
 import requests
@@ -142,7 +143,7 @@ class query_onlinenews(DiscoveryAtom):
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["text_content"]
         else:
-            raise RuntimeError("Query produced no content")
+            raise NoDiscoveryException(f"Query {self.query} produced no content")
 
             
 @FlowAtom.register("CountOnlineNews")
