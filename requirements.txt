@@ -12,6 +12,7 @@ PyYAML==6.0.1
 Requests==2.31.0
 spacy
 spacy-download
+spacy-ngram
 transformers==4.37.2
 yake==0.4.8
 boto3

@@ -135,7 +135,10 @@ class Pipeline():
         
         for step in self.steps:
             try:
-                return_value = step()
+                return_value = step() 
+                #Hypothetically, we could cast this call to a task too, that might give us the observability we want in the ui.
+                #ie: 
+                #return_vale = task(step, name="...")()
             except NoDiscoveryException:
                 self.logger.warn("Discovery Atom found no content, no work to do!")
                 break

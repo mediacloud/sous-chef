@@ -8,6 +8,7 @@ from .utils import lazy_import
 yake = lazy_import("yake")
 spacy = lazy_import("spacy")
 spacy_download = lazy_import("spacy_download")
+spacy_ngram = lazy_import("spacy_ngram")
 
 @FlowAtom.register("APIEntityExtraction")
 class ApiEntityExtraction(FlowAtom):
@@ -318,3 +319,42 @@ class ExtractURLS(ExtractRegexMatch):
     def get_regex(self):
         url_regex = "(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
         return url_regex
+
+@FlowAtom.register("NGrams")
+class NGrams(FlowAtom):
+    """
+    Obtains 1, 2, and 3-grams from docunment texts.
+    """
+    model:str
+    _defaults:{
+        "model":"en_core_web_sm"
+    }
+
+    def inputs(self, text:str):pass
+    def outputs(self, unigrams: List, bigrams: List, trigrams: List):pass
+
+    def task_body(self):
+        from spacy_ngram import NgramComponent
+        nlp = spacy_download.load_spacy(self.model)
+        nlp.add_pipe('spacy-ngram', config={
+            'ngrams': (1, 2, 3)
+        })
+        
+        unigrams = []
+        bigrams = []
+        trigrams = []
+
+
+        for row in self.data.itertuples():
+            text = row.text
+            
+            document = nlp(text)
+
+            unigrams.append(document._.ngram_1)
+            bigrams.append(document._.ngram_2)
+            trigrams.append(document._.ngram_3)
+            
+        self.results.unigrams = unigrams
+        self.results.bigrams = bigrams
+        self.results.trigrams = trigrams
+
