@@ -320,11 +320,13 @@ class ExtractURLS(ExtractRegexMatch):
 @FlowAtom.register("NGrams")
 class NGrams(FlowAtom):
     """
-    Obtains 1, 2, and 3-grams from docunment texts.
+    Obtains gram_size-grams from text
     """
     model:str
+    gram_size:int
     _defaults:{
-        "model":"en_core_web_sm"
+        "model":"en_core_web_sm"   
+        "gram_size":2
     }
 
     def inputs(self, text:str):pass
@@ -334,12 +336,10 @@ class NGrams(FlowAtom):
         from spacy_ngram import NgramComponent
         nlp = spacy_download.load_spacy(self.model)
         nlp.add_pipe('spacy-ngram', config={
-            'ngrams': (1, 2, 3)
+            'ngrams': (self.gram_size)
         })
         
-        unigrams = []
-        bigrams = []
-        trigrams = []
+        ngrams = []
 
 
         for row in self.data.itertuples():
@@ -347,11 +347,8 @@ class NGrams(FlowAtom):
             
             document = nlp(text)
 
-            unigrams.append(document._.ngram_1)
-            bigrams.append(document._.ngram_2)
-            trigrams.append(document._.ngram_3)
+            ngrams.append(document._.get(f"ngram_{self.gram_size}"))
             
-        self.results.unigrams = unigrams
-        self.results.bigrams = bigrams
-        self.results.trigrams = trigrams
+            
+        self.results.ngrams = ngrams
 
