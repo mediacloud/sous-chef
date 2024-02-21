@@ -14,8 +14,8 @@ def generate_run_name():
 
 def generate_run_name_folder():
     params = flow_run.parameters
-    name = params["recipe_directory"].split("/")[-1]
-    return f"run-{name}"
+    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")[:-1]
+    return f"run{name}"
 
 @flow(flow_run_name=generate_run_name)
 def RunFilesystemRecipe(recipe_location):
