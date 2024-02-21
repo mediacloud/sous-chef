@@ -111,10 +111,8 @@ class TopNEntities(FlowAtom):
                 #This covers the case where we have just a single entity in an article
                 article_entities = [article_entities]
             
-            print(f"pre-filter: {len(article_entities)}")
             if self.filter_type != "":
                 article_entities = [e for e in article_entities if e["type"] == self.filter_type]
-            print(f"post-filter: {len(article_entities)}")
 
             for ent in article_entities:              
                 if self.filter_type != "" and ent["type"] != self.filter_type:
@@ -214,7 +212,6 @@ class Keywords(FlowAtom):
             text = row.text
             kws = extractor.extract_keywords(text)
             words = [i[0] for i in kws]
-            print(f'{len(words)} kws') 
             keywords.append(words)
              
         self.results.keywords = keywords
