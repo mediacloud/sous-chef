@@ -3,7 +3,7 @@ from .flowatom import FlowAtom
 from prefect.runtime import flow_run
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT, RETURNS
 from .datastrategy import DataStrategy
-from .exceptions import ConfigValidationError, NoDiscoveryError
+from .exceptions import ConfigValidationError, NoDiscoveryException
 from .tasks import *
 from typing import List
 import logging
@@ -137,7 +137,7 @@ class Pipeline():
         for step in self.steps:
             try:
                 return_value = step()
-            except NoDiscoveryError:
+            except NoDiscoveryException:
                 self.logger.warn("Discovery Atom found no content, no work to do!")
                 break
             else:
