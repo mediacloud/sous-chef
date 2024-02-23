@@ -289,17 +289,17 @@ class PandasStrategy(DataStrategy):
     
     
     def write_data(self, operating_dataframe, cache=False):
-        
+        self.logger.info("Writing dataframe")
         if self.outputs is not None:
             document_map = self.config[DOCUMENTMAP]
             write_locations = [outputmap[1] for outputmap in self.outputs.items()]
             documents = list(set([document_map[out] for out in write_locations]))
             if len(documents) == 1:
                 doc_loc = self.data_location+documents[0]+"_output.csv"
-                
+                self.logger.info(f"Writing to: {doc_loc}")
                 #Load the df to begin with. 
                 write_dataframe = read_or_empty_dataframe(doc_loc)
-
+                print(write_dataframe)
                 for function_name, write_location in self.outputs.items():
                     write_dataframe.set_or_new_df(write_location, operating_dataframe[function_name], doc_loc)
                     #write_dataframe[write_location] = operating_dataframe[function_name]
