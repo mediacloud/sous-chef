@@ -120,14 +120,14 @@ class query_onlinenews(DiscoveryAtom):
         self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
         api_key = Secret.load("mediacloud-api-key")
-        mc_search = mediacloud.api.SearchApi(api_key)
+        mc_search = mediacloud.api.SearchApi(api_key.get())
         all_stories = []
         pagination_token = None
         more_stories = True
         while more_stories:
-            page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date, 
-                                                            end_date=self.end_date, collection_ids=self.collection,
-                                                          pagination_token=pagination_token, expanded=True)
+            page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date.date(), 
+                                                        end_date=self.end_date.date(), collection_ids=self.collections,
+                                                        pagination_token=pagination_token, expanded=True)
             all_stories += page
             more_stories = pagination_token is not None
 
