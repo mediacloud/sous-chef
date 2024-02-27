@@ -120,6 +120,7 @@ class query_onlinenews(DiscoveryAtom):
         
         SearchInterface = providers.provider_by_name(provider, None, base_url)
         
+        self.logger.info(f"Query Text: {self.query}")
         self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
         domains = []
@@ -139,6 +140,8 @@ class query_onlinenews(DiscoveryAtom):
             if "text_content" in article_info:
                 content.append(article_info)
         
+        self.logger.info(f"Query Returned {len(content)} Articles")
+
         if len(content) > 0:
             self.results = pd.json_normalize(content)
             self.results["text"] = self.results["text_content"]
@@ -167,8 +170,9 @@ class count_onlinenews(DiscoveryAtom):
     
     def task_body(self):
         provider = "onlinenews-mediacloud"
+        base_url = "http://ramos.angwin:8000/v1/" 
         
-        SearchInterface = providers.provider_by_name(provider)
+        SearchInterface = providers.provider_by_name(provider, None, base_url)
         
         start_date = datetime.strptime(self.start_date, self.start_date_form)
         end_date = datetime.strptime(self.end_date, self.end_date_form)

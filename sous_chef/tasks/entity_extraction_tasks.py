@@ -228,6 +228,11 @@ class TopNKeywords(FlowAtom):
         "top_n":-1,
         "sort_by":"total"
     }
+
+    @classmethod
+    def creates_new_document(self):
+        return True  
+
     def inputs(self, keywords:list):pass
     def outputs(self, top_keywords:str, keyword_counts:int, keyword_appearance_percent:float):pass
 
@@ -328,6 +333,7 @@ class NGrams(FlowAtom):
         "model":"en_core_web_sm",   
         "gram_size":2
     }
+
 
     def inputs(self, text:str):pass
     def outputs(self, ngrams: list):pass
