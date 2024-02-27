@@ -110,26 +110,24 @@ class query_onlinenews(DiscoveryAtom):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
     
-    def outputs(self, article_title:str, language:str, domain:str, original_capture_url:str, 
+    def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
                 publication_date:object, text:str):pass
     
     
     def task_body(self):
-        provider = "onlinenews-mediacloud"
-        base_url = "http://ramos.angwin:8000/v1/" 
-        
-        SearchInterface = providers.provider_by_name(provider, None, base_url)
         
         self.logger.info(f"Query Text: {self.query}")
         self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
-        domains = []
-        if len(self.collections) > 0:
-            domains = get_onlinenews_collection_domains(self.collections)
-
-        output = []
-        for result in SearchInterface.all_items(self.query, self.start_date, self.end_date, domains = domains):
-            output.extend(result)
+        mc_search = mediacloud.api.SearchApi(api_key)
+        all_stories = []
+        pagination_token = None
+        more_stories = True
+        while more_stories:
+            page, pagination_token = mc_search.story_list(query, start_date=start_date, end_date=end_date, collection_ids=collection,
+                                                          pagination_token=pagination_token, expanded=True)
+            all_stories += page
+            more_stories = pagination_token is not None
 
 
         content = []
@@ -137,14 +135,14 @@ class query_onlinenews(DiscoveryAtom):
             article_url = article["url"]
             article_info = SearchInterface.item(article["id"])
             
-            if "text_content" in article_info:
+            if "text" in article_info:
                 content.append(article_info)
         
         self.logger.info(f"Query Returned {len(content)} Articles")
 
         if len(content) > 0:
             self.results = pd.json_normalize(content)
-            self.results["text"] = self.results["text_content"]
+            self.results["text"] = self.results["text"]
         else:
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
