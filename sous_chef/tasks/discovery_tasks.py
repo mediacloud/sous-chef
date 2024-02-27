@@ -84,7 +84,7 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
     domains = []
     for collection in collection_ids:
         
-        sources = directory.source_list(collection_id=collection, **kwargs)
+        sources = directory.source_list(collection_id=collection, limit=100000,  **kwargs)
         
         for res in sources["results"]:
             if "/" not in res["name"]:
@@ -119,19 +119,21 @@ class query_onlinenews(DiscoveryAtom):
         self.logger.info(f"Query Text: {self.query}")
         self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
+
         mc_search = mediacloud.api.SearchApi(api_key)
         all_stories = []
         pagination_token = None
         more_stories = True
         while more_stories:
-            page, pagination_token = mc_search.story_list(query, start_date=start_date, end_date=end_date, collection_ids=collection,
+            page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date, 
+                                                            end_date=self.end_date, collection_ids=self.collection,
                                                           pagination_token=pagination_token, expanded=True)
             all_stories += page
             more_stories = pagination_token is not None
 
 
         content = []
-        for article in output:
+        for article in all_stories:
             article_url = article["url"]
             article_info = SearchInterface.item(article["id"])
             
