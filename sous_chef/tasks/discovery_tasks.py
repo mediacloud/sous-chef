@@ -84,7 +84,7 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
     domains = []
     for collection in collection_ids:
         
-        sources = directory.source_list(collection_id=collection, **kwargs)
+        sources = directory.source_list(collection_id=collection, limit=100000,  **kwargs)
         
         for res in sources["results"]:
             if "/" not in res["name"]:
@@ -127,6 +127,7 @@ class query_onlinenews(DiscoveryAtom):
         if len(self.collections) > 0:
             domains = get_onlinenews_collection_domains(self.collections)
 
+        print(domains)
         output = []
         for result in SearchInterface.all_items(self.query, self.start_date, self.end_date, domains = domains):
             output.extend(result)
