@@ -119,7 +119,7 @@ class query_onlinenews(DiscoveryAtom):
         self.logger.info(f"Query Text: {self.query}")
         self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
-
+        api_key = Secret.load("mediacloud-api-key")
         mc_search = mediacloud.api.SearchApi(api_key)
         all_stories = []
         pagination_token = None
