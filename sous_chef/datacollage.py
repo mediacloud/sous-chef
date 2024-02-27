@@ -53,23 +53,24 @@ class DataCollage(object):
         else:
             raise RuntimeError(f"Cannot set {col} with this value, as No columns of length {new_value.shape[0]} exist. Try dc.set_or_new_df")
             
-    def set_or_new_df(self, col, new_value, dname):
-        if len(new_value.shape) != 1:
+    def set_or_new_df(self, column_name, new_series, document_name):
+        if len(new_series.shape) != 1:
             raise RuntimeError("Cannot set new dataframe with multiple columns")
         
         try:
-            self[col] = new_value
+            self[column_name] = new_series
         except RuntimeError:
+            new_series.rename(column_name, inplace=True)
             #Create the new dataframe, rename the first column as desired, and set the internal maps. 
-            new_df = pd.DataFrame(new_value)
-            
-            old_name = new_df.columns[0]
-            new_df.rename({old_name:col})
-            
-            self.dataframes[dname] = new_df
+            new_df = pd.DataFrame(new_series)
+
+            self.dataframes[document_name] = new_df
         
-            self.col_dname_map[col] = dname
+            self.col_dname_map[column_name] = document_name
             
-            input_length = new_value.shape[0]
-            self.len_dname_map[input_length] = dname
+            input_length = new_series.shape[0]
+            self.len_dname_map[input_length] = document_name
+
+    def __repr__(self):
+        return f"<DataCollage with cols: {self.columns} between {len(self.dataframes)} DataFrames>"
             
