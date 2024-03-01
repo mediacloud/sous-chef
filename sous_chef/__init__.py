@@ -12,7 +12,7 @@ from pprint import pprint
 def get_pipeline_runname():
     params = flow_run.parameters
     if "config" in params and "name" in params["config"]:
-            return params['config']['name']
+            return f"{params['config']['name']}-pipeline"
     else:
         return "Unnamed-Sous-Chef-Pipeline"
 
@@ -135,7 +135,7 @@ class Pipeline():
         
         for step in self.steps:
             try:
-                return_value = step() 
+                return_value = task(step, name=step.task_name)() 
                 #Hypothetically, we could cast this call to a task too, that might give us the observability we want in the ui.
                 #ie: 
                 #return_vale = task(step, name="...")()

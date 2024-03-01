@@ -18,7 +18,6 @@ def generate_run_name_folder():
     name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")[:-1]
     return f"run{name}"
 
-@flow(flow_run_name=generate_run_name)
 def RunFilesystemRecipe(recipe_location):
     with open(recipe_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
@@ -31,7 +30,6 @@ def RunFilesystemRecipe(recipe_location):
     RunPipeline(json_conf)
 
 
-@flow(flow_run_name=generate_run_name)
 def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
     with open(mixin_location, "r") as infile:
         mixins = recipe_loader.load_mixins(infile)
@@ -48,6 +46,7 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
         print(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         RunPipeline(json_conf) 
 
+#Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
 def RunRecipeDirectory(recipe_directory:str):
     if "mixins.yaml" in os.listdir(recipe_directory):
@@ -58,13 +57,6 @@ def RunRecipeDirectory(recipe_directory:str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--recipe-location", help="The YAML configuration file which specifies a sous-chef recipe")
-    parser.add_argument("-m", "--mixin-location", help="The YAML file which specifies parameter mixins")
     parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
     args = parser.parse_args()
-    if args.recipe_directory is not None:
-        RunRecipeDirectory(args.recipe_directory)
-    elif args.mixin_location is None:
-        RunFilesystemRecipe(args.recipe_location)
-    else:
-        RunTemplatedRecipe(args.recipe_location, args.mixin_location)
+    RunRecipeDirectory(args.recipe_directory)

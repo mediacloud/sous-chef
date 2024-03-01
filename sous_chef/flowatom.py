@@ -43,7 +43,7 @@ class FlowAtom(object):
                 self.logger.setLevel(self.log_level)
             
             #Give the task a unique name
-            self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:8]
+            self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:2]
             
             
         else:
@@ -64,7 +64,7 @@ class FlowAtom(object):
     def register(cls, name):
         
         def _register(stepclass):
-            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"{name}")
+            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"{name}-setup")
             return stepclass 
         
         return _register
