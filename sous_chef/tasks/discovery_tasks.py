@@ -134,17 +134,13 @@ class query_onlinenews(DiscoveryAtom):
 
         content = []
         for article in all_stories:
-            article_url = article["url"]
-            article_info = SearchInterface.item(article["id"])
-            
-            if "text" in article_info:
-                content.append(article_info)
+            if "text" in article:
+                content.append(article)
         
         self.logger.info(f"Query Returned {len(content)} Articles")
 
         if len(content) > 0:
             self.results = pd.json_normalize(content)
-            self.results["text"] = self.results["text"]
         else:
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
