@@ -111,7 +111,7 @@ class query_onlinenews(DiscoveryAtom):
             self.collections = ast.literal_eval(self.collections)
     
     def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
-                publication_date:object, text:str):pass
+                publication_date:object, text:str, id:str):pass
     
     
     def task_body(self):

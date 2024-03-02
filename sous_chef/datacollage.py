@@ -35,9 +35,12 @@ class DataCollage(object):
             matching_dname = self.col_dname_map[col]
         return self.dataframes[matching_dname][col]
     
+    #We use the "length" index when setting
     def __setitem__(self, col, new_value):
-        #Go through the length index
-        input_length = new_value.shape[0]
+        if isinstance(new_value, list):
+            input_length = len(new_value)
+        else:   
+            input_length = new_value.shape[0]
         if input_length in self.len_dname_map:
             matching_dname = self.len_dname_map[input_length]
             self.dataframes[matching_dname][col] = new_value
@@ -70,6 +73,23 @@ class DataCollage(object):
             
             input_length = new_series.shape[0]
             self.len_dname_map[input_length] = document_name
+
+    def drop(self, drop_column, axis, inplace):
+        matching_dname = self.col_dname_map[drop_column]
+
+        pre_length = self.dataframes[matching_dname].shape[0]
+        
+        df = self.dataframes[matching_dname]
+        
+        #Statements dreamt up by the genuinely deranged: 
+        df.drop(df[df[drop_column] == False].index, axis=0, inplace=inplace)
+
+        post_length = self.dataframes[matching_dname].shape[0]
+        print(pre_length)
+        print(post_length)
+        ###probably recalculate the indices when we do that- at least
+        self.len_dname_map[post_length] = self.len_dname_map[pre_length]
+        del(self.len_dname_map[pre_length])
 
     def __repr__(self):
         return f"<DataCollage with cols: {self.columns} between {len(self.dataframes)} DataFrames>"

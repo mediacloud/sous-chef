@@ -324,20 +324,22 @@ class PandasStrategy(DataStrategy):
     def apply_filter(self, keep_column):
         #keep_column should be a column of bools, where "true" means the row will be kept, and 'false' that it will be dropped
         
-        documents = list(set([document_map[out] for out in write_locations]))
+        write_locations = [inputmap[1] for inputmap in self.inputs.items()]
+        documents = list(set([self.document_map[out] for out in write_locations]))
         if len(documents) == 1:
             doc_loc = self.data_location + documents[0] + "_output.csv"
             
-            dataframe = read_or_empty_dataframe(doc_loc)
+            dc = read_or_empty_dataframe(doc_loc)
 
-            dataframe["_KEEP"] = keep_column
-            post_filter_dataframe = dataframe[dataframe["_KEEP"]]
+            dc["_KEEP"] = keep_column
+            
 
-            post_filter_dataframe.drop('_KEEP', axis=1, inplace=True)
+            dc.drop('_KEEP', axis=1, inplace=True)
 
-            post_filter_dataframe.to_csv(self.data_location)
+            for location, dataframe in dc.dataframes.items():
+                dataframe.to_csv(location)
         else:
-            raise RuntimeError("apply_filter to multiple documents is not yet supported")
+            raise RuntimeError("apply_filter to multiple documents is not supported")
         
     def get_columns(self, columns):
         document_map = self.config[DOCUMENTMAP]

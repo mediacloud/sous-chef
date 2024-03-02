@@ -91,10 +91,12 @@ class PrintFieldTask(FlowAtom):
     def inputs(self, to_print:None): pass
     
     def task_body(self):
+        pd.set_option('max_colwidth', None)
         print("="*len(self.pre_message))
         print(self.pre_message)
         print(self.data.to_print)
         print(self.post_message)
+        pd.reset_option('max_colwidth')
                
 
 @FlowAtom.register("PrintStringTask")
@@ -162,7 +164,7 @@ class CommonElements(FlowAtom):
         self.results.top_elements = top_elements
         
         
-@FlowAtom.register("Num Rows")
+@FlowAtom.register("NumRows")
 class DocumentSize(FlowAtom):
     """ Return the number of rows in a document """
     
@@ -176,4 +178,5 @@ class DocumentSize(FlowAtom):
     
     def task_body(self):
         size = self.data.to_count.shape[0]
-        self.results.count = size
+        print(size)
+        self.results.count = pd.Series([size])
