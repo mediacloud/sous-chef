@@ -13,24 +13,19 @@ def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
-def generate_run_name():
-    params = flow_run.parameters
-    location = params["recipe_location"].replace("/", "-").replace("..", "").split(".")[0]
-    return location.strip("-")
-
 def generate_run_name_folder():
     params = flow_run.parameters
     name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")
     return name.strip("-")
 
 
-def RunFilesystemRecipe(recipe_location):
+def RunFilesystemRecipe(recipe_location:str):
     logger = get_run_logger()
     with open(recipe_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
         
     if "name" not in json_conf:
-        name = generate_run_name()
+        name = recipe_location.replace("/", "-").replace("..", "").split(".")[0]
         json_conf["name"] = name
     
 
