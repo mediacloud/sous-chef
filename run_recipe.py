@@ -16,14 +16,12 @@ def daterange(start_date, end_date):
 def generate_run_name():
     params = flow_run.parameters
     location = params["recipe_location"].replace("/", "-").replace("..", "").split(".")[0]
-    return f"{location}"
+    return location.strip("-")
 
 def generate_run_name_folder():
     params = flow_run.parameters
-    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")[1:]
-    return name
-
-
+    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")
+    return name.strip("-")
 
 
 def RunFilesystemRecipe(recipe_location):
