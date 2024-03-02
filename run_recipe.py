@@ -100,6 +100,10 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
 def RunRecipeDirectory(recipe_directory:str):
+    logger = get_run_logger()
+    logger.info(os.listdir())
+    logger.info("RunRecipeDirectory")
+    logger.info(os.listdir(recipe_directory))
     if "mixins.yaml" in os.listdir(recipe_directory):
         RunTemplatedRecipe(recipe_directory+"/recipe.yaml", recipe_directory+"/mixins.yaml")
     else:
