@@ -1,6 +1,6 @@
 from pprint import pprint
 import argparse
-from prefect import flow
+from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
 from sous_chef import RunPipeline, recipe_loader
 import json
@@ -16,17 +16,18 @@ def daterange(start_date, end_date):
 def generate_run_name():
     params = flow_run.parameters
     location = params["recipe_location"].replace("/", "-").replace("..", "").split(".")[0]
-    return f"run-{location}"
+    return f"{location}"
 
 def generate_run_name_folder():
     params = flow_run.parameters
-    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")[:-1]
-    return f"run{name}"
+    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")[1:]
+    return name
 
 
 
 
 def RunFilesystemRecipe(recipe_location):
+    logger = get_run_logger()
     with open(recipe_location, "r") as config_yaml:
         json_conf = recipe_loader.yaml_to_conf(config_yaml)
         
@@ -34,12 +35,14 @@ def RunFilesystemRecipe(recipe_location):
         name = generate_run_name()
         json_conf["name"] = name
     
-    print(f"Loaded recipe at {recipe_location}, Running pipeline:")
+
+    logger.info(f"Loaded recipe at {recipe_location}, Running pipeline:")
     RunPipeline(json_conf)
 
 
 #Not treating these as flows so as to limit crud in the prefect cloud ui.
 def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
+    logger = get_run_logger()
     with open(mixin_location, "r") as infile:
         mixins = recipe_loader.load_mixins(infile)
     
@@ -52,15 +55,14 @@ def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
             name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
             json_conf["name"] = name
 
-        print(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
+        logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         RunPipeline(json_conf) 
 
 
-#Take a recipe and some mixins, then run it iteratively over a sequence of timeframes. 
-#To start, just a 'daily' thing.
+#Run a query and recipe over a sequence of days
 @flow(flow_run_name=generate_run_name_folder)
 def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = None):
-
+    logger = get_run_logger()
     recipe_location = recipe_directory+"recipe.yaml"
     mixin_location = recipe_directory+"mixins.yaml"
     

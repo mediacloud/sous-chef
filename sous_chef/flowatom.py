@@ -20,9 +20,9 @@ class FlowAtom(object):
     _defaults:{"task_name":"default"}
     _new_document:False
     
-    def __init__(self, params, data_config, returns, document=False, log_level=None):
+    def __init__(self, params, data_config, returns, document=False, log_level="INFO"):
         self.return_values = {} #Can be set by a task.
-        
+        self.log_level = log_level
         if not document:
             self.task_inputs = inspect.get_annotations(self.inputs)
             self.task_outputs = inspect.get_annotations(self.outputs)
@@ -36,22 +36,20 @@ class FlowAtom(object):
             #A place to define unique setup per flow atom
             self.setup_hook(params, data_config)
             
-            #configure logging
-            self.logger = get_run_logger()
-            if log_level is not None:
-                self.log_level = log_level
-                self.logger.setLevel(self.log_level)
-            
             #Give the task a unique name
             self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:2]
             
             
         else:
-            self.logger.warn("A pipeline constructed with document==True cannot be used for any data analasis task- this is only for generating documentation")
+            self.warn("A pipeline constructed with document==True cannot be used for any data analasis task- this is only for generating documentation")
             self.docs = self.document()
             
 
+    def info(self, msg):
+        self.logger.info(msg)
 
+    def warn(self, text):
+        self.logger.info(msg)
     
     #Easy Access to the subclass registry 
     @classmethod
@@ -64,7 +62,7 @@ class FlowAtom(object):
     def register(cls, name):
         
         def _register(stepclass):
-            cls._REGISTERED_ATOMS[name] = task(stepclass, name=f"{name}-setup")
+            cls._REGISTERED_ATOMS[name] = stepclass#, name=f"{name}-setup")
             return stepclass 
         
         return _register
@@ -189,6 +187,8 @@ class FlowAtom(object):
     
     #This loads specified data to self.data as a dataframe
     def pre_task(self):
+        self.logger = get_run_logger()
+        self.logger.setLevel(self.log_level)
         if self.__data_strategy.inputs is not None:
             if self.cache_behavior == CACHE_LOAD:
                 self.data, self.results = self.get_data(cache=True)
@@ -244,15 +244,16 @@ class FlowAtom(object):
         #If an atom which runs AFTER this atom is marked load from cache,
         #then we can safely skip this atom's execution
         if self.cache_behavior == CACHE_SKIP:
-            self.logger.info(f"Skipping {self.task_name} due to cache settings")  
+            self.info(f"Skipping {self.task_name} due to cache settings")  
             pass
         else:
-            self.logger.info(f"Starting {self.task_name}")
             self.pre_task()
             self.task_body()
             self.post_task()
-            self.logger.info(f"Completed {self.task_name}")
             return self.return_values
+
+    def __repr__(self):
+        return f"<FlowAtom: {self.task_name}>"
     
 
 

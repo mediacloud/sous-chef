@@ -116,8 +116,8 @@ class query_onlinenews(DiscoveryAtom):
     
     def task_body(self):
         
-        self.logger.info(f"Query Text: {self.query}")
-        self.logger.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
+        self.info(f"Query Text: {self.query}")
+        self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
         api_key = Secret.load("mediacloud-api-key")
         mc_search = mediacloud.api.SearchApi(api_key.get())
@@ -137,7 +137,7 @@ class query_onlinenews(DiscoveryAtom):
             if "text" in article:
                 content.append(article)
         
-        self.logger.info(f"Query Returned {len(content)} Articles")
+        self.info(f"Query Returned {len(content)} Articles")
 
         if len(content) > 0:
             self.results = pd.json_normalize(content)

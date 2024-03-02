@@ -289,7 +289,6 @@ class PandasStrategy(DataStrategy):
     
     
     def write_data(self, operating_dataframe, cache=False):
-        self.logger.info("Writing dataframe")
         if self.outputs is not None:
             document_map = self.config[DOCUMENTMAP]
 

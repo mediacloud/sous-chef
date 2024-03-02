@@ -50,12 +50,12 @@ class Pipeline():
     def __get_atom_meta(self):
         #Some atom metadata (like- does it create or extend a document) is required
         #at the datasetup step- which, is obligated to run before the atom instantiation 
-        #SO catch22- how can we get this information before we instantiate the atoms?
+        #So, this data is stored as classmethods of the flow atom, and accessed here.
         available_atoms = FlowAtom.get_atoms()
         for flowatom in self.config[STEPS]:
+
             if flowatom[ID] in available_atoms:
-                wrapped_class = available_atoms[flowatom[ID]].__wrapped__
-                flowatom[NEWDOCUMENT] = wrapped_class.creates_new_document()
+                flowatom[NEWDOCUMENT] = available_atoms[flowatom[ID]].creates_new_document()
             else:
                 raise ConfigValidationError(f"{flowatom[ID]} is not a registered Flow Atom")
         
@@ -92,11 +92,11 @@ class Pipeline():
             else:
                 returns = flowatom[RETURNS]
                 all_return_names.extend(returns.items())
-                
 
             #Instantiate flow atom
             step = available_atoms[flowatom[ID]](flowatom[PARAMS], flowatom[DATA], returns, log_level=self.log_level)
             self.steps.append(step)
+            self.logger.info(f"Initialized {step.task_name} ")
             
         if len(set(all_return_names)) != len(all_return_names):
             raise ConfigValidationERror(f"There's a collision in the return value names")
@@ -135,10 +135,8 @@ class Pipeline():
         
         for step in self.steps:
             try:
+                #Prefect task integration! 
                 return_value = task(step, name=step.task_name)() 
-                #Hypothetically, we could cast this call to a task too, that might give us the observability we want in the ui.
-                #ie: 
-                #return_vale = task(step, name="...")()
             except NoDiscoveryException:
                 self.logger.warn("Discovery Atom found no content, no work to do!")
                 break
