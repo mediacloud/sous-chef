@@ -22,4 +22,8 @@ the 'tests' folder there contains recipes which demonstrate the basic shape and 
 
 The [Atom Wishlist](Atom_Wishlist.md) is where I am storing the list of new components I'll be adding as time moves on.
 
+### Version History
+
+__v0.1__ - First beta tag for versioning
+
 
