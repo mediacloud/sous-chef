@@ -177,6 +177,7 @@ class DocumentSize(FlowAtom):
         return True
     
     def task_body(self):
-        size = self.data.to_count.shape[0]
-        print(size)
-        self.results.count = pd.Series([size])
+        size = pd.Series([self.data.to_count.shape[0]])
+
+        self.results["count"] = size
+ 

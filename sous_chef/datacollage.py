@@ -85,8 +85,6 @@ class DataCollage(object):
         df.drop(df[df[drop_column] == False].index, axis=0, inplace=inplace)
 
         post_length = self.dataframes[matching_dname].shape[0]
-        print(pre_length)
-        print(post_length)
         ###probably recalculate the indices when we do that- at least
         self.len_dname_map[post_length] = self.len_dname_map[pre_length]
         del(self.len_dname_map[pre_length])

@@ -301,7 +301,6 @@ class PandasStrategy(DataStrategy):
                 #Load the df to begin with. 
                 write_dataframe = read_or_empty_dataframe(doc_loc)
                 for function_name, write_location in self.outputs.items():
-                    
                     write_dataframe.set_or_new_df(write_location, operating_dataframe[function_name], doc_loc)
                     #write_dataframe[write_location] = operating_dataframe[function_name]
 
