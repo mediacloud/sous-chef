@@ -77,12 +77,15 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
     #Iterate over all the days in the daterange
     for window_end in daterange(start_date, end_date):
         window_start = window_end - timedelta(days=1)
+        
+        window_start = window_start.strftime("%Y-%m-%d")
+        window_end = window_end.strftime("%Y-%m-%d")
 
         for template_params in mixins:
             template_params = copy(template_params)
-            template_params["START_DATE"] = f"'{window_start.strftime("%Y-%m-%d")}'"
-            template_params["END_DATE"] = f"'{window_end.strftime("%Y-%m-%d")}'"
-            template_params["NAME"] += f"-{window_start.strftime("%Y-%m-%d")}"
+            template_params["START_DATE"] = f"'{window_start}'"
+            template_params["END_DATE"] = f"'{window_end}'"
+            template_params["NAME"] += f"-{window_start}"
 
             with open(recipe_location, "r") as config_yaml: 
                 json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
