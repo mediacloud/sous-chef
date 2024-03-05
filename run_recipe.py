@@ -7,6 +7,7 @@ import json
 import os
 from copy import copy   
 
+from prefect_aws import AwsCredentials
 from datetime import date, timedelta, datetime
 
 def daterange(start_date, end_date):
@@ -19,10 +20,9 @@ def generate_run_name_folder():
     return name.strip("-")
 
 
-def RunFilesystemRecipe(recipe_location:str):
+def RunFilesystemRecipe(recipe_stream, recipe_location):
     logger = get_run_logger()
-    with open(recipe_location, "r") as config_yaml:
-        json_conf = recipe_loader.yaml_to_conf(config_yaml)
+    json_conf = recipe_loader.yaml_to_conf(recipe_stream.read())
         
     if "name" not in json_conf:
         name = recipe_location.replace("/", "-").replace("..", "").split(".")[0]
@@ -33,16 +33,15 @@ def RunFilesystemRecipe(recipe_location:str):
     RunPipeline(json_conf)
 
 
-#Not treating these as flows so as to limit crud in the prefect cloud ui.
-def RunTemplatedRecipe(recipe_location:str, mixin_location:str):
+
+def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
     logger = get_run_logger()
-    with open(mixin_location, "r") as infile:
-        mixins = recipe_loader.load_mixins(infile)
+    
+    mixins = recipe_loader.load_mixins(mixin_str)
     
     for template_params in mixins:
 
-        with open(recipe_location, "r") as config_yaml:
-            json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
+        json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
 
         if "name" not in json_conf:
             name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
@@ -95,14 +94,40 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
 def RunRecipeDirectory(recipe_directory:str):
-    logger = get_run_logger()
-    logger.info(os.listdir())
-    logger.info("RunRecipeDirectory")
-    logger.info(os.listdir(recipe_directory))
+    
     if "mixins.yaml" in os.listdir(recipe_directory):
-        RunTemplatedRecipe(recipe_directory+"/recipe.yaml", recipe_directory+"/mixins.yaml")
+        recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
+        mixin_stream = open(recipe_directory+"/mixins.yaml", "r")
+
+        RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
     else:
-        RunFilesystemRecipe(recipe_directory+"/recipe.yaml")
+        recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
+        RunFilesystemRecipe(recipe_stream, recipe_directory)
+
+
+@flow(flow_run_name=generate_run_name_folder)
+def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str):
+    aws_credentials = AwsCredentials.load(credentials_block_name)
+    s3_client = aws_credentials.get_boto3_session().client("s3")
+
+    all_objects = s3_client.list_objects_v2(
+        Bucket=recipe_bucket
+        )
+
+    
+    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
+    
+    order_content = {}
+    for component in objects:
+        final_name = component.split("/")[-1]
+        order_content[final_name] = s3_client.get_object(Bucket=recipe_bucket, Key=component)["Body"].read().decode('utf-8') 
+
+    
+    if any(["mixins.yaml" in o for o in objects]):
+        RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
+    else:
+        RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
+
 
 
 if __name__ == "__main__":
@@ -110,8 +135,13 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
     parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")
     parser.add_argument("-e", "--end-date", help="End date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe. Defaults to today if none.")
+    parser.add_argument("-b", "--bucket", action='store_true')
+
     args = parser.parse_args()
-    if args.start_date is None:
+    if args.bucket:
+        RunS3BucketRecipe("aws-s3-credentials", "sous-chef-recipes", args.recipe_directory)
+
+    elif args.start_date is None:
         RunRecipeDirectory(args.recipe_directory)
     else:
         IteratedRecipe(args.recipe_directory, args.start_date)

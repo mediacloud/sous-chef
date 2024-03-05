@@ -10,14 +10,14 @@ DATASTRAT_DEFAULT = {
 }
 
 
-def yaml_to_conf(yaml_stream):
+def yaml_to_conf(yaml_conf):
     ###parse a yaml file into a valid configuration json
-    conf = yaml.safe_load(yaml_stream)
+    
     clean_steps = []
     
     #So that the YAML can use the task name as the dict key, we have to 
     #do a little bit of shuffling 
-    for step in conf[STEPS]:
+    for step in yaml_conf[STEPS]:
         
         step_conf = list(step.values())[0]
         step_id = list(step.keys())[0]
@@ -26,18 +26,17 @@ def yaml_to_conf(yaml_stream):
             step_conf[PARAMS] = {}
         clean_steps.append(step_conf)
 
-    conf[STEPS] = clean_steps
+    yaml_conf[STEPS] = clean_steps
     
     if DATASTRATEGY not in conf:
-        conf[DATASTRATEGY] = DATASTRAT_DEFAULT
+        yaml_conf[DATASTRATEGY] = DATASTRAT_DEFAULT
     
     return conf
 
 
 
-def load_mixins(yaml_stream):
-    #Let's us name mixin sets directly in a yaml file
-    mixins = yaml.safe_load(yaml_stream)
+def load_mixins(yaml_str):
+    mixins = yaml.safe_load(yaml_str)
     cleaned_up_mixins = []
     for template in mixins:
         name = list(template)[0]
@@ -48,17 +47,17 @@ def load_mixins(yaml_stream):
 
 
 "templated_yaml -> t_yaml"
-def t_yaml_to_conf(yaml_stream, **kwargs):
+def t_yaml_to_conf(yaml_conf, **kwargs):
     ###parse a templated yaml file into a recipe
-    conf_str = yaml_stream.read()
-    vars_ = set(re.findall("\$[\w\d]*", conf_str))
+
+    vars_ = set(re.findall("\$[\w\d]*", yaml_conf))
     
-    pre_subbed = yaml.safe_load(conf_str)
+    pre_subbed = yaml.safe_load(yaml_conf)
     
     if VARS in pre_subbed:
         var_reference = pre_subbed[VARS]
     
-    subbed_str = copy.copy(conf_str)
+    subbed_str = copy.copy(yaml_conf)
     for v in vars_:
         var_name = v[1:]
         if var_name not in kwargs:
