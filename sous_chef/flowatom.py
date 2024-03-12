@@ -200,7 +200,6 @@ class FlowAtom(object):
         if self.__data_strategy.outputs is not None:
             #grab the value to return
 
-            
             for task_key, return_name in self.return_keys.items():
                 self.return_values[return_name] = self.results[task_key]
                 

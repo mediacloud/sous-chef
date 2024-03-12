@@ -136,21 +136,22 @@ class Pipeline():
         for step in self.steps:
             try:
                 #Prefect task integration! 
-                return_value = task(step, name=step.task_name)() 
+                task_return_value = task(step, name=step.task_name)() 
             except NoDiscoveryException:
                 self.logger.warn("Discovery Atom found no content, no work to do!")
                 break
             else:
-                if return_value:
-                    for key, item in return_value.items():
-                        self.return_value[key] = item
+                if task_return_value:
+                    self.return_value[step.task_name] = task_return_value
+
+
 
             
 #This is the main entrypoint for the whole thing            
 def RunPipeline(config, **kwargs):
     pipeline = Pipeline(config, **kwargs)
     
-    #return pipeline.return_value
+    return pipeline.return_value
     
 
 @flow()

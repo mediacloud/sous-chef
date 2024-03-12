@@ -28,14 +28,14 @@ pull:
 - prefect.deployments.steps.git_clone:
     repository: https://github.com/mediacloud/sous-chef.git
     credentials: '{{ prefect.blocks.github-credentials.sous-chef-read-only }}'
-    
+
 - prefect.deployments.steps.pip_install_requirements:
     requirements_file: requirements.txt
     stream_output: true
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: SC-Demo-Templates
+- name: sous-chef-s3-entrypoint
   version:
   tags: []
   description:

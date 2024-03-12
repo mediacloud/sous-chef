@@ -22,7 +22,7 @@ def generate_run_name_folder():
 
 def RunFilesystemRecipe(recipe_stream, recipe_location):
     logger = get_run_logger()
-    json_conf = recipe_loader.yaml_to_conf(recipe_stream.read())
+    json_conf = recipe_loader.yaml_to_conf(recipe_stream)
         
     if "name" not in json_conf:
         name = recipe_location.replace("/", "-").replace("..", "").split(".")[0]
@@ -30,15 +30,15 @@ def RunFilesystemRecipe(recipe_stream, recipe_location):
     
 
     logger.info(f"Loaded recipe at {recipe_location}, Running pipeline:")
-    RunPipeline(json_conf)
-
+    run_data = {json_conf["name"] : RunPipeline(json_conf)}
+    return run_data
 
 
 def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
     logger = get_run_logger()
     
     mixins = recipe_loader.load_mixins(mixin_str)
-    
+    run_data = {}
     for template_params in mixins:
 
         json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
@@ -48,7 +48,10 @@ def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
             json_conf["name"] = name
 
         logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
-        RunPipeline(json_conf) 
+        run_data[json_conf["name"]] = RunPipeline(json_conf) 
+
+    print(run_data)
+    return run_data
 
 
 #Run a query and recipe over a sequence of days
@@ -99,10 +102,12 @@ def RunRecipeDirectory(recipe_directory:str):
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         mixin_stream = open(recipe_directory+"/mixins.yaml", "r")
 
-        RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
+        run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
     else:
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-        RunFilesystemRecipe(recipe_stream, recipe_directory)
+        run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
+    print(run_data)
+    ##Send email notification. 
 
 
 @flow(flow_run_name=generate_run_name_folder)
@@ -124,10 +129,11 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
 
     
     if any(["mixins.yaml" in o for o in objects]):
-        RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
+        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
     else:
-        RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
+        run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
 
+    print(run_data)
 
 
 if __name__ == "__main__":
