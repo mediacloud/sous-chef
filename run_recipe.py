@@ -7,7 +7,6 @@ import json
 import os
 from copy import copy   
 
-
 from prefect_aws import AwsCredentials
 from datetime import date, timedelta, datetime
 
@@ -99,7 +98,7 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
-def RunRecipeDirectory(recipe_directory:str):
+def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
     
     if "mixins.yaml" in os.listdir(recipe_directory):
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
@@ -110,12 +109,12 @@ def RunRecipeDirectory(recipe_directory:str):
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
     
-    send_run_summary_email(run_data, ["nano3.14@gmail.com"])
+    send_run_summary_email(run_data, email_to)
     
 
 
 @flow(flow_run_name=generate_run_name_folder)
-def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str):
+def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
     ##Pull down recipe data from S3, then run that recipe in the local environment. 
     aws_credentials = AwsCredentials.load(credentials_block_name)
     s3_client = aws_credentials.get_boto3_session().client("s3")
@@ -138,7 +137,7 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
         run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
 
     
-    send_run_summary_email(run_data, ["nano3.14@gmail.com"])
+    send_run_summary_email(run_data, email_to)
 
 
 
