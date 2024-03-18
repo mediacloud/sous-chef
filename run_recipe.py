@@ -7,8 +7,12 @@ import json
 import os
 from copy import copy   
 
+
 from prefect_aws import AwsCredentials
 from datetime import date, timedelta, datetime
+
+from email_flows import send_run_summary_email
+
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -50,7 +54,6 @@ def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
         logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         run_data[json_conf["name"]] = RunPipeline(json_conf) 
 
-    print(run_data)
     return run_data
 
 
@@ -106,12 +109,14 @@ def RunRecipeDirectory(recipe_directory:str):
     else:
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
-    print(run_data)
-    ##Send email notification. 
+    
+    send_run_summary_email(run_data, ["nano3.14@gmail.com"])
+    
 
 
 @flow(flow_run_name=generate_run_name_folder)
 def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str):
+    ##Pull down recipe data from S3, then run that recipe in the local environment. 
     aws_credentials = AwsCredentials.load(credentials_block_name)
     s3_client = aws_credentials.get_boto3_session().client("s3")
 
@@ -119,7 +124,6 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
         Bucket=recipe_bucket
         )
 
-    
     objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
     
     order_content = {}
@@ -133,10 +137,14 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
     else:
         run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
 
-    print(run_data)
+    
+    send_run_summary_email(run_data, ["nano3.14@gmail.com"])
+
+
 
 
 if __name__ == "__main__":
+    #Entrypoints are here for the sake of local development before deployment. 
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
     parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")

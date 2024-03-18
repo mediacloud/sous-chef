@@ -33,4 +33,5 @@ class ExportToS3(FlowAtom):
         with open(self.file_name, "rb") as f:
             resp = s3_client.upload_fileobj(f, self.bucket_name, self.object_name)
         
-        self.return_values["s3_object"] = f"{self.bucket_name}/{self.object_name}"
+        self.return_values["s3_object"] = self.object_name
+        self.return_values["s3_url"] = f"https://{self.bucket_name}.s3.amazonaws.com/{self.object_name}"
