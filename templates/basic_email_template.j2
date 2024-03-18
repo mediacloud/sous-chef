@@ -1,0 +1,20 @@
+<body>
+<h1>Sous-Chef Execution Summary:</h1>
+{% for run_name, run_returns in run_data.items() %}
+	<div>
+		<h2> {{ run_name }} </h2>
+		{% for atom_name, atom_returns in run_returns.items() %}
+			<div>
+				<h3> {{ atom_name }}</h3>
+				<ul>
+				{% for output_name, output_value in atom_returns.items() %}
+					<li> {{output_name}} : {{output_value}}  </li>
+				{% endfor %}
+				</ul>
+			</div>
+		{% endfor %}
+	</div>
+
+{% endfor %}
+
+</body>

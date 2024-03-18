@@ -10,9 +10,10 @@ DATASTRAT_DEFAULT = {
 }
 
 
-def yaml_to_conf(yaml_conf):
+def yaml_to_conf(yaml_str):
     ###parse a yaml file into a valid configuration json
-    
+    yaml_conf = yaml.safe_load(yaml_str)
+
     clean_steps = []
     
     #So that the YAML can use the task name as the dict key, we have to 
@@ -28,10 +29,10 @@ def yaml_to_conf(yaml_conf):
 
     yaml_conf[STEPS] = clean_steps
     
-    if DATASTRATEGY not in conf:
+    if DATASTRATEGY not in yaml_conf:
         yaml_conf[DATASTRATEGY] = DATASTRAT_DEFAULT
     
-    return conf
+    return yaml_conf
 
 
 

@@ -10,6 +10,9 @@ from copy import copy
 from prefect_aws import AwsCredentials
 from datetime import date, timedelta, datetime
 
+from email_flows import send_run_summary_email
+
+
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
@@ -22,7 +25,7 @@ def generate_run_name_folder():
 
 def RunFilesystemRecipe(recipe_stream, recipe_location):
     logger = get_run_logger()
-    json_conf = recipe_loader.yaml_to_conf(recipe_stream.read())
+    json_conf = recipe_loader.yaml_to_conf(recipe_stream)
         
     if "name" not in json_conf:
         name = recipe_location.replace("/", "-").replace("..", "").split(".")[0]
@@ -30,15 +33,15 @@ def RunFilesystemRecipe(recipe_stream, recipe_location):
     
 
     logger.info(f"Loaded recipe at {recipe_location}, Running pipeline:")
-    RunPipeline(json_conf)
-
+    run_data = {json_conf["name"] : RunPipeline(json_conf)}
+    return run_data
 
 
 def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
     logger = get_run_logger()
     
     mixins = recipe_loader.load_mixins(mixin_str)
-    
+    run_data = {}
     for template_params in mixins:
 
         json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
@@ -48,7 +51,9 @@ def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
             json_conf["name"] = name
 
         logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
-        RunPipeline(json_conf) 
+        run_data[json_conf["name"]] = RunPipeline(json_conf) 
+
+    return run_data
 
 
 #Run a query and recipe over a sequence of days
@@ -93,20 +98,24 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
-def RunRecipeDirectory(recipe_directory:str):
+def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
     
     if "mixins.yaml" in os.listdir(recipe_directory):
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         mixin_stream = open(recipe_directory+"/mixins.yaml", "r")
 
-        RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
+        run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
     else:
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-        RunFilesystemRecipe(recipe_stream, recipe_directory)
+        run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
+    
+    send_run_summary_email(run_data, email_to)
+    
 
 
 @flow(flow_run_name=generate_run_name_folder)
-def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str):
+def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
+    ##Pull down recipe data from S3, then run that recipe in the local environment. 
     aws_credentials = AwsCredentials.load(credentials_block_name)
     s3_client = aws_credentials.get_boto3_session().client("s3")
 
@@ -114,7 +123,6 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
         Bucket=recipe_bucket
         )
 
-    
     objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
     
     order_content = {}
@@ -124,13 +132,18 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
 
     
     if any(["mixins.yaml" in o for o in objects]):
-        RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
+        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
     else:
-        RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
+        run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
+
+    
+    send_run_summary_email(run_data, email_to)
+
 
 
 
 if __name__ == "__main__":
+    #Entrypoints are here for the sake of local development before deployment. 
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
     parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")
