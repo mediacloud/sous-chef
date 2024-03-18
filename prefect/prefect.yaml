@@ -35,12 +35,12 @@ pull:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: SC-Demo-Templates
+- name: sous-chef-s3
   version:
   tags: []
   description:
   schedule:
-  entrypoint: sous-chef/run_recipe.py:RunS3BucketRecipe
+  entrypoint: run_recipe.py:RunS3BucketRecipe
   parameters:
     credentials_block_name: "aws-s3-credentials"
     recipe_bucket: "sous-chef-recipes"
