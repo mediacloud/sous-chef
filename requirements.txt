@@ -6,6 +6,7 @@ numpy==1.26.4
 pandas==2.2.0
 prefect==2.14.20
 prefect_aws
+prefect_email
 pydantic==2.6.1
 pytest==8.0.0
 PyYAML==6.0.1
