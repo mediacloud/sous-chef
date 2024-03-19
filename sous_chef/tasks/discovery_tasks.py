@@ -145,6 +145,9 @@ class query_onlinenews(DiscoveryAtom):
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
 
+        self.return_values["QueryOverview"] = f"Query Text: {self.query}, Query Start Date: {self.start_date}, Query End Date: {self.end_date}"
+        self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
+
             
 @FlowAtom.register("CountOnlineNews")
 class count_onlinenews(DiscoveryAtom):
