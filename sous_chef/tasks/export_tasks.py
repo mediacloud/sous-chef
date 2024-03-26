@@ -58,9 +58,14 @@ class CSVToS3(OutputAtom):
         aws_credentials = AwsCredentials.load(self.credentials_block)
         s3_client = aws_credentials.get_boto3_session().client("s3")
 
+        #The s3 transfer wants a bytestream- this way we don't have to save a file locally before we transmit it. 
         csv_buffer = BytesIO()
         self.data.to_csv(csv_buffer)
 
+        #Restore the buffer to first position so we can read it later. 
+        csv_buffer.seek(0) 
+
+        #Insert a date slug into the object name, to disambiguate daily runs
         if self.object_date_slug:
             datestring = date.today().strftime("%Y-%m-%d")
             self.object_name = self.object_name.replace("DATE", datestring)

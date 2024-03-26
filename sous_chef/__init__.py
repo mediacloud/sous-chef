@@ -149,7 +149,10 @@ class Pipeline():
             
 #This is the main entrypoint for the whole thing            
 def RunPipeline(config, **kwargs):
-    pipeline = Pipeline(config, **kwargs)
+    run = True
+    if("test" in kwargs):
+        run=False
+    pipeline = Pipeline(config, run=run, **kwargs)
     
     return pipeline.return_value
     

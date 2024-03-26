@@ -68,6 +68,7 @@ class SpacyNER(FlowAtom):
             doc_ents = [{"text": ent.text, "type":ent.label_} for ent in document.ents]
 
             entities.append(doc_ents)
+            
 
         self.results.entities = entities
   
@@ -129,7 +130,7 @@ class TopNEntities(FlowAtom):
                 EntitiesAppearedCount.update(Counter({ent_text:1}))
 
         number_of_articles = len(self.data.entities)
-
+        
         if(self.sort_by == "total"):
             sorted_entities, entity_counts = zip(*EntitiesTotalCount.most_common(self.top_n))
             entity_apperances = [EntitiesAppearedCount[e] for e in sorted_entities]

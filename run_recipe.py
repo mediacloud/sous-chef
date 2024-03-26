@@ -23,7 +23,7 @@ def generate_run_name_folder():
     return name.strip("-")
 
 
-def RunFilesystemRecipe(recipe_stream, recipe_location):
+def RunFilesystemRecipe(recipe_stream, recipe_location, test:bool):
     logger = get_run_logger()
     json_conf = recipe_loader.yaml_to_conf(recipe_stream)
         
@@ -37,7 +37,7 @@ def RunFilesystemRecipe(recipe_stream, recipe_location):
     return run_data
 
 
-def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str):
+def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str, test:bool):
     logger = get_run_logger()
     
     mixins = recipe_loader.load_mixins(mixin_str)
@@ -98,13 +98,13 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
-def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
+def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.org"], test:bool=False):
     
     if "mixins.yaml" in os.listdir(recipe_directory):
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         mixin_stream = open(recipe_directory+"/mixins.yaml", "r")
 
-        run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory)
+        run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory, test)
     else:
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
         run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
@@ -114,7 +114,7 @@ def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.
 
 
 @flow(flow_run_name=generate_run_name_folder)
-def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"]):
+def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"], test:bool=False):
     ##Pull down recipe data from S3, then run that recipe in the local environment. 
     aws_credentials = AwsCredentials.load(credentials_block_name)
     s3_client = aws_credentials.get_boto3_session().client("s3")
@@ -132,9 +132,9 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
 
     
     if any(["mixins.yaml" in o for o in objects]):
-        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory)
+        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory, test)
     else:
-        run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory)
+        run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory, test)
 
     
     send_run_summary_email(run_data, email_to)
@@ -149,12 +149,13 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")
     parser.add_argument("-e", "--end-date", help="End date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe. Defaults to today if none.")
     parser.add_argument("-b", "--bucket", action='store_true')
+    parser.add_argument("-t", "--test", action='store_true', help="Validate recipe")
 
     args = parser.parse_args()
     if args.bucket:
-        RunS3BucketRecipe("aws-s3-credentials", "sous-chef-recipes", args.recipe_directory)
+        RunS3BucketRecipe("aws-s3-credentials", "sous-chef-recipes", args.recipe_directory, test=args.test)
 
     elif args.start_date is None:
-        RunRecipeDirectory(args.recipe_directory)
+        RunRecipeDirectory(args.recipe_directory, test=args.test)
     else:
         IteratedRecipe(args.recipe_directory, args.start_date)
