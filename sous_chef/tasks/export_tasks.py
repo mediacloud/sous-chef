@@ -52,6 +52,11 @@ class CSVToS3(OutputAtom):
     bucket_name:str
     object_name:str
     object_date_slug:bool
+    replace:bool
+    _defaults:{
+        "replace": True,
+
+    }
 
 
     def task_body(self):
@@ -70,11 +75,25 @@ class CSVToS3(OutputAtom):
             datestring = date.today().strftime("%Y-%m-%d")
             self.object_name = self.object_name.replace("DATE", datestring)
 
-        resp = s3_client.put_object(Body=csv_buffer, Bucket=self.bucket_name, Key=self.object_name, ContentType="text/csv")
+        object_index = 0
+        put_success = False
+        while put_success == False:
+            pre, su = self.object_name.split(".")
+            put_name = f"{pre}-{object_index}.{su}"
+
+            try:
+                #Fails if put_name doesn't exist
+                s3_client.get_object(Bucket=self.bucket_name, Key=put_name)
+                object_index += 1
+
+            except Exception as e:
+                print(e)
+                resp = s3_client.put_object(Body=csv_buffer, Bucket=self.bucket_name, Key=put_name, ContentType="text/csv")
+                put_success = True
 
         self.return_values["columns_saved"] = list(self.data.columns.values)
-        self.return_values["s3_object"] = self.object_name
-        self.return_values["s3_url"] = f"https://{self.bucket_name}.s3.amazonaws.com/{self.object_name}"
+        self.return_values["s3_object"] = put_name
+        self.return_values["s3_url"] = f"https://{self.bucket_name}.s3.amazonaws.com/{put_name}"
         
         
         
