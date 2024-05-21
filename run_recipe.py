@@ -63,8 +63,18 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
     recipe_location = recipe_directory+"recipe.yaml"
     mixin_location = recipe_directory+"mixins.yaml"
     
-    with open(mixin_location, "r") as infile:
-        mixins = recipe_loader.load_mixins(infile)
+    recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
+    mixin_stream = open(recipe_directory+"/mixins.yaml", "r").read()
+
+    run_data = RunIteratedRecipe(recipe_stream, recipe_location, mixin_stream, start_date, end_date)
+
+
+
+#As above but loading content arbitrarily as strs instead of file locations. 
+def RunIteratedRecipe(recipe_str:str, recipe_location:str, mixin_str: str, start_date:str, end_date:str,
+                        email_to:list=["paige@mediacloud.org"]):
+    logger = get_run_logger()
+    mixins = recipe_loader.load_mixins(mixin_str)
 
     if end_date is None:
         end_date = datetime.today()
@@ -73,8 +83,10 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
 
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
 
+    run_data = {}
     #Iterate over all the days in the daterange
     for window_end in daterange(start_date, end_date):
+        date_run_data = {}
         window_start = window_end - timedelta(days=1)
         
         window_start = window_start.strftime("%Y-%m-%d")
@@ -86,15 +98,23 @@ def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = N
             template_params["END_DATE"] = f"'{window_end}'"
             template_params["NAME"] += f"-{window_start}"
 
-            with open(recipe_location, "r") as config_yaml: 
-                json_conf = recipe_loader.t_yaml_to_conf(config_yaml, **template_params)
+            json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
 
-            
             if "name" not in json_conf:
                 name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
                 json_conf["name"] = name
+
+            logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
+
+            date_run_data[name] = RunPipeline(json_conf) 
+
+        send_run_summary_email(date_run_data, email_to)
+        run_data[window_end] = date_run_data
             
-            RunPipeline(json_conf)
+    return run_data 
+
+
+
 
 #Main flow entrypoint. 
 @flow(flow_run_name=generate_run_name_folder)
@@ -136,14 +156,34 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
     else:
         run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory, test)
 
-    
     send_run_summary_email(run_data, email_to)
 
+
+###In progress....
+@flow(flow_run_name=generate_run_name_folder)
+def IteratedS3BucketRecipe(credentials_block_name:str, recipe_bucket:str, recipe_directory:str, 
+                             start_date:str, end_date:str):
+
+    aws_credentials = AwsCredentials.load(credentials_block_name)
+    s3_client = aws_credentials.get_boto3_session().client("s3")
+
+    all_objects = s3_client.list_objects_v2(
+        Bucket=recipe_bucket
+        )
+
+    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
+    
+    order_content = {}
+    for component in objects:
+        final_name = component.split("/")[-1]
+        order_content[final_name] = s3_client.get_object(Bucket=recipe_bucket, Key=component)["Body"].read().decode('utf-8') 
+
+    RunIteratedRecipe(order_content["recipe.yaml"], recipe_directory, order_content["mixins.yaml"], start_date, end_date)
 
 
 
 if __name__ == "__main__":
-    #Entrypoints are here for the sake of local development before deployment. 
+    #These entrypoints are here for the sake of local development before deployment. 
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
     parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")

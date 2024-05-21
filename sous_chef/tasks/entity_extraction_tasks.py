@@ -131,16 +131,23 @@ class TopNEntities(FlowAtom):
 
         number_of_articles = len(self.data.entities)
         
-        if(self.sort_by == "total"):
-            sorted_entities, entity_counts = zip(*EntitiesTotalCount.most_common(self.top_n))
-            entity_apperances = [EntitiesAppearedCount[e] for e in sorted_entities]
-        
-        elif(self.sort_by == "percentage"):
-            sorted_entities, entity_apperances = zip(*EntitiesAppearedCount.most_common(self.top_n))
-            entity_counts = [EntitiesTotalCount[e] for e in sorted_entities]
-           
-        entity_apperances = [e/number_of_articles for e in entity_apperances]
+        if(len(EntitiesTotalCount) > 1):
 
+            if(self.sort_by == "total"):
+                sorted_entities, entity_counts = zip(*EntitiesTotalCount.most_common(self.top_n))
+                entity_apperances = [EntitiesAppearedCount[e] for e in sorted_entities]
+            
+            elif(self.sort_by == "percentage"):
+                sorted_entities, entity_apperances = zip(*EntitiesAppearedCount.most_common(self.top_n))
+                entity_counts = [EntitiesTotalCount[e] for e in sorted_entities]
+        
+            entity_apperances = [e/number_of_articles for e in entity_apperances]
+
+        else:
+            sorted_entities = []
+            entity_counts = []
+            entity_apperances = []
+       
         self.results.top_entities = sorted_entities
         self.results.entity_counts = entity_counts
         self.results.entity_appearance_percent = entity_apperances

@@ -50,3 +50,21 @@ deployments:
     job_variables:
       image: '{{ build_image.image }}'
   is_schedule_active: true
+
+- name: iterated-sous-chef-s3
+  version:
+  tags: []
+  description:
+  schedule:
+  entrypoint: run_recipe.py:IteratedS3BucketRecipe
+  parameters:
+    credentials_block_name: "aws-s3-credentials"
+    recipe_bucket: "sous-chef-recipes"
+  work_pool:
+    name: Guerin
+    work_queue_name:
+    job_variables:
+      image: '{{ build_image.image }}'
+  is_schedule_active: true
+
+
