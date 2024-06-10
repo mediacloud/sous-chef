@@ -171,7 +171,7 @@ def IteratedS3BucketRecipe(credentials_block_name:str, recipe_bucket:str, recipe
         Bucket=recipe_bucket
         )
 
-    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
+    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and ".yaml" in o["Key"]]
     
     order_content = {}
     for component in objects:
