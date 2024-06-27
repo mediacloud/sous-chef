@@ -7,6 +7,7 @@ from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
 from prefect.blocks.system import Secret
 import mediacloud.api
+import time
 import re
 import os
 import ast
@@ -124,6 +125,7 @@ class query_onlinenews(DiscoveryAtom):
         all_stories = []
         pagination_token = None
         more_stories = True
+        start_time = time.time()
         while more_stories:
             page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date.date(), 
                                                         end_date=self.end_date.date(), collection_ids=self.collections,
@@ -131,6 +133,8 @@ class query_onlinenews(DiscoveryAtom):
             all_stories += page
             more_stories = pagination_token is not None
 
+        end_time = time.time()
+        elapsed_time = end_time - start_time
 
         content = []
         for article in all_stories:
@@ -145,8 +149,10 @@ class query_onlinenews(DiscoveryAtom):
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
 
+
         self.return_values["QueryOverview"] = f"Query Text: {self.query}, Query Start Date: {self.start_date}, Query End Date: {self.end_date}"
         self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
+        self.return_values["ElapsedTime"] = elapsed_time
 
             
 @FlowAtom.register("CountOnlineNews")
