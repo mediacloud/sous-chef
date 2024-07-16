@@ -111,7 +111,7 @@ class query_onlinenews(DiscoveryAtom):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
     
-    def outputs(self, title:str, language:str, domain:str, original_capture_url:str, 
+    def outputs(self, title:str, language:str, media_name:str, original_capture_url:str, 
                 publication_date:object, text:str, id:str):pass
     
     
@@ -150,7 +150,7 @@ class query_onlinenews(DiscoveryAtom):
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
 
-        
+
         self.return_values["QueryOverview"] = f"Query Text: {self.query}, Query Start Date: {self.start_date}, Query End Date: {self.end_date}"
         self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
         self.return_values["ElapsedTime"] = elapsed_time
