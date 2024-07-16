@@ -111,8 +111,8 @@ class query_onlinenews(DiscoveryAtom):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
     
-    def outputs(self, title:str, language:str, media_name:str, original_capture_url:str, 
-                publication_date:object, text:str, id:str):pass
+    def outputs(self, title:str, language:str, media_name:str, url:str, 
+                publish_date:object, text:str, id:str):pass
     
     
     def task_body(self):
