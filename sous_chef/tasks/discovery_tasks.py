@@ -142,6 +142,7 @@ class query_onlinenews(DiscoveryAtom):
                 content.append(article)
         
         self.info(f"Query Returned {len(content)} Articles")
+        self.info(content[0])
 
         if len(content) > 0:
             self.results = pd.json_normalize(content)
@@ -149,7 +150,7 @@ class query_onlinenews(DiscoveryAtom):
             print(content)
             raise NoDiscoveryException(f"Query {self.query} produced no content")
 
-
+        
         self.return_values["QueryOverview"] = f"Query Text: {self.query}, Query Start Date: {self.start_date}, Query End Date: {self.end_date}"
         self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
         self.return_values["ElapsedTime"] = elapsed_time
