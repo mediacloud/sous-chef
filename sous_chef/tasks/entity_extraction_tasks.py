@@ -393,7 +393,7 @@ class TopTerms(FlowAtom):
 
         words, counts = zip(*sorted(counter.items(), key=lambda item: item[1], reverse=True)[:])
 
-        self.results.words = top_words
+        self.results.top_words = words
         self.results.word_counts = counts
 
 
