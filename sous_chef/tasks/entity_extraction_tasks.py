@@ -381,13 +381,17 @@ class TopTerms(FlowAtom):
     def inputs(self, text:str, language:str):pass
     def outputs(self, top_words:str, word_counts:str):pass
 
+    @classmethod
+    def creates_new_document(self):
+        return True   
+
     def task_body(self):
 
         counter = Counter()
         for row in self.data.itertuples():
             
             stopwords = mc_providers.language.stopwords_for_language(row.language)
-            words = [w for w in segwords(row.text) if w not in stopwords and len(w) > 1]
+            words = [w for w in segwords(row.text.lower()) if w not in stopwords and len(w) > 1]
             
             counter += Counter(words)
 

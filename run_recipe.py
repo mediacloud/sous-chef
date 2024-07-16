@@ -127,7 +127,7 @@ def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.
         run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory, test)
     else:
         recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-        run_data = RunFilesystemRecipe(recipe_stream, recipe_directory)
+        run_data = RunFilesystemRecipe(recipe_stream, recipe_directory, test)
     
     send_run_summary_email(run_data, email_to)
     
