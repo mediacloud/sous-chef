@@ -4,6 +4,8 @@ from collections import Counter
 from ..flowatom import FlowAtom
 import re
 from .utils import lazy_import
+from uniseg.wordbreak import words as segwords
+import mc_providers
 
 yake = lazy_import("yake")
 spacy = lazy_import("spacy")
@@ -274,8 +276,6 @@ class TopNKeywords(FlowAtom):
         self.results.keyword_counts = kw_counts
         self.results.keyword_appearance_percent = kw_apperances
 
-
-
 @FlowAtom.register("ExtractByRegex")
 class ExtractRegexMatch(FlowAtom):
     """
@@ -316,8 +316,7 @@ class ExtractHashtags(ExtractRegexMatch):
     Extract all hashtags from provided strings
     """
     def get_regex(self):
-        return '[#]{1}[\S]+'
-    
+        return '[#]{1}[\S]+'    
 
 #Extract URLS
 @FlowAtom.register("ExtractURLS")
@@ -368,4 +367,35 @@ class NGrams(FlowAtom):
             
             
         self.results.ngrams = ngrams
+
+@FlowAtom.register("TopTerms")
+class TopTerms(FlowAtom):
+    """
+    Simple top-terms using uniseg
+    """
+    top_n:int
+    _defaults = {
+        "top_n":100
+    }
+
+    def inputs(self, text:str, language:str):pass
+    def outputs(self, top_words:str, word_counts:str):pass
+
+    def task_body(self):
+
+        counter = Counter()
+        for row in self.data.itertuples():
+            
+            stopwords = mc_providers.language.stopwords_for_language(row.language)
+            words = [w for w in segwords(row.text) if w not in stopwords and len(w) > 1]
+            
+            counter += Counter(words)
+
+        words, counts = zip(*sorted(counter.items(), key=lambda item: item[1], reverse=True)[:])
+
+        self.results.words = top_words
+        self.results.word_counts = counts
+
+
+
 
