@@ -54,7 +54,7 @@ class DiscoveryAtom(FlowAtom):
 
 
     _defaults:{
-        "api_key_block":"mediacloud-api-key"
+        "api_key_block":"mediacloud-api-key",
         "date_mode":"direct",
         "start_date":"",
         "end_date":"",
