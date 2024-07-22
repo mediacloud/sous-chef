@@ -50,9 +50,11 @@ class DiscoveryAtom(FlowAtom):
     start_date:str
     end_date:str
     window_size:int
+    api_key_block:int
 
 
     _defaults:{
+        "api_key_block":"mediacloud-api-key"
         "date_mode":"direct",
         "start_date":"",
         "end_date":"",
@@ -97,11 +99,9 @@ def get_onlinenews_collection_domains(collection_ids, **kwargs):
         
 @FlowAtom.register("QueryOnlineNews")
 class query_onlinenews(DiscoveryAtom):
-    
     """
     Query mediacloud's onlinenews collection
     """
-    
     collections:list
     _defaults:{
         "collections":[]
@@ -120,7 +120,7 @@ class query_onlinenews(DiscoveryAtom):
         self.info(f"Query Text: {self.query}")
         self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
-        api_key = Secret.load("mediacloud-api-key")
+        mc_api = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(api_key.get())
         all_stories = []
         pagination_token = None
