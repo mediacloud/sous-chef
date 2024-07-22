@@ -50,7 +50,7 @@ class DiscoveryAtom(FlowAtom):
     start_date:str
     end_date:str
     window_size:int
-    api_key_block:int
+    api_key_block:str
 
 
     _defaults:{
