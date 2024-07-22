@@ -81,8 +81,8 @@ class DiscoveryAtom(FlowAtom):
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
-    mc_api = Secret.load("mediacloud-api-key")
-    directory = mediacloud.api.DirectoryApi(mc_api.get())
+    mc_api_key = Secret.load("mediacloud-api-key")
+    directory = mediacloud.api.DirectoryApi(mc_api_key.get())
     
     domains = []
     for collection in collection_ids:
@@ -113,7 +113,6 @@ class query_onlinenews(DiscoveryAtom):
     
     def outputs(self, title:str, language:str, media_name:str, url:str, 
                 publish_date:object, text:str, id:str):pass
-    
     
     def task_body(self):
         
