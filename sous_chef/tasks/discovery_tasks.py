@@ -158,8 +158,10 @@ class query_onlinenews(DiscoveryAtom):
 @FlowAtom.register("CountOverTime")
 class onlinenews_count_over_time(DiscoveryAtom):
     collections:list
+    timeout_secs: int
     _defaults:{
-        "collections":[]
+        "collections":[],
+        "timeout_secs":600
     }
 
     def validate(self):
@@ -175,6 +177,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
         
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
+        mc_search.TIMEOUT_SECS = self.timeout_secs
 
         count_over_time = mc_search.story_count_over_time(self.query, 
                                                     start_date=self.start_date.date(), 

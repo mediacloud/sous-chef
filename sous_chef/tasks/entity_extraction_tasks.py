@@ -251,18 +251,19 @@ class TopNKeywords(FlowAtom):
         TotalCount = Counter()
         #Only count one appearance of a keyword per article, so we can get percentages
         AppearedCount = Counter()
-        
+
         for article_keywords in self.data.keywords:
-            
+
             for keyword in article_keywords:              
                 TotalCount.update(Counter({keyword:1}))
             
-            for kw in set(article_keywords):
-                AppearedCount.update(Counter({kw:1}))
+            for keyword in set(article_keywords):
+                AppearedCount.update(Counter({keyword:1}))
 
         number_of_articles = len(self.data.keywords)
 
         if(self.sort_by == "total"):
+
             sorted_kws, kw_counts = zip(*TotalCount.most_common(self.top_n))
             kw_apperances = [AppearedCount[e] for e in sorted_kws]
         
