@@ -154,7 +154,35 @@ class query_onlinenews(DiscoveryAtom):
         self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
         self.return_values["ElapsedTime"] = elapsed_time
 
-            
+
+@FlowAtom.register("CountOverTime")
+class onlinenews_count_over_time(DiscoveryAtom):
+    collections:list
+    _defaults:{
+        "collections":[]
+    }
+
+    def validate(self):
+        if "[" in self.collections:
+            self.collections = ast.literal_eval(self.collections)
+    
+    def outputs(self, date:str, total_count:int, ratio:float): pass
+
+    def task_body(self):
+        
+        self.info(f"Query Text: {self.query}")
+        self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
+        
+        mc_api_key = Secret.load(self.api_key_block)
+        mc_search = mediacloud.api.SearchApi(mc_api_key.get())
+
+        count_over_time = mc_search.story_count_over_time(self.query, 
+                                                    start_date=self.start_date.date(), 
+                                                    end_date=self.end_date.date(), 
+                                                    collection_ids=self.collections)
+        
+        self.results = pd.DataFrame(count_over_time)
+
 @FlowAtom.register("CountOnlineNews")
 class count_onlinenews(DiscoveryAtom):
     """
