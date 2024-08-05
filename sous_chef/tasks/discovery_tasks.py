@@ -149,9 +149,10 @@ class query_onlinenews(DiscoveryAtom):
                 content.append(article)
         
         self.info(f"Query Returned {len(content)} Articles")
-        self.info(content[0])
+        
 
         if len(content) > 0:
+            self.info(content[0])
             self.results = pd.json_normalize(content)
         else:
             print(content)
