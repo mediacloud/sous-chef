@@ -105,7 +105,7 @@ class query_onlinenews(DiscoveryAtom):
     collections:list
     use_staging:bool
     _defaults:{
-        "collections":[]
+        "collections":[],
         "use_staging":False
     }
         
