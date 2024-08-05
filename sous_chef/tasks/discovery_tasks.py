@@ -103,8 +103,10 @@ class query_onlinenews(DiscoveryAtom):
     Query mediacloud's onlinenews collection
     """
     collections:list
+    use_staging:bool
     _defaults:{
         "collections":[]
+        "use_staging":False
     }
         
     def validate(self):
@@ -119,8 +121,14 @@ class query_onlinenews(DiscoveryAtom):
         self.info(f"Query Text: {self.query}")
         self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
         
+        if self.use_staging:
+            self.api_key_block = "mc-staging-test-api-key"
+
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
+        if self.use_staging:   
+            mc_search.BASE_API_URL = "https://mcweb-staging.tarbell.mediacloud.org/api/"
+
         all_stories = []
         pagination_token = None
         more_stories = True
