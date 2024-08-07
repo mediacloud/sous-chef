@@ -171,7 +171,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
     use_staging: bool
     _defaults:{
         "collections":[],
-        "timeout_secs":600
+        "timeout_secs":600,
         "use_staging":False
     }
 
