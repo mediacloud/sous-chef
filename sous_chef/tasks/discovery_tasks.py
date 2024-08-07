@@ -168,9 +168,11 @@ class query_onlinenews(DiscoveryAtom):
 class onlinenews_count_over_time(DiscoveryAtom):
     collections:list
     timeout_secs: int
+    use_staging: bool
     _defaults:{
         "collections":[],
         "timeout_secs":600
+        "use_staging":False
     }
 
     def validate(self):
@@ -183,17 +185,31 @@ class onlinenews_count_over_time(DiscoveryAtom):
         
         self.info(f"Query Text: {self.query}")
         self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
+
+        if self.use_staging:
+            self.api_key_block = "mc-staging-test-api-key"
+
         
+
+
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         mc_search.TIMEOUT_SECS = self.timeout_secs
+        if self.use_staging:   
+            mc_search.BASE_API_URL = "https://mcweb-staging.tarbell.mediacloud.org/api/"
 
+        start_time = time.time()
         count_over_time = mc_search.story_count_over_time(self.query, 
                                                     start_date=self.start_date.date(), 
                                                     end_date=self.end_date.date(), 
                                                     collection_ids=self.collections)
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
         
         self.results = pd.DataFrame(count_over_time)
+
+        self.return_values["ElapsedTime"] = elapsed_time
 
 @FlowAtom.register("CountOnlineNews")
 class count_onlinenews(DiscoveryAtom):
