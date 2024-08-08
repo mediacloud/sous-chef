@@ -199,15 +199,21 @@ class onlinenews_count_over_time(DiscoveryAtom):
             mc_search.BASE_API_URL = "https://mcweb-staging.tarbell.mediacloud.org/api/"
 
         start_time = time.time()
-        count_over_time = mc_search.story_count_over_time(self.query, 
+        try:
+            count_over_time = mc_search.story_count_over_time(self.query, 
                                                     start_date=self.start_date.date(), 
                                                     end_date=self.end_date.date(), 
                                                     collection_ids=self.collections)
+        except RuntimeError as e:
+            self.info(e)
+            self.info("continuing...")
+        else:
 
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        
-        self.results = pd.DataFrame(count_over_time)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            
+            self.results = pd.DataFrame(count_over_time)
+
 
         self.return_values["ElapsedTime"] = elapsed_time
 
