@@ -207,6 +207,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
         except RuntimeError as e:
             self.info(e)
             self.info("continuing...")
+            elapsed_time = 0 
         else:
 
             end_time = time.time()
