@@ -127,7 +127,7 @@ class query_onlinenews(DiscoveryAtom):
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         if self.use_staging:   
-            mc_search.BASE_API_URL = "https://mcweb-staging.tarbell.mediacloud.org/api/"
+            mc_search.BASE_API_URL = "https://mcweb-staging.steinam.angwin/api/"
 
         all_stories = []
         pagination_token = None
@@ -196,7 +196,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         mc_search.TIMEOUT_SECS = self.timeout_secs
         if self.use_staging:   
-            mc_search.BASE_API_URL = "https://mcweb-staging.tarbell.mediacloud.org/api/"
+            mc_search.BASE_API_URL = "https://mcweb-staging.steinam.angwin/api/"
 
         start_time = time.time()
         try:
