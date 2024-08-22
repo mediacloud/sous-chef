@@ -51,6 +51,7 @@ class DiscoveryAtom(FlowAtom):
     end_date:str
     window_size:int
     api_key_block:str
+    endpoint:str 
 
 
     _defaults:{
@@ -59,6 +60,7 @@ class DiscoveryAtom(FlowAtom):
         "start_date":"",
         "end_date":"",
         "window_size":""
+        "endpoint":""
     }
 
     
@@ -103,12 +105,8 @@ class query_onlinenews(DiscoveryAtom):
     Query mediacloud's onlinenews collection
     """
     collections:list
-    use_staging:bool
-    staging_endpoint:str
     _defaults:{
         "collections":[],
-        "use_staging":False,
-        "staging_endpoint":"https://mcweb-staging.tarbell.mediacloud.org/api/",
     }
         
     def validate(self):
@@ -122,14 +120,12 @@ class query_onlinenews(DiscoveryAtom):
         
         self.info(f"Query Text: {self.query}")
         self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
-        
-        if self.use_staging:
-            self.api_key_block = "mc-staging-test-api-key"
 
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
-        if self.use_staging:   
-            mc_search.BASE_API_URL = self.staging_endpoint
+        
+        if self.endpoint != "":   
+            mc_search.BASE_API_URL = self.endpoint
 
         all_stories = []
         pagination_token = None
@@ -175,8 +171,6 @@ class onlinenews_count_over_time(DiscoveryAtom):
     _defaults:{
         "collections":[],
         "timeout_secs":600,
-        "use_staging":False,
-        "staging_endpoint":"https://mcweb-staging.tarbell.mediacloud.org/api/",
     }
 
     def validate(self):
@@ -190,17 +184,11 @@ class onlinenews_count_over_time(DiscoveryAtom):
         self.info(f"Query Text: {self.query}")
         self.info(f"Query Start Date: {self.start_date}, Query End Date: {self.end_date}")
 
-        if self.use_staging:
-            self.api_key_block = "mc-staging-test-api-key"
-
-        
-
-
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         mc_search.TIMEOUT_SECS = self.timeout_secs
-        if self.use_staging:   
-            mc_search.BASE_API_URL = self.staging_endpoint
+        if self.endpoint != "":   
+            mc_search.BASE_API_URL = self.endpoint
 
         start_time = time.time()
         try:
