@@ -59,7 +59,7 @@ class DiscoveryAtom(FlowAtom):
         "date_mode":"direct",
         "start_date":"",
         "end_date":"",
-        "window_size":""
+        "window_size":"",
         "endpoint":""
     }
 
