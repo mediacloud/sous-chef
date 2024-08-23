@@ -23,7 +23,7 @@ class Pipeline():
     Then call the class to run the pipeline
     """
 
-    __code__=self.__init__.__code__
+    __code__ = "somecode"
     
     def __init__(self, config, run=True, log_level = "INFO"):
         
