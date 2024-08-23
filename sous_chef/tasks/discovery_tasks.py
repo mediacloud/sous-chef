@@ -52,6 +52,7 @@ class DiscoveryAtom(FlowAtom):
     window_size:int
     api_key_block:str
     endpoint:str 
+    timeout:int
 
 
     _defaults:{
@@ -60,7 +61,8 @@ class DiscoveryAtom(FlowAtom):
         "start_date":"",
         "end_date":"",
         "window_size":"",
-        "endpoint":"default"
+        "endpoint":"default",
+        "timeout":300,
     }
 
     
@@ -123,7 +125,7 @@ class query_onlinenews(DiscoveryAtom):
 
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
-        
+        mc_search.TIMEOUT_SECS = self.timeout
         if self.endpoint != "default":   
             mc_search.BASE_API_URL = self.endpoint
 
@@ -165,10 +167,8 @@ class query_onlinenews(DiscoveryAtom):
 @FlowAtom.register("CountOverTime")
 class onlinenews_count_over_time(DiscoveryAtom):
     collections:list
-    timeout_secs: int
     _defaults:{
         "collections":[],
-        "timeout_secs":600,
     }
 
     def validate(self):
@@ -184,7 +184,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
 
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
-        mc_search.TIMEOUT_SECS = self.timeout_secs
+        mc_search.TIMEOUT_SECS = self.timeout
         if self.endpoint != "default":   
             mc_search.BASE_API_URL = self.endpoint
 
