@@ -22,6 +22,8 @@ class Pipeline():
     Initialize it with a configuration json, and it will run all of the pre-run validation.
     Then call the class to run the pipeline
     """
+
+    __code__=self.__init__.__code__
     
     def __init__(self, config, run=True, log_level = "INFO"):
         
@@ -46,7 +48,8 @@ class Pipeline():
         if run:
             self.logger.info("Setup complete, beginning sous chef execution")
             self.run_pipeline()
-                
+
+
     def __get_atom_meta(self):
         #Some atom metadata (like- does it create or extend a document) is required
         #at the datasetup step- which, is obligated to run before the atom instantiation 
