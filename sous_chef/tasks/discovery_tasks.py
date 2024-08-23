@@ -166,8 +166,6 @@ class query_onlinenews(DiscoveryAtom):
 class onlinenews_count_over_time(DiscoveryAtom):
     collections:list
     timeout_secs: int
-    use_staging: bool
-    staging_endpoint:str
     _defaults:{
         "collections":[],
         "timeout_secs":600,
