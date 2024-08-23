@@ -60,7 +60,7 @@ class DiscoveryAtom(FlowAtom):
         "start_date":"",
         "end_date":"",
         "window_size":"",
-        "endpoint":""
+        "endpoint":"default"
     }
 
     
@@ -124,7 +124,7 @@ class query_onlinenews(DiscoveryAtom):
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         
-        if self.endpoint != "":   
+        if self.endpoint != "default":   
             mc_search.BASE_API_URL = self.endpoint
 
         all_stories = []
@@ -185,7 +185,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
         mc_api_key = Secret.load(self.api_key_block)
         mc_search = mediacloud.api.SearchApi(mc_api_key.get())
         mc_search.TIMEOUT_SECS = self.timeout_secs
-        if self.endpoint != "":   
+        if self.endpoint != "default":   
             mc_search.BASE_API_URL = self.endpoint
 
         start_time = time.time()
