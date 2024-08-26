@@ -3,6 +3,7 @@ from ..exceptions import NoDiscoveryException
 from datetime import datetime, timedelta
 import pandas as pd
 import requests
+from requests.exceptions import ReadTimeout
 from .utils import lazy_import
 from waybacknews.searchapi import SearchApiClient as WaybackSearchClient
 from prefect.blocks.system import Secret
@@ -194,7 +195,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
                                                     start_date=self.start_date.date(), 
                                                     end_date=self.end_date.date(), 
                                                     collection_ids=self.collections)
-        except RuntimeError as e:
+        except ReadTimeout as e:
             self.info(e)
             self.info("continuing...")
             elapsed_time = 0 
@@ -208,40 +209,7 @@ class onlinenews_count_over_time(DiscoveryAtom):
 
         self.return_values["ElapsedTime"] = elapsed_time
 
-@FlowAtom.register("CountOnlineNews")
-class count_onlinenews(DiscoveryAtom):
-    """
-    Gets the count as returned from onlinenews.count(query)
-    """
-    
-    collections:list
-    _defaults:{
-        "collections":[]
-    }
-        
-    def outputs(self, count:int):pass
-    
-    def validate(self):
-        if "[" in self.collections:
-            self.collections = ast.literal_eval(self.collections)
-            
-    
-    def task_body(self):
-        provider = "onlinenews-mediacloud"
-        base_url = "http://ramos.angwin:8000/v1/" 
-        
-        SearchInterface = providers.provider_by_name(provider, None, base_url)
-        
-        start_date = datetime.strptime(self.start_date, self.start_date_form)
-        end_date = datetime.strptime(self.end_date, self.end_date_form)
-    
-        domains = []
-        if len(self.collections) > 0:
-            domains = get_onlinenews_collection_domains(self.collections)
-            
-        count = SearchInterface.count(self.query, start_date, end_date, domains = domains)
-        self.results = pd.DataFrame()
-        self.results["count"] = [count]
+
             
             
             
