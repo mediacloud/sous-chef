@@ -147,7 +147,8 @@ class Pipeline():
                 if task_return_value:
                     self.return_value[step.task_name] = task_return_value
 
-
+    def __call__(self):
+        self.run_pipeline()
 
             
 #This is the main entrypoint for the whole thing            

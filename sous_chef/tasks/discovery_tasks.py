@@ -63,7 +63,7 @@ class DiscoveryAtom(FlowAtom):
         "end_date":"",
         "window_size":"",
         "endpoint":"default",
-        "timeout":300,
+        "timeout":600,
     }
 
     
