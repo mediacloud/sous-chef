@@ -48,7 +48,7 @@ class FlowAtom(object):
     def info(self, msg):
         self.logger.info(msg)
 
-    def warn(self, text):
+    def warn(self, msg):
         self.logger.warning(msg)
     
     #Easy Access to the subclass registry 
