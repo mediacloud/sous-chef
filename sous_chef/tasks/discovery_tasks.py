@@ -195,9 +195,9 @@ class onlinenews_count_over_time(DiscoveryAtom):
                                                     start_date=self.start_date.date(), 
                                                     end_date=self.end_date.date(), 
                                                     collection_ids=self.collections)
-        except ReadTimeout as e:
-            self.info(e)
-            self.info("continuing...")
+        except ReadTimeout or RuntimeError as e:
+            self.warn(e)
+            self.warn("continuing...")
             elapsed_time = 0 
         else:
 
