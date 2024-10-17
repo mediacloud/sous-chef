@@ -18,6 +18,22 @@ from .constants import (ID, STEPS, DATA, DATASTRATEGY, DATALOCATION, READLOCATIO
     USER_CONFIGURED_OUTPUT, USER_CONFIGURED_COLUMNS, STRING_TYPE_MAP, LOAD_IF_CACHED,
     CACHE_STEP, CACHE_SKIP, CACHE_LOAD, CACHE_HASHES, CACHE_SAVE)
 
+import sys
+import csv
+maxInt = sys.maxsize
+
+#As we're occasionally loading Very Large csvs, raise this as high as the system allows
+while True:
+    # decrease the maxInt value by factor 10 
+    # as long as the OverflowError occurs.
+
+    try:
+        csv.field_size_limit(maxInt)
+        break
+    except OverflowError:
+        maxInt = int(maxInt/10)
+
+
 
 #There should be one data strategy per pipeline
 #Each impliments three methods:
