@@ -37,7 +37,7 @@ def RunFilesystemRecipe(recipe_stream, recipe_location, test:bool):
     return run_data
 
 
-def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str, test:bool):
+def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str, test:bool, email_on_subflow:bool=False, email_to:list=[]):
     logger = get_run_logger()
     
     mixins = recipe_loader.load_mixins(mixin_str)
@@ -52,6 +52,8 @@ def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str, test:
 
         logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
         run_data[json_conf["name"]] = RunPipeline(json_conf) 
+        if email_on_subflow:
+            send_run_summary_email(run_data, email_to)
 
     return run_data
 
@@ -134,7 +136,8 @@ def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.
 
 
 @flow(flow_run_name=generate_run_name_folder)
-def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"], test:bool=False):
+def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"], 
+                     test:bool=False, email_on_subflow:bool=False):
     ##Pull down recipe data from S3, then run that recipe in the local environment. 
     aws_credentials = AwsCredentials.load(credentials_block_name)
     s3_client = aws_credentials.get_boto3_session().client("s3")
@@ -152,7 +155,8 @@ def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_dir
 
     
     if any(["mixins.yaml" in o for o in objects]):
-        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory, test)
+        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory, test, 
+                                        email_on_subflow=email_on_subflow, email_to=email_to)
     else:
         run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory, test)
 
