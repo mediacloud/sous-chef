@@ -4,7 +4,7 @@ mc-providers==0.5.4
 wayback-news-search==1.2.*
 numpy==1.26.4
 pandas==2.2.0
-prefect==2.20.3
+prefect==3.0.*
 prefect_aws
 prefect_email
 pydantic==2.6.1

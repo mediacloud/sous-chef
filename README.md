@@ -24,6 +24,7 @@ The [Atom Wishlist](Atom_Wishlist.md) is where I am storing the list of new comp
 
 ### Version History
 
+__v1.0__ - Upgrade to prefect 3
 __v0.1__ - First beta tag for versioning
 
 
