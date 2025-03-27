@@ -4,10 +4,10 @@ mc-providers==0.5.4
 wayback-news-search==1.2.*
 numpy==1.26.4
 pandas==2.2.0
-prefect==3.2.14,
-prefect_aws,
-prefect_email,
-pydantic,
+prefect==3.2.14
+prefect_aws
+prefect_email
+pydantic
 pytest==8.0.0
 PyYAML==6.0.1
 Requests==2.31.0
