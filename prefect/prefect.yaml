@@ -35,7 +35,7 @@ pull:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: sous-chef-s3
+- name: sous-chef-s3-p3
   version:
   tags: []
   description:
@@ -45,7 +45,7 @@ deployments:
     credentials_block_name: "aws-s3-credentials"
     recipe_bucket: "sous-chef-recipes"
   work_pool:
-    name: Guerin
+    name: bly
     work_queue_name:
     job_variables:
       image: '{{ build_image.image }}'
