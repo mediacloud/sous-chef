@@ -1,205 +1,78 @@
-from pprint import pprint
 import argparse
+import json
+import yaml
 from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
-from sous_chef import RunPipeline, recipe_loader
-import json
-import os
-from copy import copy   
-
 from prefect_aws import AwsCredentials
-from datetime import date, timedelta, datetime
 
+from sous_chef import RunPipeline
+from sous_chef.recipe_model import load_recipe_file, load_recipe_template_str, build_model_from_recipe, render_recipe
 from email_flows import send_run_summary_email
 
 
-def daterange(start_date, end_date):
-    for n in range(int((end_date - start_date).days)):
-        yield start_date + timedelta(n)
-
 def generate_run_name_folder():
     params = flow_run.parameters
-    name = params["recipe_directory"].split("sous-chef-recipes")[-1].replace("/", "-")
-    return name.strip("-")
+    name = Path(params["recipe_path"]).name.replace("/","-")
+    return name
 
-
-def RunFilesystemRecipe(recipe_stream, recipe_location, test:bool):
+def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
     logger = get_run_logger()
-    json_conf = recipe_loader.yaml_to_conf(recipe_stream)
-        
-    if "name" not in json_conf:
-        name = recipe_location.replace("/", "-").replace("..", "").split(".")[0]
-        json_conf["name"] = name
-    
+    recipe_dict = load_recipe_file(recipe_path)
+    RecipeParamsModel = build_model_from_recipe(recipe_dict)
+    recipe_template_str = load_recipe_template_str(recipe_path)
 
-    logger.info(f"Loaded recipe at {recipe_location}, Running pipeline:")
-    run_data = {json_conf["name"] : RunPipeline(json_conf)}
-    return run_data
+    for params in param_sets:
+        try:
+            validated_params = RecipeParamsModel(**params)
+            rendered_recipe = render_recipe(recipe_template_str, validated_params)
+            json_conf = yaml.safe_load(rendered_recipe)
+            RunPipeline(json_conf)
+            logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
+        except Exception as e:
+            logger.error(f"Failed to run recipe {source_label} with params {params}: {e}")
 
-
-def RunTemplatedRecipe(recipe_str:str, mixin_str:str, recipe_location:str, test:bool, email_on_subflow:bool=False, email_to:list=[]):
-    logger = get_run_logger()
-    
-    mixins = recipe_loader.load_mixins(mixin_str)
-    run_data = {}
-    for template_params in mixins:
-
-        json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
-
-        if "name" not in json_conf:
-            name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
-            json_conf["name"] = name
-
-        logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
-        run_data[json_conf["name"]] = RunPipeline(json_conf) 
-        if email_on_subflow:
-            send_run_summary_email(run_data, email_to)
-
-    return run_data
-
-
-#Run a query and recipe over a sequence of days
 @flow(flow_run_name=generate_run_name_folder)
-def IteratedRecipe(recipe_directory:str, start_date: str, end_date: str|None = None):
-    logger = get_run_logger()
-    recipe_location = recipe_directory+"recipe.yaml"
-    mixin_location = recipe_directory+"mixins.yaml"
-    
-    recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-    mixin_stream = open(recipe_directory+"/mixins.yaml", "r").read()
-
-    run_data = RunIteratedRecipe(recipe_stream, recipe_location, mixin_stream, start_date, end_date)
-
-
-
-#As above but loading content arbitrarily as strs instead of file locations. 
-def RunIteratedRecipe(recipe_str:str, recipe_location:str, mixin_str: str, start_date:str, end_date:str,
-                        email_to:list=["paige@mediacloud.org"]):
-    logger = get_run_logger()
-    mixins = recipe_loader.load_mixins(mixin_str)
-
-    if end_date is None:
-        end_date = datetime.today()
-    else:
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-
-    start_date = datetime.strptime(start_date, "%Y-%m-%d")
-
-    run_data = {}
-    #Iterate over all the days in the daterange
-    for window_end in daterange(start_date, end_date):
-        date_run_data = {}
-        window_start = window_end - timedelta(days=1)
-        
-        window_start = window_start.strftime("%Y-%m-%d")
-        window_end = window_end.strftime("%Y-%m-%d")
-
-        for template_params in mixins:
-            template_params = copy(template_params)
-            template_params["START_DATE"] = f"'{window_start}'"
-            template_params["END_DATE"] = f"'{window_end}'"
-            template_params["NAME"] += f"-{window_start}"
-
-            json_conf = recipe_loader.t_yaml_to_conf(recipe_str, **template_params)
-
-            if "name" not in json_conf:
-                name = recipe_location.split(".")[0].split("/")[-1]+template_params["NAME"]
-                json_conf["name"] = name
-
-            logger.info(f"Loaded recipe at {recipe_location} with mixin {template_params['NAME']}, Running pipeline:")
-
-            date_run_data[name] = RunPipeline(json_conf) 
-
-        send_run_summary_email(date_run_data, email_to)
-        run_data[window_end] = date_run_data
-            
-    return run_data 
-
-
-
-
-#Main flow entrypoint. 
-@flow(flow_run_name=generate_run_name_folder)
-def RunRecipeDirectory(recipe_directory:str, email_to:list = ["paige@mediacloud.org"], test:bool=False):
-    
-    if "mixins.yaml" in os.listdir(recipe_directory):
-        recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-        mixin_stream = open(recipe_directory+"/mixins.yaml", "r")
-
-        run_data = RunTemplatedRecipe(recipe_stream, mixin_stream, recipe_directory, test)
-    else:
-        recipe_stream = open(recipe_directory+"/recipe.yaml", "r").read()
-        run_data = RunFilesystemRecipe(recipe_stream, recipe_directory, test)
-    
-    send_run_summary_email(run_data, email_to)
-    
+def run_recipe(recipe_path: str, params: dict,):
+    _load_and_run_recipe(recipe_path, [params])
 
 
 @flow(flow_run_name=generate_run_name_folder)
-def RunS3BucketRecipe(credentials_block_name: str, recipe_bucket:str, recipe_directory:str, email_to:list = ["paige@mediacloud.org"], 
-                     test:bool=False, email_on_subflow:bool=False):
-    ##Pull down recipe data from S3, then run that recipe in the local environment. 
-    aws_credentials = AwsCredentials.load(credentials_block_name)
-    s3_client = aws_credentials.get_boto3_session().client("s3")
+def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block: str, base_params: dict, test: bool = False):
+    logger = get_run_logger()
+    aws_credentials = AwsCredentials.load(aws_credentials_block)
+    s3_bucket = S3Bucket(bucket_name=bucket_name, credentials=aws_credentials)
 
-    all_objects = s3_client.list_objects_v2(
-        Bucket=recipe_bucket
-        )
+    recipe_key = f"{recipe_dir_path}/recipe.yaml"
+    mixins_key = f"{recipe_dir_path}/mixins.yaml"
 
-    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and "." in o["Key"]]
-    
-    order_content = {}
-    for component in objects:
-        final_name = component.split("/")[-1]
-        order_content[final_name] = s3_client.get_object(Bucket=recipe_bucket, Key=component)["Body"].read().decode('utf-8') 
+    try:
+        mixins_data = s3_bucket.read_path(mixins_key)
+        mixins_values = yaml.safe_load(mixins_data)
+    except Exception as e:
+        logger.error(f"Could not load mixins.yaml from S3 at {mixins_key}: {e}")
+        return
 
-    
-    if any(["mixins.yaml" in o for o in objects]):
-        run_data = RunTemplatedRecipe(order_content["recipe.yaml"], order_content["mixins.yaml"], recipe_directory, test, 
-                                        email_on_subflow=email_on_subflow, email_to=email_to)
-    else:
-        run_data = RunFilesystemRecipe(order_content["recipe.yaml"], recipe_directory, test)
+    local_recipe_path = f"/tmp/{Path(recipe_key).name}"
+    try:
+        recipe_data = s3_bucket.read_path(recipe_key)
+        with open(local_recipe_path, 'w') as f:
+            f.write(recipe_data)
+    except Exception as e:
+        logger.error(f"Could not load recipe.yaml from S3 at {recipe_key}: {e}")
+        return
 
-    send_run_summary_email(run_data, email_to)
+    param_sets = [{**base_params, **value} for value in mixins_values]
+    _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
 
-
-###In progress....
-@flow(flow_run_name=generate_run_name_folder)
-def IteratedS3BucketRecipe(credentials_block_name:str, recipe_bucket:str, recipe_directory:str, 
-                             start_date:str, end_date:str):
-
-    aws_credentials = AwsCredentials.load(credentials_block_name)
-    s3_client = aws_credentials.get_boto3_session().client("s3")
-
-    all_objects = s3_client.list_objects_v2(
-        Bucket=recipe_bucket
-        )
-
-    objects = [o["Key"] for o in all_objects["Contents"] if recipe_directory in o["Key"] and ".yaml" in o["Key"]]
-    
-    order_content = {}
-    for component in objects:
-        final_name = component.split("/")[-1]
-        order_content[final_name] = s3_client.get_object(Bucket=recipe_bucket, Key=component)["Body"].read().decode('utf-8') 
-
-    RunIteratedRecipe(order_content["recipe.yaml"], recipe_directory, order_content["mixins.yaml"], start_date, end_date)
 
 
 
 if __name__ == "__main__":
-    #These entrypoints are here for the sake of local development before deployment. 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--recipe-directory", help="A directory with a recipe.yaml and perhaps a mixins.yaml file to generate runs from")
-    parser.add_argument("-s", "--start-date", help="Start date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe")
-    parser.add_argument("-e", "--end-date", help="End date in YYYY-MM-DD to iterate the recipe query over. Triggers iterated recipe. Defaults to today if none.")
-    parser.add_argument("-b", "--bucket", action='store_true')
-    parser.add_argument("-t", "--test", action='store_true', help="Validate recipe")
-
+    parser = argparse.ArgumentParser(description="Run a sous-chef recipe.")
+    parser.add_argument("recipe_path", type=str, help="Path to the recipe YAML file.")
+    parser.add_argument("--params", type=str, help="JSON string of parameters to pass to the recipe.")
+    parser.add_argument("--test", action="store_true", help="Run the recipe in test mode.")
     args = parser.parse_args()
-    if args.bucket:
-        RunS3BucketRecipe("aws-s3-credentials", "sous-chef-recipes", args.recipe_directory, test=args.test)
 
-    elif args.start_date is None:
-        RunRecipeDirectory(args.recipe_directory, test=args.test)
-    else:
-        IteratedRecipe(args.recipe_directory, args.start_date)
+    params = json.loads(args.params) if args.params else {}
+    run_recipe(args.recipe_path, params, args.test)
