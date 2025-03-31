@@ -12,7 +12,7 @@ build:
     id: build_image
     requires: prefect-docker>=0.3.1
     image_name: graceworthy/sous_chef
-    tag: b1
+    tag: latest
     dockerfile: auto
 
 # push section allows you to manage if and how this project is uploaded to remote locations
@@ -25,13 +25,8 @@ push:
 
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
-- prefect.deployments.steps.git_clone:
-    repository: https://github.com/mediacloud/sous-chef.git
-    credentials: '{{ prefect.blocks.github-credentials.sous-chef-read-only }}'
-
-- prefect.deployments.steps.pip_install_requirements:
-    requirements_file: requirements.txt
-    stream_output: true
+- prefect.deployments.steps.set_working_directory:
+  directory: /opt/prefect/sous_chef
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
