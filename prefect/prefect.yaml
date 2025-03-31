@@ -24,9 +24,10 @@ push:
     credentials: '{{ prefect.blocks.docker-registry-credentials.docker-auth }}'
 
 # pull section allows you to provide instructions for cloning this project in remote locations
+
 pull:
 - prefect.deployments.steps.set_working_directory:
-    path: /opt/prefect/sous_chef
+    directory: /opt/prefect/sous-chef
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
