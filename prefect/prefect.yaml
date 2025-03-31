@@ -26,9 +26,8 @@ push:
 # pull section allows you to provide instructions for cloning this project in remote locations
 
 pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: /opt/prefect/sous-chef
-
+  null
+  
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
 - name: sous-chef-s3-b1
