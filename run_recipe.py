@@ -16,7 +16,7 @@ def generate_run_name_folder():
     name = Path(params["recipe_dir_path"]).name.replace("/","-")
     return name
 
-def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
+def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = "", test=False):
     logger = get_run_logger()
     recipe_dict = load_recipe_file(recipe_path)
     RecipeParamsModel = build_model_from_recipe(recipe_dict)
@@ -27,7 +27,8 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
             validated_params = RecipeParamsModel(**params)
             rendered_recipe = render_recipe(recipe_template_str, validated_params)
             json_conf = yaml.safe_load(rendered_recipe)
-            RunPipeline(json_conf)
+            if not test:
+                RunPipeline(json_conf)
             logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
         except Exception as e:
             logger.error(f"Failed to run recipe {source_label} with params {params}: {e}")
