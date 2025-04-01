@@ -65,9 +65,9 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
         return
 
     param_sets = [
-        {**base_params, **params}
+        {**base_params, **params, "NAME":name}
         for mixin in mixins_values
-        for _, params in mixin.items()
+        for name, params in mixin.items()
     ]
     _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
 
