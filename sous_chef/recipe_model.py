@@ -80,8 +80,8 @@ def finalize_recipe_config(rendered_yaml: str) -> dict:
         finalized_steps.append(step_conf)
     
     parameters = yaml_conf.get("parameters", [])
-    if RUNNAME in parameters:
-        yaml_conf[RUNNAME] = parameters[RUNNAME]
+    if "NAME" in parameters:
+        yaml_conf[RUNNAME] = parameters["NAME"]
     else:
         yaml_conf[RUNNAME] = "unnamed"
 
