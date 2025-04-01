@@ -48,7 +48,7 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
     mixins_key = f"{recipe_dir_path}/mixins.yaml"
 
     try:
-        mixins_data = s3_bucket.read_path(mixins_key)
+        mixins_data = s3_bucket.read_path(mixins_key).decode("utf-8")
         mixins_values = yaml.safe_load(mixins_data)
     except Exception as e:
         logger.error(f"Could not load mixins.yaml from S3 at {mixins_key}: {e}")
@@ -56,7 +56,7 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
 
     local_recipe_path = f"/tmp/{Path(recipe_key).name}"
     try:
-        recipe_data = s3_bucket.read_path(recipe_key)
+        recipe_data = s3_bucket.read_path(recipe_key).decode("utf-8")
         with open(local_recipe_path, 'w') as f:
             f.write(recipe_data)
     except Exception as e:
