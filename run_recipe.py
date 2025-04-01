@@ -13,7 +13,7 @@ from email_flows import send_run_summary_email
 
 def generate_run_name_folder():
     params = flow_run.parameters
-    name = Path(params["recipe_path"]).name.replace("/","-")
+    name = Path(params["recipe_dir_path"]).name.replace("/","-")
     return name
 
 def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
