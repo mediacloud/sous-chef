@@ -1,6 +1,7 @@
 import argparse
 import json
 import yaml
+from pathlib import Path
 from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
 from prefect_aws import AwsCredentials
@@ -61,7 +62,11 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
         logger.error(f"Could not load recipe.yaml from S3 at {recipe_key}: {e}")
         return
 
-    param_sets = [{**base_params, **value} for value in mixins_values]
+    param_sets = [
+        {**base_params, **params}
+        for mixin in mixins_values
+        for _, params in mixin.items()
+    ]
     _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
 
 
