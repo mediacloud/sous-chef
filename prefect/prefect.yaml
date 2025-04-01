@@ -45,8 +45,8 @@ deployments:
   schedule:
   entrypoint: run_recipe.py:run_s3_recipe
   parameters:
-    credentials_block_name: "aws-s3-credentials"
-    recipe_bucket: "sous-chef-recipes"
+    aws_credentials_block: "aws-s3-credentials"
+    bucket_name: "sous-chef-recipes"
   work_pool:
     name: bly
     work_queue_name:
