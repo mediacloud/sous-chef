@@ -16,6 +16,7 @@ def generate_run_name_folder():
     name = Path(params["recipe_dir_path"]).name.replace("/","-")
     return name
 
+
 def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
     logger = get_run_logger()
     logger.info(f"Param schema for {source_label}: {SousChefRecipe.get_param_schema(recipe_path)}")
@@ -35,6 +36,7 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
 def run_recipe(recipe_path: str, params: dict, email_to=["paige@mediacloud.org"]):
     run_data = _load_and_run_recipe(recipe_path, [params])
     send_run_summary_email(run_data, email_to)
+
 
 @flow(flow_run_name=generate_run_name_folder)
 def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block: str, base_params: dict, email_to=["paige@mediacloud.org"]):
@@ -67,17 +69,15 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
         for mixin in mixins_values
         for name, params in mixin.items()
     ]
-    run_data = _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
+    run_data = _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})")
     send_run_summary_email(run_data, email_to)
-
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run a sous-chef recipe.")
     parser.add_argument("recipe_path", type=str, help="Path to the recipe YAML file.")
     parser.add_argument("--params", type=str, help="JSON string of parameters to pass to the recipe.")
-    parser.add_argument("--test", action="store_true", help="Run the recipe in test mode.")
     args = parser.parse_args()
 
     params = json.loads(args.params) if args.params else {}
-    run_recipe(args.recipe_path, params, args.test)
+    run_recipe(args.recipe_path, params)
