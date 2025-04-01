@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 import yaml
 import json
 from string import Template
+from datetime import date
 
 # Mapping from string types in YAML to Python types
 _basic_type_map = {
@@ -10,6 +11,7 @@ _basic_type_map = {
     "int": int,
     "float": float,
     "bool": bool,
+    "date": date,
 }
 
 def parse_type(type_str: str) -> Any:
@@ -44,9 +46,11 @@ def render_recipe(recipe_template_str: str, params: BaseModel) -> str:
     Lists and dicts are automatically JSON-stringified.
     """
     flat_params = {
-        k: json.dumps(v) if isinstance(v, (list, dict)) else v
+        k: v.isoformat() if isinstance(v, date)
+        else json.dumps(v) if isinstance(v, (list, dict))
+        else v
         for k, v in params.dict().items()
-    }
+    }    
     return Template(recipe_template_str).substitute(flat_params)
 
 
