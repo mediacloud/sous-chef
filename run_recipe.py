@@ -19,9 +19,7 @@ def generate_run_name_folder():
 
 def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = "", test=False):
     logger = get_run_logger()
-    recipe_dict = load_recipe_file(recipe_path)
-    RecipeParamsModel = build_model_from_recipe(recipe_dict)
-    recipe_template_str = load_recipe_template_str(recipe_path)
+  
 
     for params in param_sets:
         try:

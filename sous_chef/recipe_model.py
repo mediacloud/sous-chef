@@ -4,7 +4,7 @@ import yaml
 import json
 from string import Template
 from datetime import date
-from .constants import DATASTRATEGY, STEPS
+from .constants import DATASTRATEGY, STEPS, RUNNAME
 
 DATASTRATEGY_DEFAULT = {
     "id": "PandasStrategy",
@@ -78,6 +78,12 @@ def finalize_recipe_config(rendered_yaml: str) -> dict:
         step_conf["id"] = step_id
         step_conf.setdefault("params", {})
         finalized_steps.append(step_conf)
+    
+    parameters = yaml_conf.get("parameters", [])
+    if RUNNAME in parameters:
+        yaml_conf[RUNNAME] = parameters[RUNNAME]
+    else:
+        yaml_conf[RUNNAME] = "unnamed"
 
     yaml_conf[STEPS] = finalized_steps
     yaml_conf.setdefault(DATASTRATEGY, DATASTRATEGY_DEFAULT)
@@ -108,7 +114,7 @@ class SousChefRecipe:
         return self.final_config
 
     def get_name(self) -> str:
-        return self.final_config.get("name", "unnamed")
+        return self.final_config.get(RUNNAME, "unnamed")
 
     def get_params(self) -> dict:
         return self.params.dict()
