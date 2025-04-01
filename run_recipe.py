@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
-from prefect_aws import AwsCredentials
+from prefect_aws import AwsCredentials, S3Bucket
 
 from sous_chef import RunPipeline
 from sous_chef.recipe_model import load_recipe_file, load_recipe_template_str, build_model_from_recipe, render_recipe
@@ -41,6 +41,7 @@ def run_recipe(recipe_path: str, params: dict,):
 def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block: str, base_params: dict, test: bool = False):
     logger = get_run_logger()
     aws_credentials = AwsCredentials.load(aws_credentials_block)
+    #s3 = aws_credentials.get_boto3_session().client("s3")
     s3_bucket = S3Bucket(bucket_name=bucket_name, credentials=aws_credentials)
 
     recipe_key = f"{recipe_dir_path}/recipe.yaml"
