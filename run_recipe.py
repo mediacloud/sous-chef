@@ -26,7 +26,7 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
             recipe = SousChefRecipe(recipe_path, params)
             run_data = RunPipeline(recipe)
             logger.info(f"Successfully ran recipe {recipe.name} from {source_label}")
-            run_summary_data{recipe.name} = run_data
+            run_summary_data[recipe.name] = run_data
 
         except Exception as e:
             logger.error(f"Failed to run recipe {recipe.name} from {source_label} with params {params}: {e}")
