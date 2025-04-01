@@ -60,7 +60,7 @@ def render_recipe(recipe_template_str: str, params: BaseModel) -> str:
     return Template(recipe_template_str).substitute(flat_params)
 
 
-def finalize_recipe_config(rendered_yaml: str) -> dict:
+def finalize_recipe_config(rendered_yaml: str, name: str) -> dict:
     """
     Finalize a rendered YAML recipe by:
     - Ensuring each step has an "id" key matching its dict key
@@ -80,11 +80,8 @@ def finalize_recipe_config(rendered_yaml: str) -> dict:
         finalized_steps.append(step_conf)
     
     parameters = yaml_conf.get("parameters", [])
-    if "NAME" in parameters:
-        yaml_conf[RUNNAME] = parameters["NAME"]
-    else:
-        yaml_conf[RUNNAME] = "unnamed"
-
+    
+    yaml_conf[RUNNAME] = name
     yaml_conf[STEPS] = finalized_steps
     yaml_conf.setdefault(DATASTRATEGY, DATASTRATEGY_DEFAULT)
 
@@ -102,19 +99,21 @@ def load_recipe_template_str(path: str) -> str:
 
 class SousChefRecipe:
     def __init__(self, path: str, params: dict):
+        if "NAME" in params:
+            self.name = params["NAME"]
+        else:
+            self.name = "unnamed"
+
         self.path = path
         self.template_str = load_recipe_template_str(path)
         self.recipe_yaml = load_recipe_file(path)
         self.ParamModel = build_model_from_recipe(self.recipe_yaml)
         self.params = self.ParamModel(**params)
         self.rendered = render_recipe(self.template_str, self.params)
-        self.final_config = finalize_recipe_config(self.rendered)
+        self.final_config = finalize_recipe_config(self.rendered, self.name)
 
     def get_config(self) -> dict:
         return self.final_config
-
-    def get_name(self) -> str:
-        return self.final_config.get(RUNNAME, "unnamed")
 
     def get_params(self) -> dict:
         return self.params.dict()
