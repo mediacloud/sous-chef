@@ -20,17 +20,19 @@ def generate_run_name_folder():
 def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
     logger = get_run_logger()
     logger.info(f"Param schema for {source_label}: {SousChefRecipe.get_param_schema(recipe_path)}")
+    run_summary_data = {}
     for params in param_sets:
         try:
             recipe = SousChefRecipe(recipe_path, params)
             run_data = RunPipeline(recipe)
             logger.info(f"Successfully ran recipe {recipe.name} from {source_label}")
-            return run_data
+            run_summary_data{recipe.name} = run_data
 
         except Exception as e:
             logger.error(f"Failed to run recipe {recipe.name} from {source_label} with params {params}: {e}")
             logger.error(traceback.format_exc())
 
+    return run_summary_data
 
 @flow(flow_run_name=generate_run_name_folder)
 def run_recipe(recipe_path: str, params: dict, email_to=["paige@mediacloud.org"]):
