@@ -93,6 +93,27 @@ def load_recipe_template_str(path: str) -> str:
     with open(path) as f:
         return f.read()
 
+
+class SousChefRecipe:
+    def __init__(self, path: str, params: dict):
+        self.path = path
+        self.template_str = load_recipe_template_str(path)
+        self.recipe_yaml = load_recipe_file(path)
+        self.ParamModel = build_model_from_recipe(self.recipe_yaml)
+        self.params = self.ParamModel(**params)
+        self.rendered = render_recipe(self.template_str, self.params)
+        self.final_config = finalize_recipe_config(self.rendered)
+
+    def get_config(self) -> dict:
+        return self.final_config
+
+    def get_name(self) -> str:
+        return self.final_config.get("name", "unnamed")
+
+    def get_params(self) -> dict:
+        return self.params.dict()
+
+
 # Example usage:
 # recipe_dict = load_recipe_file("some_recipe.yaml")
 # RecipeParamsModel = build_model_from_recipe(recipe_dict)

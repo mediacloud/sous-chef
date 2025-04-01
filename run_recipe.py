@@ -8,7 +8,7 @@ from prefect.runtime import flow_run
 from prefect_aws import AwsCredentials, S3Bucket
 
 from sous_chef import RunPipeline
-from sous_chef.recipe_model import load_recipe_file, load_recipe_template_str, build_model_from_recipe, render_recipe
+from sous_chef.recipe_model import load_recipe_file, load_recipe_template_str, build_model_from_recipe, render_recipe, SousChefRecipe
 from email_flows import send_run_summary_email
 
 
@@ -25,11 +25,9 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
 
     for params in param_sets:
         try:
-            validated_params = RecipeParamsModel(**params)
-            rendered_recipe = render_recipe(recipe_template_str, validated_params)
-            json_conf = yaml.safe_load(rendered_recipe)
+            recipe = SousChefRecipe(recipe_path, params)
             if not test:
-                RunPipeline(json_conf)
+                RunPipeline(recipe)
             logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
         except Exception as e:
             logger.error(f"Failed to run recipe {source_label} with params {params}: {e}")

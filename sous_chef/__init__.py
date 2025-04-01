@@ -1,10 +1,12 @@
 from prefect import flow, task, get_run_logger
 from .flowatom import FlowAtom
 from prefect.runtime import flow_run
+from .recipe_model import SousChefRecipe
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT, RETURNS
 from .datastrategy import DataStrategy
 from .exceptions import ConfigValidationError, NoDiscoveryException
 from .tasks import *
+
 from typing import List
 import logging
 from pprint import pprint 
@@ -152,11 +154,11 @@ class Pipeline():
 
             
 #This is the main entrypoint for the whole thing            
-def RunPipeline(config, **kwargs):
+def RunPipeline(recipe:SousChefRecipe, **kwargs):
     run = True
     if("test" in kwargs):
         run=False
-    pipeline = Pipeline(config, run=run, **kwargs)
+    pipeline = Pipeline(recipe.get_config(), run=run, **kwargs)
     
     return pipeline.return_value
     
