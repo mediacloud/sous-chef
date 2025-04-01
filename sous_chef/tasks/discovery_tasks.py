@@ -137,8 +137,8 @@ class query_onlinenews(DiscoveryAtom):
         more_stories = True
         start_time = time.time()
         while more_stories:
-            page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date.date(), 
-                                                        end_date=self.end_date.date(), collection_ids=self.collections,
+            page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date, 
+                                                        end_date=self.end_date, collection_ids=self.collections,
                                                         pagination_token=pagination_token, expanded=True)
             all_stories += page
             more_stories = pagination_token is not None
@@ -194,8 +194,8 @@ class onlinenews_count_over_time(DiscoveryAtom):
         start_time = time.time()
         try:
             count_over_time = mc_search.story_count_over_time(self.query, 
-                                                    start_date=self.start_date.date(), 
-                                                    end_date=self.end_date.date(), 
+                                                    start_date=self.start_date, 
+                                                    end_date=self.end_date, 
                                                     collection_ids=self.collections)
         except ReadTimeout or RuntimeError as e:
             self.warn(e)
