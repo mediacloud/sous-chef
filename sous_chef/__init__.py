@@ -1,10 +1,10 @@
 from prefect import flow, task, get_run_logger
 from .flowatom import FlowAtom
 from prefect.runtime import flow_run
-from .recipe_model import SousChefRecipe
 from .constants import DATASTRATEGY, NOSTRAT, DATA, ID, STEPS, PARAMS, INPUTS, OUTPUTS, NEWDOCUMENT, USER_CONFIGURED_OUTPUT, RETURNS
 from .datastrategy import DataStrategy
 from .exceptions import ConfigValidationError, NoDiscoveryException
+from .recipe import SousChefRecipe
 from .tasks import *
 
 from typing import List

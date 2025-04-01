@@ -118,6 +118,17 @@ class SousChefRecipe:
     def get_params(self) -> dict:
         return self.params.dict()
 
+    @classmethod
+    def get_param_schema(cls, path: str) -> dict:
+        recipe_yaml = load_recipe_file(path)
+        ParamModel = build_model_from_recipe(recipe_yaml)
+        return ParamModel.schema()
+
+    @classmethod
+    def get_param_model(cls, path:str) -> Type[BaseModel]:
+        recipe_yaml = load_recipe_file(path)
+        return build_model_from_recipe(recipe_yaml)
+
 
 # Example usage:
 # recipe_dict = load_recipe_file("some_recipe.yaml")

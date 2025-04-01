@@ -7,8 +7,7 @@ from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
 from prefect_aws import AwsCredentials, S3Bucket
 
-from sous_chef import RunPipeline
-from sous_chef.recipe_model import load_recipe_file, load_recipe_template_str, build_model_from_recipe, render_recipe, SousChefRecipe
+from sous_chef import RunPipeline, SousChefRecipe
 from email_flows import send_run_summary_email
 
 
@@ -17,27 +16,28 @@ def generate_run_name_folder():
     name = Path(params["recipe_dir_path"]).name.replace("/","-")
     return name
 
-def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = "", test=False):
+def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label: str = ""):
     logger = get_run_logger()
-  
-
+    logger.info(f"Param schema for {source_label}: {SousChefRecipe.get_param_schema(recipe_path)}")
     for params in param_sets:
         try:
             recipe = SousChefRecipe(recipe_path, params)
-            if not test:
-                RunPipeline(recipe)
+            run_data = RunPipeline(recipe)
             logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
+            return run_data
+
         except Exception as e:
             logger.error(f"Failed to run recipe {source_label} with params {params}: {e}")
             logger.error(traceback.format_exc())
 
-@flow(flow_run_name=generate_run_name_folder)
-def run_recipe(recipe_path: str, params: dict,):
-    _load_and_run_recipe(recipe_path, [params])
-
 
 @flow(flow_run_name=generate_run_name_folder)
-def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block: str, base_params: dict, test: bool = False):
+def run_recipe(recipe_path: str, params: dict, email_to=["paige@mediacloud.org"]):
+    run_data = _load_and_run_recipe(recipe_path, [params])
+    send_run_summary_email(run_data, email_to)
+
+@flow(flow_run_name=generate_run_name_folder)
+def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block: str, base_params: dict, email_to=["paige@mediacloud.org"]):
     logger = get_run_logger()
     aws_credentials = AwsCredentials.load(aws_credentials_block)
     #s3 = aws_credentials.get_boto3_session().client("s3")
@@ -67,8 +67,8 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
         for mixin in mixins_values
         for name, params in mixin.items()
     ]
-    _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
-
+    run_data = _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})", test=test)
+    send_run_summary_email(run_data, email_to)
 
 
 
