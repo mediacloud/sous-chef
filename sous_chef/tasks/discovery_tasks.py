@@ -1,6 +1,6 @@
 from ..flowatom import FlowAtom
 from ..exceptions import NoDiscoveryException
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import pandas as pd
 import requests
 from requests.exceptions import ReadTimeout
@@ -48,8 +48,8 @@ def clean_text(text):
 class DiscoveryAtom(FlowAtom):
     query:str
     date_mode:str
-    start_date:str
-    end_date:str
+    start_date:date
+    end_date:date
     window_size:int
     api_key_block:str
     endpoint:str 
@@ -72,6 +72,8 @@ class DiscoveryAtom(FlowAtom):
         return True
     
     def validate(self):
+        pass
+        """
         if self.date_mode=="direct":
             self.start_date_form = validate_datestr_form(self.start_date, "start_date")
             self.end_date_form = validate_datestr_form(self.end_date, "end_date")
@@ -82,7 +84,7 @@ class DiscoveryAtom(FlowAtom):
         elif self.date_mode == "daily":
             self.end_date = datetime.today()
             self.start_date = datetime.today() - timedelta(days=self.window_size)
-        
+        """
 
 def get_onlinenews_collection_domains(collection_ids, **kwargs):
     
