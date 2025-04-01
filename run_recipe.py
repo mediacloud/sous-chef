@@ -24,7 +24,7 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
         try:
             recipe = SousChefRecipe(recipe_path, params)
             run_data = RunPipeline(recipe)
-            logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
+            logger.info(f"Successfully ran recipe {recipe['NAME']} from {source_label}")
             return run_data
 
         except Exception as e:
@@ -35,7 +35,8 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
 @flow(flow_run_name=generate_run_name_folder)
 def run_recipe(recipe_path: str, params: dict, email_to=["paige@mediacloud.org"]):
     run_data = _load_and_run_recipe(recipe_path, [params])
-    send_run_summary_email(run_data, email_to)
+    if run_data:
+        send_run_summary_email(run_data, email_to)
 
 
 @flow(flow_run_name=generate_run_name_folder)
@@ -70,7 +71,8 @@ def run_s3_recipe(recipe_dir_path: str, bucket_name: str, aws_credentials_block:
         for name, params in mixin.items()
     ]
     run_data = _load_and_run_recipe(local_recipe_path, param_sets, source_label=f"(s3 {mixins_key})")
-    send_run_summary_email(run_data, email_to)
+    if run_data:
+        send_run_summary_email(run_data, email_to)
 
 
 if __name__ == "__main__":
