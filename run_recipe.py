@@ -1,6 +1,7 @@
 import argparse
 import json
 import yaml
+import traceback
 from pathlib import Path
 from prefect import flow, get_run_logger
 from prefect.runtime import flow_run
@@ -32,6 +33,7 @@ def _load_and_run_recipe(recipe_path: str, param_sets: list[dict], source_label:
             logger.info(f"Successfully ran recipe {json_conf['name']} {source_label}")
         except Exception as e:
             logger.error(f"Failed to run recipe {source_label} with params {params}: {e}")
+            logger.error(traceback.format_exc())
 
 @flow(flow_run_name=generate_run_name_folder)
 def run_recipe(recipe_path: str, params: dict,):

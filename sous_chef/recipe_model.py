@@ -4,6 +4,12 @@ import yaml
 import json
 from string import Template
 from datetime import date
+from .constants import DATASTRATEGY, STEPS
+
+DATASTRATEGY_DEFAULT = {
+    "id": "PandasStrategy",
+    "data_location": "data/"
+}
 
 # Mapping from string types in YAML to Python types
 _basic_type_map = {
@@ -53,6 +59,30 @@ def render_recipe(recipe_template_str: str, params: BaseModel) -> str:
     }    
     return Template(recipe_template_str).substitute(flat_params)
 
+
+def finalize_recipe_config(rendered_yaml: str) -> dict:
+    """
+    Finalize a rendered YAML recipe by:
+    - Ensuring each step has an "id" key matching its dict key
+    - Inserting an empty "params" dict if missing
+    - Setting a default "dataStrategy" if not present
+    """
+    yaml_conf = yaml.safe_load(rendered_yaml)
+
+    steps = yaml_conf.get("steps", [])
+    finalized_steps = []
+    for step in steps:
+        if not isinstance(step, dict) or len(step) != 1:
+            raise ValueError(f"Invalid step format: {step}")
+        step_id, step_conf = list(step.items())[0]
+        step_conf["id"] = step_id
+        step_conf.setdefault("params", {})
+        finalized_steps.append(step_conf)
+
+    yaml_conf[STEPS] = finalized_steps
+    yaml_conf.setdefault(DATASTRATEGY, DATASTRATEGY_DEFAULT)
+
+    return yaml_conf
 
 def load_recipe_file(path: str) -> dict:
     with open(path) as f:
