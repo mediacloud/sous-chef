@@ -129,9 +129,3 @@ class SousChefRecipe:
         recipe_yaml = load_recipe_file(path)
         return build_model_from_recipe(recipe_yaml)
 
-
-# Example usage:
-# recipe_dict = load_recipe_file("some_recipe.yaml")
-# RecipeParamsModel = build_model_from_recipe(recipe_dict)
-# validated_params = RecipeParamsModel(**user_input)
-# rendered_yaml = render_recipe(load_recipe_template_str("some_recipe.yaml"), validated_params)

@@ -36,6 +36,6 @@ def send_run_summary_email(run_data, email_addresses):
             subject="Sous-Chef Execution Summary",
             msg=email_text,
             email_to=email_address,
-        )
+        ).wait()
 
 
