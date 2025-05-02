@@ -4,11 +4,16 @@ from prefect_aws import AwsCredentials
 from prefect_github import GitHubCredentials
 from prefect_email import EmailServerCredentials
 from prefect_docker import DockerRegistryCredentials
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-#These are all loaded from values provided to the environment by content in a private repository 
+#These are all loaded from values provided through a .env file in a private repository 
+#Using .env because I don't think there's any reason to pollute the actual runtime with these. 
 
 class SousChefCredentials(BaseSettings):
+	
+	model_config = SettingsConfigDict(
+		env_file=".env", env_file_encoding="utf-8")
+
 	ACCESS_KEY_ID:str
 	ACCESS_KEY_SECRET:str
 
