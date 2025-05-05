@@ -10,7 +10,7 @@ jinja_env = Environment(
 
 @flow
 def send_test_email_flow(email_addresses):
-    email_server_credentials = EmailServerCredentials.load("paige-mediacloud-email-password")
+    email_server_credentials = EmailServerCredentials.load("email-password")
     
     for email_address in email_addresses:
         subject = email_send_message.with_options(name=f"email {email_address}").submit(
@@ -28,7 +28,7 @@ def send_run_summary_email(run_data, email_addresses):
     email_template = jinja_env.get_template("basic_email_template.j2")
     email_text = email_template.render(run_data=run_data)
 
-    email_server_credentials = EmailServerCredentials.load("paige-mediacloud-email-password")
+    email_server_credentials = EmailServerCredentials.load("email-password")
     
     for email_address in email_addresses:
         subject = email_send_message.with_options(name=f"email {email_address}").submit(
