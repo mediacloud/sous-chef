@@ -3,4 +3,5 @@ venv/
 data/
 *.csv
 .DS_STORE
+.env
 .prefect/
