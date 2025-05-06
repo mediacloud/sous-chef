@@ -34,7 +34,6 @@ def setup_prefect_blocks(env_file, overwrite):
 
 	config = SousChefCredentials(_env_file=env_file)
 	click.echo(f"Loaded config at {env_file}")
-
 	current_prefect_profile = os.getenv("PREFECT_PROFILE")
 	click.echo(f"Setting up sous-chef secret blocks on prefect with profile: {current_prefect_profile}")
 
@@ -46,7 +45,8 @@ def setup_prefect_blocks(env_file, overwrite):
 
 	DockerRegistryCredentials(
 		username=config.DOCKER_USERNAME,
-		password=config.DOCKER_PASSWORD
+		password=config.DOCKER_PASSWORD,
+		registry_url="index.docker.io" #I think this is only ever hardcoded
 		).save("docker-auth", overwrite=overwrite)
 
 
