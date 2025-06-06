@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version="v1.0"
+version="v2.0"
 dependencies = [
   "matplotlib == 3.8.2",
   "mediacloud == 4.1.3",
