@@ -163,8 +163,8 @@ class query_onlinenews(DiscoveryAtom):
 
 
         self.return_values["QueryOverview"] = f"Query Text: {self.query}, Query Start Date: {self.start_date}, Query End Date: {self.end_date}"
-        self.return_values["QueryCount"] = f"Query Returned {len(content)} Articles"
-        self.return_values["ElapsedTime"] = elapsed_time
+        self.return_values["DocumentCount"] = len(content)
+        self.return_values["ElapsedTime"] = round(elapsed_time, 1)
 
 
 @FlowAtom.register("CountOverTime")

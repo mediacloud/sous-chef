@@ -36,12 +36,13 @@ class FlowAtom(object):
             #A place to define unique setup per flow atom
             self.setup_hook(params, data_config)
             
-            #Give the task a unique name
-            self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:2]
+            #Give the task a unique name, if not set by the recipe
+            if self.task_name == __defaults["task_name"]:
+                self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:2]
             
             
         else:
-            self.warn("A pipeline constructed with document==True cannot be used for any data analasis task- this is only for generating documentation")
+            self.warn("A pipeline constructed with document==True cannot be used for any data analysis task- this is only for generating documentation")
             self.docs = self.document()
             
 
