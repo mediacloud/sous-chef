@@ -37,7 +37,7 @@ class FlowAtom(object):
             self.setup_hook(params, data_config)
             
             #Give the task a unique name, if not set by the recipe
-            if self.task_name == _defaults["task_name"]:
+            if self.task_name == "default":
                 self.task_name = self.__class__.__qualname__ + "-"+uuid4().hex[:2]
             
             
