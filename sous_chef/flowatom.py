@@ -17,7 +17,11 @@ class FlowAtom(object):
     _REGISTERED_ATOMS = {}
 
     task_name:str
-    _defaults:{"task_name":"default"}
+    restricted: bool
+    _defaults:{
+        "task_name":"default"
+        "restricted": False
+    }
     _new_document:False
     
     def __init__(self, params, data_config, returns, document=False, log_level="INFO"):
@@ -250,6 +254,7 @@ class FlowAtom(object):
             self.pre_task()
             self.task_body()
             self.post_task()
+            self.return_values["restricted"] = self.restricted
             return self.return_values
 
     def __repr__(self):
