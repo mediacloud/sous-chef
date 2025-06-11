@@ -19,7 +19,7 @@ class FlowAtom(object):
     task_name:str
     restricted: bool
     _defaults:{
-        "task_name":"default"
+        "task_name":"default",
         "restricted": False
     }
     _new_document:False
