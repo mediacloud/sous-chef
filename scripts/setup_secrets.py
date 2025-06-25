@@ -4,7 +4,7 @@ from prefect_aws import AwsCredentials
 from prefect_github import GitHubCredentials
 from prefect_email import EmailServerCredentials
 from prefect_docker import DockerRegistryCredentials
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 import click
 import os 
 #These are all loaded from values provided through a .env file in a private repository 
