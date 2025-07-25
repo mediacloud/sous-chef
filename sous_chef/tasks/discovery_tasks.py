@@ -110,8 +110,10 @@ class query_onlinenews(DiscoveryAtom):
     Query mediacloud's onlinenews collection
     """
     collections:list
+    sources:list
     _defaults:{
         "collections":[],
+        "sources":[],
     }
         
     def validate(self):
@@ -139,7 +141,8 @@ class query_onlinenews(DiscoveryAtom):
         while more_stories:
             page, pagination_token = mc_search.story_list(self.query, start_date=self.start_date, 
                                                         end_date=self.end_date, collection_ids=self.collections,
-                                                        pagination_token=pagination_token, expanded=True)
+                                                        source_ids=self.sources, pagination_token=pagination_token, 
+                                                        expanded=True)
             all_stories += page
             more_stories = pagination_token is not None
 
