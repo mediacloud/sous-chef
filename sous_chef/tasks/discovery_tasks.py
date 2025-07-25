@@ -119,6 +119,8 @@ class query_onlinenews(DiscoveryAtom):
     def validate(self):
         if "[" in self.collections:
             self.collections = ast.literal_eval(self.collections)
+        if "[" in self.sources:
+            self.sources = ast.literal_eval(self.sources)
     
     def outputs(self, title:str, language:str, media_name:str, url:str, 
                 publish_date:object, text:str, id:str):pass
