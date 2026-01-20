@@ -4,36 +4,65 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version="v2.3.1"
-dependencies = [
-  "matplotlib == 3.8.2",
-  "mediacloud == 4.1.3",
-  "mc-providers == 0.5.4",
-  "wayback-news-search == 1.2.*",
-  "numpy == 1.26.4",
-  "pandas == 2.2.0",
-  "prefect == 3.4.8",
-  "prefect_aws",
-  "prefect_email",
-  "pydantic",
-  "pytest == 8.0.0",
-  "PyYAML == 6.0.1",
-  "requests == 2.31.0",
-  "spacy",
-  "spacy-download",
-  "spacy-ngram",
-  "transformers == 4.37.2",
-  "yake == 0.4.8",
-  "boto3",
-  "uniseg"
-]
+version = "v3.0.0-alpha"
+description = "Sous-Chef data pipeline tool - supports both YAML recipes (v2) and Python flows (v3)"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [
   {name = "Paige Gulley", email = "pgulley@mediacloud.org"}
 ]
 
-description = "Sous-Chef is a yaml-configurable data pipeline tool for interacting with the Mediacloud data service"
-readme = "README.md"
+# Merged dependencies from both v2 (YAML) and v3 (Python flows)
+# Updated to newer versions where conflicts existed
+dependencies = [
+  # Core data processing (numpy < 2.0 required by matplotlib 3.8.2)
+  "pandas >= 2.2.0, < 3.0",
+  "numpy >= 1.26.0, < 2.0",
+  
+  # Prefect orchestration (updated to v3.6.10)
+  "prefect >= 3.6.10",
+  "prefect_aws",
+  "prefect_email",
+  
+  # Data validation and models
+  "pydantic >= 2.12.5",
+  
+  # MediaCloud integration
+  "mediacloud >= 4.1.3",
+  "mc-providers >= 0.5.4",
+  "wayback-news-search >= 1.2.0",
+  
+  # NLP and text processing
+  "yake >= 0.6.0",
+  "spacy",
+  "spacy-download",
+  "spacy-ngram",
+  "transformers >= 4.37.2",
+  "uniseg",
+  
+  # Utilities
+  "click >= 8.3.1",
+  "requests >= 2.32.5",
+  "PyYAML >= 6.0.3",
+  "ruamel.yaml >= 0.19.1",
+  "python-dotenv >= 1.2.1",
+  
+  # Testing
+  "pytest >= 8.0.0",
+  
+  # Visualization (requires numpy < 2.0)
+  "matplotlib >= 3.8.2",
+  
+  # AWS/B2 storage
+  "boto3",
+]
+
+[project.optional-dependencies]
+# Optional dependencies for legacy YAML recipe system
+legacy = [
+  "PyYAML >= 6.0.1",
+  "ruamel.yaml >= 0.18.0",
+]
 
 [tool.flit.module]
 name = "sous_chef"
