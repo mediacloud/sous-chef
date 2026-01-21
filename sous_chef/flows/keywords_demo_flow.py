@@ -11,14 +11,13 @@ Can run with or without Prefect.
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from datetime import date
-import pandas as pd
 
 from ..flow import register_flow
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
 from ..tasks.export_tasks import csv_to_b2
-
+from ..utils import create_url_safe_slug
 
 class KeywordsDemoParams(BaseModel):
     """Parameters for the keywords demo flow."""
@@ -30,7 +29,7 @@ class KeywordsDemoParams(BaseModel):
     top_n: int = 50  # Number of keywords to extract per article
     # Optional Backblaze B2 export settings
     b2_bucket: Optional[str] = "sous-chef-output"
-    b2_object_prefix: str = "sous-chef-two"
+    b2_object_prefix: str = "sous-chef-output"
     b2_add_date_slug: bool = True
     b2_ensure_unique: bool = True
 
@@ -38,7 +37,8 @@ class KeywordsDemoParams(BaseModel):
 @register_flow(
     name="keywords_demo",
     description="Demo: Extract keywords from news articles matching a query",
-    params_model=KeywordsDemoParams
+    params_model=KeywordsDemoParams,
+    log_prints=True
 )
 def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     """
@@ -64,6 +64,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         - query: The search query used
         - b2_export: Optional dict with export metadata if B2 export was performed
     """
+
     # Step 1: Query MediaCloud for articles
     articles = query_online_news(
         query=params.query,
@@ -93,9 +94,11 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     # Optional Step 4: Export top keywords to Backblaze B2 as CSV
     b2_export = None
     if params.b2_bucket:
+        slug = create_url_safe_slug(params.query)
         object_name = (
-            f"{params.b2_object_prefix}/DATE/{params.query}-top-keywords.csv"
+            f"{params.b2_object_prefix}/DATE/{slug}-top-keywords.csv"
         )
+        print(f"calling csv_to_b2 with params: {params.b2_bucket}, {object_name}")
         b2_export = csv_to_b2(
             top_keywords,
             bucket_name=params.b2_bucket,

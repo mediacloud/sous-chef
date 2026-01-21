@@ -9,11 +9,11 @@ from datetime import date
 from io import BytesIO
 from typing import Dict, Any
 
-import os
 import pandas as pd
 from prefect import task
+from prefect.logging import get_run_logger
 
-from ..secrets import get_b2_s3_client
+from ..secrets import get_b2_s3_client, get_b2_endpoint_url
 
 
 @task
@@ -23,9 +23,11 @@ def csv_to_b2(
     object_name: str,
     add_date_slug: bool = True,
     ensure_unique: bool = True,
+    normalize_name: bool = True,
     b2_block_name: str = "b2-s3-credentials",
     dry_run: bool = False,
 ) -> Dict[str, Any]:
+
     """
     Upload a DataFrame as a CSV to Backblaze B2 (S3-compatible).
 
@@ -54,10 +56,12 @@ def csv_to_b2(
     if df is None:
         raise ValueError("csv_to_b2: DataFrame 'df' must not be None")
 
+    logger = get_run_logger()
     # Build CSV into an in-memory buffer
     csv_buffer = BytesIO()
-    df.to_csv(csv_buffer, index=False)
+    df.to_csv(csv_buffer, index=False, encoding='utf-8', lineterminator='\n')
     csv_buffer.seek(0)
+
 
     # Insert date slug if requested
     final_object_name = object_name
@@ -65,8 +69,10 @@ def csv_to_b2(
         datestring = date.today().strftime("%Y-%m-%d")
         final_object_name = final_object_name.replace("DATE", datestring)
 
+    #We think this is the fix?
+    final_object_name = final_object_name.lstrip('/')
     client = None
-    endpoint_url = os.getenv("B2_S3_ENDPOINT")
+    endpoint_url = get_b2_endpoint_url(block_name=b2_block_name)
 
     if not dry_run:
         client = get_b2_s3_client(block_name=b2_block_name)
@@ -93,12 +99,23 @@ def csv_to_b2(
         put_name = final_object_name
 
     if not dry_run:
+        # Log detailed client configuration before put_object
+        logger.info(f"[CSVToB2] Preparing to upload CSV")
+        logger.info(f"[CSVToB2] Bucket: {bucket_name}, Key: {put_name}")
+        logger.info(f"[CSVToB2] Client endpoint: {client.meta.endpoint_url}")
+        logger.info(f"[CSVToB2] Client region: {client.meta.region_name}")
+        
+        logger.info(f"[CSVToB2] CSV buffer size: {len(csv_buffer.getvalue())} bytes")
+        
         client.put_object(
-            Body=csv_buffer,
+            Body=csv_buffer,#.getvalue(),
             Bucket=bucket_name,
             Key=put_name,
-            ContentType="text/csv",
+            ContentType="text/csv"
+            #ContentLength=len(csv_buffer.getvalue())
         )
+        
+        logger.info(f"[CSVToB2] Successfully uploaded to {bucket_name}/{put_name}")
 
     # Best-effort URL construction using the configured endpoint, if present.
     url = None

@@ -64,9 +64,7 @@ tests/                   # Test suite
 
 The previous YAML-based recipe system is available in `sous_chef_legacy/` for reference but is not actively maintained. Legacy recipes used YAML configuration files and the FlowAtom/DataStrategy architecture.
 
-### Version History
-
-**v3.0.0-alpha** - Python flow architecture with Pydantic models and Prefect integration  
+### Version History**v3.0.0-alpha** - Python flow architecture with Pydantic models and Prefect integration  
 **v2.3.1** - YAML recipe system with FlowAtoms and DataStrategy  
 **v2.0** - Introduced SousChefRecipe class for better typing around inputs  
 **v1.0** - Upgrade to Prefect 3  

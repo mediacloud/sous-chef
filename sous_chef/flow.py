@@ -1,7 +1,6 @@
 from prefect import flow as prefect_flow
 from typing import Dict, Callable, Any, Optional
 from pydantic import BaseModel
-import re
 
 _FLOW_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
