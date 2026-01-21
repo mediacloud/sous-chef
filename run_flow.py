@@ -323,7 +323,7 @@ def main():
     
     try:
         # Run flow using .fn() - this bypasses Prefect orchestration
-        result = flow_func.fn(params)
+        result = flow_func(params)
         
         print("=" * 80)
         print("Flow Execution Complete!")

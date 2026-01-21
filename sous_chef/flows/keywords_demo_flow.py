@@ -29,7 +29,7 @@ class KeywordsDemoParams(BaseModel):
     end_date: date
     top_n: int = 50  # Number of keywords to extract per article
     # Optional Backblaze B2 export settings
-    b2_bucket: Optional[str] = None
+    b2_bucket: Optional[str] = "sous-chef-output"
     b2_object_prefix: str = "sous-chef-two"
     b2_add_date_slug: bool = True
     b2_ensure_unique: bool = True
@@ -103,11 +103,10 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
             add_date_slug=params.b2_add_date_slug,
             ensure_unique=params.b2_ensure_unique,
         )
-        print(b2_export)
+        
 
     return {
         "article_count": len(articles),
-        "top_keywords": top_keywords,
         "query": params.query,
         "b2_export": b2_export,
     }
