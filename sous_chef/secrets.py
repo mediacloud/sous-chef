@@ -83,20 +83,13 @@ def get_b2_s3_client(block_name: str = "b2-s3-credentials"):
     endpoint_url = os.getenv("B2_S3_ENDPOINT")
     region_name = os.getenv("B2_REGION", "us-west-004")
 
-    if not endpoint_url:
-        raise ValueError(
-            "Backblaze B2 S3 endpoint not configured. "
-            "Set environment variable 'B2_S3_ENDPOINT' "
-            "(e.g., https://s3.us-west-004.backblazeb2.com)."
-        )
-
     # Try Prefect AwsCredentials block first (preferred when running under Prefect)
     try:
         context = TaskRunContext.get()
         if context:
             aws_creds = AwsCredentials.load(block_name)
             session = aws_creds.get_boto3_session()
-            return session.client("s3", endpoint_url=endpoint_url, region_name=region_name)
+            return session.client("s3")
     except Exception:
         pass
 
