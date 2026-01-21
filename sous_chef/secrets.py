@@ -89,7 +89,7 @@ def get_b2_s3_client(block_name: str = "b2-s3-credentials"):
         if context:
             aws_creds = AwsCredentials.load(block_name)
             session = aws_creds.get_boto3_session()
-            return session.client("s3")
+            return session.client("s3", **aws_creds.aws_client_parameters.get_params_override())
     except Exception:
         pass
 
