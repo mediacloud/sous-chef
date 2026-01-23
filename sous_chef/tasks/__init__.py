@@ -8,10 +8,14 @@ from .discovery_tasks import query_online_news
 from .keyword_tasks import extract_keywords
 from .aggregator_tasks import top_n_unique_values
 from .export_tasks import csv_to_b2
+from .email_tasks import send_email, send_templated_email, send_run_summary_email
 
 __all__ = [
     "query_online_news",
     "extract_keywords",
     "top_n_unique_values",
     "csv_to_b2",
+    "send_email",
+    "send_templated_email",
+    "send_run_summary_email",
 ]

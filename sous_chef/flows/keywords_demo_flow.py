@@ -17,6 +17,7 @@ from ..tasks.discovery_tasks import query_online_news
 from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
 from ..tasks.export_tasks import csv_to_b2
+from ..tasks.email_tasks import send_email, send_templated_email, send_run_summary_email
 from ..utils import create_url_safe_slug
 
 class KeywordsDemoParams(BaseModel):
@@ -107,7 +108,14 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
             ensure_unique=params.b2_ensure_unique,
         )
         
+    send_email(
+        email_to="nano3.14@gmail.com",
+        subject="test",
+        msg="Test Sous-Chef output! Did we do it??"
+        )
 
+
+    ##Return values here are saved out later to prefect artifacts, and are transiently available via the buffet. 
     return {
         "article_count": len(articles),
         "query": params.query,

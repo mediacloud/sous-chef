@@ -14,10 +14,6 @@ import os
 from typing import Optional
 import boto3
 from botocore.config import Config
-import logging
-
-logging.basicConfig()
-logging.getLogger("botocore").setLevel(logging.DEBUG)
 
 def get_mediacloud_api_key(block_name: str = "mediacloud-api-key") -> str:
     """
