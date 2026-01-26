@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version = "v3.0.0-alpha"
+version = "v3.0.0-alpha-1"
 description = "Sous-Chef data pipeline tool - supports both YAML recipes (v2) and Python flows (v3)"
 readme = "README.md"
 requires-python = ">=3.10"
