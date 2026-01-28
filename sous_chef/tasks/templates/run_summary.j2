@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+        }
+        .status-success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sous-Chef Execution Summary</h1>
+    
+    {% if run_name %}
+    <p><strong>Run Name:</strong> {{ run_name }}</p>
+    {% endif %}
+    
+    {% if status %}
+    <p><strong>Status:</strong> 
+        <span class="status-{{ status|lower }}">{{ status }}</span>
+    </p>
+    {% endif %}
+    
+    {% for run_name, run_returns in run_data.items() %}
+        <div>
+            <h2>{{ run_name }}</h2>
+            {% for atom_name, atom_returns in run_returns.items() %}
+                <div>
+                    <h3>{{ atom_name }}</h3>
+                    <ul>
+                    {% for output_name, output_value in atom_returns.items() %}
+                        <li><strong>{{ output_name }}:</strong> {{ output_value }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    
+    {% if not run_data %}
+    <p>No run data available.</p>
+    {% endif %}
+</body>
+</html>

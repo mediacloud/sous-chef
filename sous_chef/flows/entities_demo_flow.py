@@ -1,0 +1,124 @@
+"""
+Demo flow that extracts named entities from news articles using SpaCy NER.
+
+This flow demonstrates:
+- Querying MediaCloud for articles
+- Extracting named entities from each article using SpaCy
+- Aggregating entities to find the top entities by type
+- Filtering and sorting options for entity analysis
+
+Can run with or without Prefect.
+"""
+from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
+from datetime import date
+
+from ..flow import register_flow
+from ..tasks.discovery_tasks import query_online_news
+from ..tasks.extraction_tasks import extract_entities, top_n_entities
+from ..tasks.export_tasks import csv_to_b2
+from ..utils import create_url_safe_slug
+
+
+class EntitiesDemoParams(BaseModel):
+    """Parameters for the entities demo flow."""
+    query: str
+    collection_ids: List[int] = []
+    source_ids: List[int] = []
+    start_date: date
+    end_date: date
+    spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
+    top_n: int = 20  # Number of top entities to return
+    filter_type: Optional[str] = None  # Optional entity type filter (e.g., "PERSON", "ORG", "GPE")
+    sort_by: str = "total"  # Sort by "total" or "percentage"
+    # Optional Backblaze B2 export settings
+    b2_bucket: Optional[str] = "sous-chef-output"
+    b2_object_prefix: str = "sous-chef-output"
+    b2_add_date_slug: bool = True
+    b2_ensure_unique: bool = True
+
+
+@register_flow(
+    name="entities_demo",
+    description="Demo: Extract named entities from news articles using SpaCy NER",
+    params_model=EntitiesDemoParams,
+    log_prints=True
+)
+def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
+    """
+    Extract named entities from news articles matching a query.
+    
+    This flow:
+    1. Queries MediaCloud for articles matching the query
+    2. Extracts named entities from each article's text using SpaCy NER
+    3. Aggregates entities to find the top entities (optionally filtered by type)
+    4. Returns articles with entities and the top entities summary
+    
+    The result keeps entities associated with their source text,
+    making it easy to see which entities came from which article,
+    and also provides a summary of the most common entities across all articles.
+    
+    Args:
+        params: Flow parameters
+        
+    Returns:
+        Dictionary with:
+        - article_count: Number of articles processed
+        - top_entities: DataFrame with top entities (entity, type, count, appearance_percent, document_count)
+        - query: The search query used
+        - filter_type: The entity type filter applied (if any)
+        - b2_export: Optional dict with export metadata if B2 export was performed
+    """
+    
+    # Step 1: Query MediaCloud for articles
+    articles = query_online_news(
+        query=params.query,
+        collection_ids=params.collection_ids,
+        source_ids=params.source_ids,
+        start_date=params.start_date,
+        end_date=params.end_date
+    )
+    
+    # Step 2: Extract named entities from each article
+    # This adds an 'entities' column to the DataFrame
+    # Each entity is a dict with {"text": "...", "type": "..."}
+    articles = extract_entities(
+        articles,
+        text_column="text",
+        model=params.spacy_model
+    )
+    
+    # Step 3: Aggregate entities to find the top entities
+    top_entities = top_n_entities(
+        articles,
+        entities_column="entities",
+        top_n=params.top_n,
+        filter_type=params.filter_type,
+        sort_by=params.sort_by
+    )
+    
+    # Optional Step 4: Export top entities to Backblaze B2 as CSV
+    b2_export = None
+    if params.b2_bucket:
+        slug = create_url_safe_slug(params.query)
+        filter_suffix = f"-{params.filter_type}" if params.filter_type else ""
+        object_name = (
+            f"{params.b2_object_prefix}/DATE/{slug}{filter_suffix}-top-entities.csv"
+        )
+        print(f"Exporting top entities to B2: {params.b2_bucket}/{object_name}")
+        b2_export = csv_to_b2(
+            top_entities,
+            bucket_name=params.b2_bucket,
+            object_name=object_name,
+            add_date_slug=params.b2_add_date_slug,
+            ensure_unique=params.b2_ensure_unique,
+        )
+    
+    # Return values here are saved out later to prefect artifacts, and are transiently available via the buffet.
+    return {
+        "article_count": len(articles),
+        "query": params.query,
+        "filter_type": params.filter_type,
+        "top_entities": top_entities,
+        "b2_export": b2_export,
+    }

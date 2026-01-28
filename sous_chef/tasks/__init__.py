@@ -1,6 +1,24 @@
-import pkgutil
-#This allows all modules in this directory to be loaded automatically with 
-#from tasks import *
-__path__ = pkgutil.extend_path(__path__, __name__)
-for importer, modname, ispkg in pkgutil.walk_packages(path=__path__, prefix=__name__+'.'):
-        __import__(modname)
+"""
+Task library for sous-chef flows.
+
+Tasks are Prefect-decorated functions that can be used within flows.
+"""
+
+from .discovery_tasks import query_online_news
+from .keyword_tasks import extract_keywords
+from .extraction_tasks import extract_entities, top_n_entities
+from .aggregator_tasks import top_n_unique_values
+from .export_tasks import csv_to_b2
+from .email_tasks import send_email, send_templated_email, send_run_summary_email
+
+__all__ = [
+    "query_online_news",
+    "extract_keywords",
+    "extract_entities",
+    "top_n_entities",
+    "top_n_unique_values",
+    "csv_to_b2",
+    "send_email",
+    "send_templated_email",
+    "send_run_summary_email",
+]
