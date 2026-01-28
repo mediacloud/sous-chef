@@ -2,7 +2,7 @@
 
 Sous-Chef is a data pipeline tool for building and executing data processing workflows with MediaCloud and other data sources.
 
-## Version 3.0.0-alpha (Current)
+## Version 3.0.0
 
 This version introduces a new Python-based flow architecture. Flows are defined as Python functions with Pydantic parameter models, providing better type safety and easier testing compared to the previous YAML-based recipe system.
 
