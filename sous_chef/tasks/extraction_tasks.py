@@ -18,7 +18,7 @@ except ImportError:
 
 def extract_entities_row(
     text: str,
-    model: str = "en_core_web_sm"
+    nlp = None
 ) -> List[Dict[str, str]]:
     """
     Extract named entities from a single text using SpaCy NER.
@@ -33,13 +33,7 @@ def extract_entities_row(
         List of entity dictionaries, each with "text" and "type" keys.
         Example: [{"text": "Apple", "type": "ORG"}, {"text": "New York", "type": "GPE"}]
     """
-    if spacy_download is None:
-        raise ImportError(
-            "spacy-download is required for entity extraction. "
-            "Install it with: pip install spacy-download"
-        )
     
-    nlp = spacy_download.load_spacy(model)
     document = nlp(text)
     
     entities = [
@@ -80,12 +74,21 @@ def extract_entities(
         # entities[i] contains entities extracted from text[i]
         # Each entity is {"text": "...", "type": "ORG"} etc.
     """
+
+    if spacy_download is None:
+        raise ImportError(
+            "spacy-download is required for entity extraction. "
+            "Install it with: pip install spacy-download"
+        )
+    
+    nlp = spacy_download.load_spacy(model)
+
     return add_column_from_function(
         df,
         extract_entities_row,
         input_cols=[text_column],
         output_col="entities",
-        model=model
+        nlp = nlp
     )
 
 

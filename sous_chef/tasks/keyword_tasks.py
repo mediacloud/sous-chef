@@ -13,6 +13,7 @@ from .utils import add_column_from_function
 def extract_keywords_row(
     text: str,
     language: str,
+    extractors: dict,
     top_n: int = 50,
     ngram_max: int = 3,
     dedup_limit: float = 0.9
@@ -25,6 +26,7 @@ def extract_keywords_row(
     Args:
         text: Text to extract keywords from
         language: Language code (e.g., "en", "es")
+        extractors: Dict of language -> KeywordExtractor (for caching)
         top_n: Number of top keywords to return
         ngram_max: Maximum n-gram size
         dedup_limit: Deduplication limit
@@ -32,13 +34,17 @@ def extract_keywords_row(
     Returns:
         List of keywords
     """
-    extractor = yake.KeywordExtractor(
-        lan=language,
-        n=ngram_max,
-        dedupLim=dedup_limit,
-        top=top_n,
-        features=None
-    )
+    # Get or create extractor for this language
+    if language not in extractors:
+        extractors[language] = yake.KeywordExtractor(
+            lan=language,
+            n=ngram_max,
+            dedupLim=dedup_limit,
+            top=top_n,
+            features=None
+        )
+    
+    extractor = extractors[language]
     keywords = extractor.extract_keywords(text)
     # Extract just the keyword text (first element of each tuple)
     return [kw[0] for kw in keywords]
@@ -78,11 +84,15 @@ def extract_keywords(
         # articles now has: text, language, keywords columns
         # keywords[i] contains keywords extracted from text[i]
     """
+    # Create shared extractor cache (one per language)
+    extractors = {}
+    
     return add_column_from_function(
         df,
         extract_keywords_row,
         input_cols=[text_column, language_column],
         output_col="keywords",
+        extractors=extractors,
         top_n=top_n,
         ngram_max=ngram_max,
         dedup_limit=dedup_limit
