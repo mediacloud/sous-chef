@@ -88,8 +88,14 @@ def get_flow_schema(name: str) -> Dict[str, Any]:
                     base_class is object):
                     continue
                 
-                # Check if this base class has a component hint (check __dict__ to avoid inheritance)
-                component_hint = getattr(base_class, '_component_hint', None)
+                # Check if this base class has a component hint
+                # Try multiple ways to access it (Pydantic v2 might handle this differently)
+                component_hint = None
+                if hasattr(base_class, '_component_hint'):
+                    component_hint = getattr(base_class, '_component_hint', None)
+                elif '_component_hint' in base_class.__dict__:
+                    component_hint = base_class.__dict__['_component_hint']
+                
                 if component_hint and isinstance(component_hint, str):
                     # Get fields defined in this base class
                     if hasattr(base_class, 'model_fields'):
