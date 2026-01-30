@@ -13,13 +13,12 @@ import pandas as pd
 from prefect import task
 from prefect.logging import get_run_logger
 
-from ..secrets import get_b2_s3_client, get_b2_endpoint_url
+from ..secrets import get_b2_s3_client, get_b2_endpoint_url, get_b2_bucket_name
 
 
 @task
 def csv_to_b2(
     df: pd.DataFrame,
-    bucket_name: str,
     object_name: str,
     add_date_slug: bool = True,
     ensure_unique: bool = True,
@@ -31,9 +30,11 @@ def csv_to_b2(
     """
     Upload a DataFrame as a CSV to Backblaze B2 (S3-compatible).
 
+    The bucket name is automatically retrieved from Prefect variable "b2-bucket-name"
+    or the B2_BUCKET environment variable, defaulting to "sous-chef-output".
+
     Args:
         df: DataFrame to export.
-        bucket_name: Target B2 bucket name.
         object_name: Object key/path. If it contains the substring ``\"DATE\"``
             and ``add_date_slug`` is True, ``\"DATE\"`` will be replaced with
             the current date (YYYY-MM-DD).
@@ -57,6 +58,8 @@ def csv_to_b2(
         raise ValueError("csv_to_b2: DataFrame 'df' must not be None")
 
     logger = get_run_logger()
+    # Get bucket name from Prefect variable or environment
+    bucket_name = get_b2_bucket_name()
     # Build CSV into an in-memory buffer
     csv_buffer = BytesIO()
     df.to_csv(csv_buffer, index=False, encoding='utf-8', lineterminator='\n')

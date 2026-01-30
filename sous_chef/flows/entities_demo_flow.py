@@ -95,10 +95,9 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
         object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}{filter_suffix}-top-entities.csv"
         )
-        print(f"Exporting top entities to B2: {params.b2_bucket}/{object_name}")
+        print(f"Exporting top entities to B2: {object_name}")
         b2_export = csv_to_b2(
             top_entities,
-            bucket_name=params.b2_bucket,
             object_name=object_name,
             add_date_slug=params.b2_add_date_slug,
             ensure_unique=params.b2_ensure_unique,

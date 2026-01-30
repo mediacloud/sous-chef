@@ -89,10 +89,9 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}-top-keywords.csv"
         )
-        print(f"calling csv_to_b2 with params: {params.b2_bucket}, {object_name}")
+        print(f"calling csv_to_b2 with object_name: {object_name}")
         b2_export = csv_to_b2(
             top_keywords,
-            bucket_name=params.b2_bucket,
             object_name=object_name,
             add_date_slug=params.b2_add_date_slug,
             ensure_unique=params.b2_ensure_unique,

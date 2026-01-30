@@ -15,7 +15,6 @@ class CsvExportParams(BaseModel):
     # Component hint for frontend grouping (Phase 2)
     _component_hint: ClassVar[str] = "CsvExportParams"
     
-    b2_bucket: Optional[str] = None
     b2_object_prefix: str = "sous-chef-output"
     b2_add_date_slug: bool = True
     b2_ensure_unique: bool = True

@@ -13,7 +13,7 @@ from datetime import date
 class MediacloudQuery(BaseModel):
     """Base model for MediaCloud query parameters."""
     
-    # Component hint for frontend grouping (Phase 2)
+    # Component hint for frontend grouping 
     _component_hint: ClassVar[str] = "MediacloudQuery"
     
     query: str

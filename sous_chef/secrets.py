@@ -10,6 +10,7 @@ from prefect_aws import AwsCredentials
 from prefect.context import TaskRunContext
 from prefect import task
 from prefect.logging import get_run_logger
+from prefect.variables import Variable
 import os
 from typing import Optional
 import boto3
@@ -159,3 +160,38 @@ def get_b2_endpoint_url(block_name: str = "b2-s3-credentials") -> Optional[str]:
     # Fallback to environment variable
     return os.getenv("B2_S3_ENDPOINT")
 
+def get_b2_bucket_name(variable_name: str = "b2-bucket-name") -> str:
+    """
+    Get the B2 bucket name from Prefect variable or environment.
+    
+    Order of resolution:
+    1. Prefect Variable named `variable_name` (when in a Prefect context)
+    2. Environment variable B2_BUCKET (fallback for local/testing)
+    
+    Args:
+        variable_name: Name of Prefect variable (default: "b2-bucket-name")
+        
+    Returns:
+        Bucket name string
+        
+    Raises:
+        ValueError: If bucket name not found in variable or environment
+    """
+    # Try Prefect Variable first (preferred when running under Prefect)
+    try:
+        context = TaskRunContext.get()
+        if context:
+            bucket_name = Variable.get(variable_name)
+            if bucket_name:
+                return bucket_name
+    except Exception:
+        # Variable not found or error accessing it, fall through to env var
+        pass
+    
+    # Fallback to environment variable
+    bucket_name = os.getenv("B2_BUCKET")
+    if bucket_name:
+        return bucket_name
+    
+    # Default fallback
+    return "sous-chef-output"
