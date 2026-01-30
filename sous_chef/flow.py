@@ -61,6 +61,9 @@ def get_flow_schema(name: str) -> Dict[str, Any]:
     """
     Get JSON schema for flow parameters.
     Returns format compatible with frontend form generation.
+    
+    If the parameter model inherits from base models with _component_hint,
+    adds x-component metadata to fields for frontend grouping.
     """
     flow = _FLOW_REGISTRY.get(name)
     if not flow:
@@ -70,8 +73,49 @@ def get_flow_schema(name: str) -> Dict[str, Any]:
     if params_model:
         # Pydantic model -> JSON schema
         schema = params_model.model_json_schema()
-        # Return just the properties (matches current API format)
-        return schema.get("properties", {})
+        properties = schema.get("properties", {})
+        
+        # Enhance with component hints if base models are used
+        if hasattr(params_model, '__mro__'):
+            # Build field-to-component mapping
+            field_components = {}
+            
+            # Walk through MRO to find base models with _component_hint
+            for base_class in params_model.__mro__:
+                # Skip the model itself and BaseModel
+                if (base_class is params_model or 
+                    base_class is BaseModel or
+                    base_class is object):
+                    continue
+                
+                # Check if this base class has a component hint
+                # Try multiple ways to access it (Pydantic v2 might handle this differently)
+                component_hint = None
+                if hasattr(base_class, '_component_hint'):
+                    component_hint = getattr(base_class, '_component_hint', None)
+                elif '_component_hint' in base_class.__dict__:
+                    component_hint = base_class.__dict__['_component_hint']
+                
+                if component_hint and isinstance(component_hint, str):
+                    # Get fields defined in this base class
+                    if hasattr(base_class, 'model_fields'):
+                        for field_name in base_class.model_fields.keys():
+                            field_components[field_name] = component_hint
+            
+            # Add x-component metadata to properties
+            for field_name, field_schema in properties.items():
+                if field_name in field_components:
+                    # Ensure field_schema is a dict (it should be from Pydantic)
+                    if not isinstance(field_schema, dict):
+                        properties[field_name] = field_schema = {}
+                    else:
+                        # Work with existing dict
+                        field_schema = properties[field_name]
+                    
+                    # Add component hint metadata
+                    field_schema['x-component'] = field_components[field_name]
+        
+        return properties
     
     # Fallback: extract from function signature if no Pydantic model
     import inspect

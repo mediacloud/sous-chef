@@ -8,11 +8,11 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
-from datetime import date
+from typing import Dict, Any
 
 from ..flow import register_flow
+from ..params.mediacloud_query import MediacloudQuery
+from ..params.csv_export import CsvExportParams
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
@@ -20,19 +20,9 @@ from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_email, send_templated_email, send_run_summary_email
 from ..utils import create_url_safe_slug
 
-class KeywordsDemoParams(BaseModel):
+class KeywordsDemoParams(MediacloudQuery, CsvExportParams):
     """Parameters for the keywords demo flow."""
-    query: str
-    collection_ids: List[int] = []
-    source_ids: List[int] = []
-    start_date: date
-    end_date: date
     top_n: int = 50  # Number of keywords to extract per article
-    # Optional Backblaze B2 export settings
-    b2_bucket: Optional[str] = "sous-chef-output"
-    b2_object_prefix: str = "sous-chef-output"
-    b2_add_date_slug: bool = True
-    b2_ensure_unique: bool = True
 
 
 @register_flow(
