@@ -9,33 +9,23 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
-from datetime import date
+from typing import Dict, Any, Optional
 
 from ..flow import register_flow
+from ..params.mediacloud_query import MediacloudQuery
+from ..params.csv_export import CsvExportParams
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.extraction_tasks import extract_entities, top_n_entities
 from ..tasks.export_tasks import csv_to_b2
 from ..utils import create_url_safe_slug
 
 
-class EntitiesDemoParams(BaseModel):
+class EntitiesDemoParams(MediacloudQuery, CsvExportParams):
     """Parameters for the entities demo flow."""
-    query: str
-    collection_ids: List[int] = []
-    source_ids: List[int] = []
-    start_date: date
-    end_date: date
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
     top_n: int = 20  # Number of top entities to return
     filter_type: Optional[str] = None  # Optional entity type filter (e.g., "PERSON", "ORG", "GPE")
     sort_by: str = "total"  # Sort by "total" or "percentage"
-    # Optional Backblaze B2 export settings
-    b2_bucket: Optional[str] = "sous-chef-output"
-    b2_object_prefix: str = "sous-chef-output"
-    b2_add_date_slug: bool = True
-    b2_ensure_unique: bool = True
 
 
 @register_flow(
