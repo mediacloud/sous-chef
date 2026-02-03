@@ -7,6 +7,7 @@ from datetime import date
 from typing import List
 import requests
 import time
+from prefect.logging import get_run_logger
 
 
 # Tasks use it
@@ -19,14 +20,16 @@ def query_online_news(
         source_ids: List[int] = [],
     	# Clean signature!
 		) -> pd.DataFrame:
-
+    logger = get_run_logger()
+    logger.info("Starting query online news")
     api_key = get_mediacloud_api_key()
     mc_search = mediacloud.api.SearchApi(api_key)
-
+    logger.info("Got mc api key")
     stories = []
     token = None
     more_stories = True
     while more_stories:
+        logger.info(f"Fetching Page, got {len(stories)} stories")
         try:
             page, token = mc_search.story_list(
                 query, 

@@ -19,6 +19,7 @@ from ..tasks.aggregator_tasks import top_n_unique_values
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_email, send_templated_email, send_run_summary_email
 from ..utils import create_url_safe_slug
+from prefect.logging import get_run_logger
 
 class KeywordsDemoParams(MediacloudQuery, CsvExportParams):
     """Parameters for the keywords demo flow."""
@@ -55,7 +56,8 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         - query: The search query used
         - b2_export: Optional dict with export metadata if B2 export was performed
     """
-
+    logger = get_run_logger()
+    logger.info("starting keyword demo run")
     # Step 1: Query MediaCloud for articles
     articles = query_online_news(
         query=params.query,
@@ -83,20 +85,20 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     )
 
     # Optional Step 4: Export top keywords to Backblaze B2 as CSV
-    b2_export = None
-    if params.b2_bucket:
-        slug = create_url_safe_slug(params.query)
-        object_name = (
+ 
+    slug = create_url_safe_slug(params.query)
+    object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}-top-keywords.csv"
-        )
-        print(f"calling csv_to_b2 with object_name: {object_name}")
-        b2_export = csv_to_b2(
-            top_keywords,
-            object_name=object_name,
-            add_date_slug=params.b2_add_date_slug,
-            ensure_unique=params.b2_ensure_unique,
-        )
-        
+    )
+    print(f"calling csv_to_b2 with object_name: {object_name}")
+    b2_export = csv_to_b2(
+        top_keywords,
+        object_name=object_name,
+        add_date_slug=params.b2_add_date_slug,
+        ensure_unique=params.b2_ensure_unique,
+    )
+    
+    #This will be where we fix tomorrow
     send_email(
         email_to="nano3.14@gmail.com",
         subject="test",

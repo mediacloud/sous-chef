@@ -233,11 +233,6 @@ def main():
         print("  python run_flow.py <flow_name> [--interactive] [--params file.json] [--param-name value ...]")
         print("\nExamples:")
         print("  python run_flow.py keywords_demo --interactive")
-        print("  python run_flow.py keywords_demo --query 'climate change' --start-date 2024-01-01 --end-date 2024-01-07")
-        print("  # With B2 CSV export (bucket must already exist in Backblaze B2)")
-        print("  python run_flow.py keywords_demo --query 'climate change' \\")
-        print("      --start-date 2024-01-01 --end-date 2024-01-07 \\")
-        print("      --b2-bucket mc-sous-chef-output")
         return
     
     # Get flow

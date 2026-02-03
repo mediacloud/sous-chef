@@ -89,19 +89,19 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
     
     # Optional Step 4: Export top entities to Backblaze B2 as CSV
     b2_export = None
-    if params.b2_bucket:
-        slug = create_url_safe_slug(params.query)
-        filter_suffix = f"-{params.filter_type}" if params.filter_type else ""
-        object_name = (
+    
+    slug = create_url_safe_slug(params.query)
+    filter_suffix = f"-{params.filter_type}" if params.filter_type else ""
+    object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}{filter_suffix}-top-entities.csv"
-        )
-        print(f"Exporting top entities to B2: {object_name}")
-        b2_export = csv_to_b2(
+    )
+    print(f"Exporting top entities to B2: {object_name}")
+    b2_export = csv_to_b2(
             top_entities,
             object_name=object_name,
             add_date_slug=params.b2_add_date_slug,
             ensure_unique=params.b2_ensure_unique,
-        )
+    )
     
     # Return values here are saved out later to prefect artifacts, and are transiently available via the buffet.
     return {
