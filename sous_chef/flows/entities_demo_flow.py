@@ -14,13 +14,15 @@ from typing import Dict, Any, Optional
 from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
+from ..params.email_recipient import EmailRecipientParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.extraction_tasks import extract_entities, top_n_entities
 from ..tasks.export_tasks import csv_to_b2
+from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug
 
 
-class EntitiesDemoParams(MediacloudQuery, CsvExportParams):
+class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """Parameters for the entities demo flow."""
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
     top_n: int = 20  # Number of top entities to return
@@ -93,6 +95,16 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
             add_date_slug=params.b2_add_date_slug,
             ensure_unique=params.b2_ensure_unique,
     )
+    
+    # Send email notification if recipients are specified
+    if params.email_to:
+        email_result = send_run_summary_email(
+            email_to=params.email_to,
+            query_summary=query_summary,
+            b2_artifact=b2_artifact,
+            flow_name="entities_demo",
+            query=params.query
+        )
     
     # Return only artifact objects - these are saved as Prefect artifacts
     return {

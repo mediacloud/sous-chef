@@ -144,28 +144,37 @@ def send_templated_email(
 @task
 def send_run_summary_email(
     email_to: str | List[str],
-    run_data: Dict[str, Any],
-    subject: str = "Sous-Chef Execution Summary",
-    template_name: str = "run_summary.j2",
+    run_data: Optional[Dict[str, Any]] = None,
+    query_summary=None,
+    b2_artifact=None,
+    flow_name: Optional[str] = None,
+    query: Optional[str] = None,
+    subject: Optional[str] = None,
+    template_name: Optional[str] = None,
     email_server_credentials_block: str = "email-password",
 ) -> Tuple[Dict[str, Any], None]:
     """
     Send a run summary email using a template.
     
     This is a convenience wrapper around send_templated_email specifically
-    for sending flow execution summaries.
+    for sending flow execution summaries. Can handle both legacy run_data format
+    and new artifact-based format.
     
     Args:
         email_to: Single email address or list of email addresses
-        run_data: Dictionary containing run summary data (will be passed to template)
-        subject: Email subject line (default: "Sous-Chef Execution Summary")
-        template_name: Name of the template file (default: "run_summary.j2")
+        run_data: Dictionary containing run summary data (legacy format, optional)
+        query_summary: MediacloudQuerySummary artifact or dict (optional)
+        b2_artifact: FileUploadArtifact artifact or dict (optional)
+        flow_name: Name of the flow that was executed (optional)
+        query: The search query that was executed (optional)
+        subject: Email subject line (auto-generated if not provided)
+        template_name: Name of the template file (auto-selected if not provided)
         email_server_credentials_block: Name of Prefect EmailServerCredentials block
         
     Returns:
         Dict with task result metadata
         
-    Example:
+    Example (legacy format):
         ```python
         send_run_summary_email(
             email_to=["user@example.com"],
@@ -176,12 +185,84 @@ def send_run_summary_email(
             }
         )
         ```
+    
+    Example (artifact format):
+        ```python
+        send_run_summary_email(
+            email_to=["user@example.com"],
+            query_summary=query_summary_artifact,
+            b2_artifact=b2_artifact,
+            flow_name="keywords_demo",
+            query="climate change"
+        )
+        ```
     """
+    logger = get_run_logger()
+    
+    # Convert artifacts to dicts if they're artifact objects
+    query_summary_dict = None
+    b2_artifact_dict = None
+    
+    if query_summary is not None:
+        # Check if it's an artifact object with to_table_row method
+        if hasattr(query_summary, 'to_table_row'):
+            query_summary_dict = query_summary.to_table_row()
+        elif isinstance(query_summary, dict):
+            query_summary_dict = query_summary
+        else:
+            logger.warning(f"query_summary is not an artifact or dict, got {type(query_summary)}")
+    
+    if b2_artifact is not None:
+        # Check if it's an artifact object with to_table_row method
+        if hasattr(b2_artifact, 'to_table_row'):
+            b2_artifact_dict = b2_artifact.to_table_row()
+        elif isinstance(b2_artifact, dict):
+            b2_artifact_dict = b2_artifact
+        else:
+            logger.warning(f"b2_artifact is not an artifact or dict, got {type(b2_artifact)}")
+    
+    # Determine template and build template_data
+    if query_summary_dict is not None or b2_artifact_dict is not None:
+        # Use new flow_results template
+        if template_name is None:
+            template_name = "flow_results.j2"
+        
+        # Build template data
+        template_data = {}
+        if query_summary_dict:
+            template_data["query_summary"] = query_summary_dict
+        if b2_artifact_dict:
+            template_data["b2_artifact"] = b2_artifact_dict
+        if flow_name:
+            template_data["flow_name"] = flow_name
+        if query:
+            template_data["query"] = query
+        
+        # Generate subject if not provided
+        if subject is None:
+            if query:
+                query_preview = query[:50] + "..." if len(query) > 50 else query
+                subject = f"Sous-Chef Results: {query_preview}"
+            else:
+                subject = "Sous-Chef Flow Results"
+    else:
+        # Use legacy run_data format
+        if template_name is None:
+            template_name = "run_summary.j2"
+        
+        if run_data is None:
+            run_data = {}
+        
+        template_data = run_data
+        
+        if subject is None:
+            subject = "Sous-Chef Execution Summary"
+    
     result, _ = send_templated_email(
         email_to=email_to,
         subject=subject,
         template_name=template_name,
-        template_data=run_data,
+        template_data=template_data,
         email_server_credentials_block=email_server_credentials_block,
     )
     return result, None

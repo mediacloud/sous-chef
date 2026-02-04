@@ -95,10 +95,12 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     
     # Send email notification if recipients are specified
     if params.email_to:
-        email_result = send_email(
+        email_result = send_run_summary_email(
             email_to=params.email_to,
-            subject="Sous-Chef Keywords Demo - Run Complete",
-            msg="Test Sous-Chef output! Did we do it??"
+            query_summary=query_summary,
+            b2_artifact=b2_artifact,
+            flow_name="keywords_demo",
+            query=params.query
         )
 
 
