@@ -45,10 +45,13 @@ class BaseArtifact(BaseModel, ABC):
         Returns a flat dict with all fields serialized to JSON-compatible types.
         The `_artifact_type` field is added automatically for frontend identification.
         
+        Dates and datetimes are converted to ISO format strings for JSON compatibility.
+        
         Returns:
             Dict with all artifact fields plus `_artifact_type` field
         """
-        data = self.model_dump()
+        # Use mode='json' to get JSON-serializable values (dates become strings)
+        data = self.model_dump(mode='json')
         # Add artifact type for frontend identification
         data["_artifact_type"] = self.artifact_type
         return data
