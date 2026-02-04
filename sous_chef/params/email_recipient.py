@@ -17,5 +17,5 @@ class EmailRecipientParam(BaseModel):
     email_to: List[str] = Field(
         default_factory=list,
         title="Email notification recipients",
-        description="List of email addresses to send notifications to"
+        description="Additional emails to send notifications to"
     )
