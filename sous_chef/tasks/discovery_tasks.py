@@ -36,16 +36,12 @@ def query_online_news(
             end_date=date(2024, 1, 31)
         )
     """
-    logger = get_run_logger()
-    logger.info("Starting query online news")
     api_key = get_mediacloud_api_key()
     mc_search = mediacloud.api.SearchApi(api_key)
-    logger.info("Got mc api key")
     stories = []
     pagination_token = None
     more_stories = True
     while more_stories:
-        logger.info(f"Fetching Page, got {len(stories)} stories")
         try:
             page, pagination_token = mc_search.story_list(
                 query, 

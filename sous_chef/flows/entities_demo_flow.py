@@ -42,22 +42,15 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
     1. Queries MediaCloud for articles matching the query
     2. Extracts named entities from each article's text using SpaCy NER
     3. Aggregates entities to find the top entities (optionally filtered by type)
-    4. Returns articles with entities and the top entities summary
-    
-    The result keeps entities associated with their source text,
-    making it easy to see which entities came from which article,
-    and also provides a summary of the most common entities across all articles.
+    4. Exports results to B2 and returns artifacts
     
     Args:
         params: Flow parameters
         
     Returns:
-        Dictionary with:
-        - article_count: Number of articles processed
-        - top_entities: DataFrame with top entities (entity, type, count, appearance_percent, document_count)
-        - query: The search query used
-        - filter_type: The entity type filter applied (if any)
-        - b2_export: Optional dict with export metadata if B2 export was performed
+        Dictionary containing only artifact objects:
+        - query_summary: MediacloudQuerySummary artifact with query context and statistics
+        - b2_artifact: FileUploadArtifact with upload details for the exported CSV
     """
     
     # Step 1: Query MediaCloud for articles
@@ -101,13 +94,8 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
             ensure_unique=params.b2_ensure_unique,
     )
     
-    # Return values here are saved out later to prefect artifacts, and are transiently available via the buffet.
+    # Return only artifact objects - these are saved as Prefect artifacts
     return {
-        "article_count": len(articles),
-        "query": params.query,
-        "filter_type": params.filter_type,
-        "top_entities": top_entities,
-        "b2_export": b2_metadata,
         "query_summary": query_summary,
         "b2_artifact": b2_artifact,
     }
