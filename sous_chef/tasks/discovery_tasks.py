@@ -26,18 +26,19 @@ def query_online_news(
     mc_search = mediacloud.api.SearchApi(api_key)
     logger.info("Got mc api key")
     stories = []
-    token = None
+    pagination_token = None
     more_stories = True
     while more_stories:
         logger.info(f"Fetching Page, got {len(stories)} stories")
         try:
-            page, token = mc_search.story_list(
+            page, pagination_token = mc_search.story_list(
                 query, 
                 start_date=start_date, 
                 end_date=end_date, 
                 collection_ids=collection_ids, 
                 source_ids=source_ids,
-                expanded=True
+                expanded=True,
+                pagination_token=pagination_token
             )
             #time.sleep(5)
         except requests.exceptions.JSONDecodeError as e:
@@ -49,9 +50,9 @@ def query_online_news(
             ) from e
         except mediacloud.error.APIResponseError as e:
             # Re-raise API errors as-is
-            raise
+            raise e
         df = pd.DataFrame.from_records(page)
         stories.append(df)
-        more_stories = token is not None
+        more_stories = pagination_token is not None
 
     return pd.concat(stories)
