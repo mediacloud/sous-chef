@@ -8,8 +8,10 @@ that can be used by the frontend to group related fields.
 
 from .mediacloud_query import MediacloudQuery
 from .csv_export import CsvExportParams
+from .email_recipient import EmailRecipientParam
 
 __all__ = [
     "MediacloudQuery",
     "CsvExportParams",
+    "EmailRecipientParam",
 ]

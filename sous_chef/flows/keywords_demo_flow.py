@@ -13,6 +13,7 @@ from typing import Dict, Any
 from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
+from ..params.email_recipient import EmailRecipientParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
@@ -21,7 +22,7 @@ from ..tasks.email_tasks import send_email, send_templated_email, send_run_summa
 from ..utils import create_url_safe_slug
 from prefect.logging import get_run_logger
 
-class KeywordsDemoParams(MediacloudQuery, CsvExportParams):
+class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """Parameters for the keywords demo flow."""
     top_n: int = 50  # Number of keywords to extract per article
 
@@ -92,11 +93,12 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         ensure_unique=params.b2_ensure_unique,
     )
     
-    #This will be where we fix tomorrow
-    email_result = send_email(
-        email_to="nano3.14@gmail.com",
-        subject="test",
-        msg="Test Sous-Chef output! Did we do it??"
+    # Send email notification if recipients are specified
+    if params.email_to:
+        email_result = send_email(
+            email_to=params.email_to,
+            subject="Sous-Chef Keywords Demo - Run Complete",
+            msg="Test Sous-Chef output! Did we do it??"
         )
 
 
