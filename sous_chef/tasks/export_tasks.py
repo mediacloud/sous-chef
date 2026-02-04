@@ -14,6 +14,7 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 from ..secrets import get_b2_s3_client, get_b2_endpoint_url, get_b2_bucket_name
+from ..artifacts import ArtifactResult, FileUploadArtifact
 
 
 @task
@@ -25,8 +26,7 @@ def csv_to_b2(
     normalize_name: bool = True,
     b2_block_name: str = "b2-s3-credentials",
     dry_run: bool = False,
-) -> Dict[str, Any]:
-
+) -> ArtifactResult[Dict[str, Any]]:
     """
     Upload a DataFrame as a CSV to Backblaze B2 (S3-compatible).
 
@@ -48,11 +48,17 @@ def csv_to_b2(
             name and return metadata. Useful for tests.
 
     Returns:
-        Dict with:
-        - bucket: bucket name
-        - object: final object key
-        - url: best-effort HTTPS URL to the object (may be None if endpoint not set)
-        - columns_saved: list of DataFrame column names
+        ArtifactResult[Dict[str, Any]]: Tuple of (metadata_dict, FileUploadArtifact)
+        
+        - First element: Dict with:
+            - bucket: bucket name
+            - object: final object key
+            - url: best-effort HTTPS URL to the object (may be None if endpoint not set)
+            - columns_saved: list of DataFrame column names
+        - Second element: FileUploadArtifact with upload details for frontend display
+        
+    Example:
+        metadata, artifact = csv_to_b2(df, "output.csv")
     """
     if df is None:
         raise ValueError("csv_to_b2: DataFrame 'df' must not be None")
@@ -125,10 +131,23 @@ def csv_to_b2(
     if endpoint_url:
         url = f"{endpoint_url.rstrip('/')}/{bucket_name}/{put_name}"
 
-    return {
+    # Create metadata dict (result)
+    metadata = {
         "bucket": bucket_name,
         "object": put_name,
         "url": url,
         "columns_saved": list(df.columns),
     }
+    
+    # Create artifact for frontend display
+    artifact = FileUploadArtifact(
+        url=url,
+        bucket=bucket_name,
+        object_key=put_name,
+        file_type="csv",
+        columns_saved=list(df.columns),
+        row_count=len(df)
+    )
+    
+    return metadata, artifact
 

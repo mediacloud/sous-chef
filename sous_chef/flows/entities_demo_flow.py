@@ -61,7 +61,7 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
     """
     
     # Step 1: Query MediaCloud for articles
-    articles = query_online_news(
+    articles, query_summary = query_online_news(
         query=params.query,
         collection_ids=params.collection_ids,
         source_ids=params.source_ids,
@@ -88,15 +88,13 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
     )
     
     # Optional Step 4: Export top entities to Backblaze B2 as CSV
-    b2_export = None
-    
     slug = create_url_safe_slug(params.query)
     filter_suffix = f"-{params.filter_type}" if params.filter_type else ""
     object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}{filter_suffix}-top-entities.csv"
     )
     print(f"Exporting top entities to B2: {object_name}")
-    b2_export = csv_to_b2(
+    b2_metadata, b2_artifact = csv_to_b2(
             top_entities,
             object_name=object_name,
             add_date_slug=params.b2_add_date_slug,
@@ -109,5 +107,7 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
         "query": params.query,
         "filter_type": params.filter_type,
         "top_entities": top_entities,
-        "b2_export": b2_export,
+        "b2_export": b2_metadata,
+        "query_summary": query_summary,
+        "b2_artifact": b2_artifact,
     }

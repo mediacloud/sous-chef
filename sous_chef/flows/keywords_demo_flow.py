@@ -59,7 +59,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     logger = get_run_logger()
     logger.info("starting keyword demo run")
     # Step 1: Query MediaCloud for articles
-    articles = query_online_news(
+    articles, query_summary = query_online_news(
         query=params.query,
         collection_ids=params.collection_ids,
         source_ids=params.source_ids,
@@ -91,7 +91,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
             f"{params.b2_object_prefix}/DATE/{slug}-top-keywords.csv"
     )
     print(f"calling csv_to_b2 with object_name: {object_name}")
-    b2_export = csv_to_b2(
+    b2_metadata, b2_artifact = csv_to_b2(
         top_keywords,
         object_name=object_name,
         add_date_slug=params.b2_add_date_slug,
@@ -99,7 +99,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     )
     
     #This will be where we fix tomorrow
-    send_email(
+    email_result = send_email(
         email_to="nano3.14@gmail.com",
         subject="test",
         msg="Test Sous-Chef output! Did we do it??"
@@ -110,5 +110,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
     return {
         "article_count": len(articles),
         "query": params.query,
-        "b2_export": b2_export,
+        "b2_export": b2_metadata,
+        "query_summary": query_summary,
+        "b2_artifact": b2_artifact,
     }

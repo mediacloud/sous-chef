@@ -5,7 +5,7 @@ Provides tasks for sending emails with template support.
 """
 import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from prefect import task
@@ -31,7 +31,7 @@ def send_email(
     subject: str,
     msg: str,
     email_server_credentials_block: str = "email-password",
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], None]:
     """
     Send an email using Prefect's email integration.
     
@@ -80,12 +80,14 @@ def send_email(
             "task": result
         })
     
-    return {
+    result = {
         "emails_sent": len(results),
         "recipients": email_addresses,
         "subject": subject,
         "results": results
     }
+    
+    return result, None
 
 
 @task
@@ -95,7 +97,7 @@ def send_templated_email(
     template_name: str,
     template_data: Dict[str, Any],
     email_server_credentials_block: str = "email-password",
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], None]:
     """
     Send an email using a Jinja2 template.
     
@@ -130,12 +132,13 @@ def send_templated_email(
         raise
     
     # Send email using the rendered template
-    return send_email(
+    result, _ = send_email(
         email_to=email_to,
         subject=subject,
         msg=email_text,
         email_server_credentials_block=email_server_credentials_block,
     )
+    return result, None
 
 
 @task
@@ -145,7 +148,7 @@ def send_run_summary_email(
     subject: str = "Sous-Chef Execution Summary",
     template_name: str = "run_summary.j2",
     email_server_credentials_block: str = "email-password",
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], None]:
     """
     Send a run summary email using a template.
     
@@ -174,10 +177,11 @@ def send_run_summary_email(
         )
         ```
     """
-    return send_templated_email(
+    result, _ = send_templated_email(
         email_to=email_to,
         subject=subject,
         template_name=template_name,
         template_data=run_data,
         email_server_credentials_block=email_server_credentials_block,
     )
+    return result, None

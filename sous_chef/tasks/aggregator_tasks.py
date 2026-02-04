@@ -87,11 +87,9 @@ def top_n_unique_values(
     # Convert to DataFrame
     if top_items:
         values, counts = zip(*top_items)
-        result_df = pd.DataFrame({
+        return pd.DataFrame({
             "value": values,
             "count": counts
         })
     else:
-        result_df = pd.DataFrame(columns=["value", "count"])
-    
-    return result_df
+        return pd.DataFrame(columns=["value", "count"])

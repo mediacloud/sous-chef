@@ -8,9 +8,9 @@ from typing import List
 import requests
 import time
 from prefect.logging import get_run_logger
+from ..artifacts import ArtifactResult, MediacloudQuerySummary
 
 
-# Tasks use it
 @task
 def query_online_news(
     	query: str,
@@ -19,7 +19,23 @@ def query_online_news(
         collection_ids: List[int] = [],
         source_ids: List[int] = [],
     	# Clean signature!
-		) -> pd.DataFrame:
+		) -> ArtifactResult[pd.DataFrame]:
+    """
+    Query MediaCloud for news articles matching a search query.
+    
+    Returns:
+        ArtifactResult[pd.DataFrame]: Tuple of (DataFrame, MediacloudQuerySummary)
+        
+        - First element: DataFrame containing articles matching the query
+        - Second element: MediacloudQuerySummary artifact with query context and statistics
+        
+    Example:
+        articles, query_summary = query_online_news(
+            query="climate change",
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 31)
+        )
+    """
     logger = get_run_logger()
     logger.info("Starting query online news")
     api_key = get_mediacloud_api_key()
@@ -55,4 +71,16 @@ def query_online_news(
         stories.append(df)
         more_stories = pagination_token is not None
 
-    return pd.concat(stories)
+    stories_df = pd.concat(stories)
+    
+    # Create summary artifact
+    summary = MediacloudQuerySummary(
+        query=query,
+        start_date=start_date,
+        end_date=end_date,
+        collection_ids=collection_ids,
+        source_ids=source_ids,
+        story_count=len(stories_df)
+    )
+    
+    return stories_df, summary
