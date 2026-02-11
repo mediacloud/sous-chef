@@ -22,6 +22,7 @@ def extract_matching_sentences(
     Args:
         nlp: spaCy Language object to use
         text: Text to extract keywords from
+        language: 
         inclusion_filters: Optional list of regex patterns to filter sentences (only include sentences that match
         any pattern)
 
@@ -60,7 +61,7 @@ def matching_sentences(
     for index, row in df.iterrows():
         text = row[text_column]
         language = row[language_column]
-        sentences = extract_matching_sentences(nlp, text, language, inclusion_filters)
+        sentences = extract_matching_sentences(nlp, text, inclusion_filters) #removed language parameter for testing
         for s in sentences:
             results.append({
                 "id": row["id"],
