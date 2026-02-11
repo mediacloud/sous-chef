@@ -15,7 +15,7 @@ from ..utils import create_url_safe_slug
 class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """Parameters for the entities demo flow."""
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
-    regular_expressions: List[re.Regex] = []
+    inclusion_filters: Optional[List[re.Pattern]] = None
 
 
 @register_flow(
