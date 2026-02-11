@@ -9,7 +9,7 @@ from prefect.blocks.system import Secret
 from prefect_aws import AwsCredentials
 from prefect.context import TaskRunContext
 from prefect import task
-from prefect.logging import get_run_logger
+from .utils import get_logger
 from prefect.variables import Variable
 import os
 from typing import Optional
@@ -86,7 +86,7 @@ def get_b2_s3_client(block_name: str = "b2-s3-credentials"):
     """
     endpoint_url = os.getenv("B2_S3_ENDPOINT")
     region_name = os.getenv("B2_REGION", "us-east-005")
-    logger = get_run_logger()
+    logger = get_logger()
 
     # Try Prefect AwsCredentials block first (preferred when running under Prefect)
     try:
