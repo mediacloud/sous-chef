@@ -19,8 +19,7 @@ from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_email, send_templated_email, send_run_summary_email
-from ..utils import create_url_safe_slug
-from prefect.logging import get_run_logger
+from ..utils import create_url_safe_slug, get_logger
 
 class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """Parameters for the keywords demo flow."""
@@ -51,7 +50,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         - query_summary: MediacloudQuerySummary artifact with query context and statistics
         - b2_artifact: FileUploadArtifact with upload details for the exported CSV
     """
-    logger = get_run_logger()
+    logger = get_logger()
     logger.info("starting keyword demo run")
     # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(

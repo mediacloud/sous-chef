@@ -7,7 +7,6 @@ from datetime import date
 from typing import List
 import requests
 import time
-from prefect.logging import get_run_logger
 from ..artifacts import ArtifactResult, MediacloudQuerySummary
 
 

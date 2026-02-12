@@ -2,9 +2,60 @@
 General utility functions for sous-chef.
 """
 import hashlib
+import logging
+import os
 import re
 import time
 import unicodedata
+
+# Try to import Prefect logging utilities
+try:
+    from prefect.logging import get_run_logger
+    from prefect.exceptions import MissingContextError
+    PREFECT_LOGGING_AVAILABLE = True
+except ImportError:
+    PREFECT_LOGGING_AVAILABLE = False
+    get_run_logger = None
+    MissingContextError = None
+
+
+def get_logger() -> logging.Logger:
+    """
+    Get a logger that works with or without Prefect context.
+    
+    Falls back to standard Python logging if Prefect context is unavailable.
+    This allows tasks and flows to work when called directly (e.g., via .fn())
+    without requiring a Prefect server or active flow run.
+    
+    Returns:
+        A logger instance (either Prefect's run logger or standard Python logger)
+    """
+    if not PREFECT_LOGGING_AVAILABLE:
+        return logging.getLogger("sous_chef")
+    
+    try:
+        return get_run_logger()
+    except MissingContextError:
+        return logging.getLogger("sous_chef")
+
+
+def is_test_mode() -> bool:
+    """
+    Check if we're running in test mode.
+    
+    Test mode is enabled when:
+    - SOUS_CHEF_TEST_MODE environment variable is set to a truthy value
+    - SOUS_CHEF_SKIP_B2 environment variable is set to a truthy value
+    
+    This is automatically set when using run_flow.py with the --test flag.
+    
+    Returns:
+        True if test mode is enabled, False otherwise
+    """
+    return (
+        os.getenv("SOUS_CHEF_TEST_MODE", "").lower() in ("true", "1", "yes") or
+        os.getenv("SOUS_CHEF_SKIP_B2", "").lower() in ("true", "1", "yes")
+    )
 
 
 def create_url_safe_slug(text: str, max_length: int = 16) -> str:
