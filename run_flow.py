@@ -5,15 +5,25 @@ General flow runner for testing flows locally.
 This script allows you to run any registered flow using Prefect's .fn() method,
 which executes flows as plain Python functions without Prefect orchestration.
 
+When --test is used, prefect_test_harness() provides a minimal Prefect context
+using a temporary SQLite database, which is useful for testing flows that use
+Prefect features like logging or blocks without requiring a Prefect server.
+
 Usage:
     # List available flows
     python run_flow.py --list
     
-    # Run a flow with parameters
+    # Run a flow with parameters (no Prefect test harness)
     python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+    
+    # Run with test harness (recommended for testing)
+    python run_flow.py keywords_demo --test --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
     
     # Run interactively (will prompt for parameters)
     python run_flow.py keywords_demo --interactive
+    
+    # Run with test harness and interactive mode
+    python run_flow.py keywords_demo --test --interactive
     
     # Run with JSON parameters file
     python run_flow.py keywords_demo --params params.json
@@ -21,12 +31,21 @@ Usage:
 import sys
 import json
 import argparse
+import os
 from pathlib import Path
 from datetime import date, datetime
 from typing import Dict, Any, Optional
 
 # Add sous-chef to path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Import Prefect testing utilities (optional)
+try:
+    from prefect.testing.utilities import prefect_test_harness
+    PREFECT_TESTING_AVAILABLE = True
+except ImportError:
+    PREFECT_TESTING_AVAILABLE = False
+    prefect_test_harness = None
 
 # Import flows to register them
 from sous_chef.flows import *  # This imports and registers all flows
@@ -211,6 +230,15 @@ def main():
         help="Path to JSON file with parameters"
     )
     
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Use prefect_test_harness() to provide Prefect context. "
+             "Recommended when testing flows that use Prefect features like "
+             "logging or blocks. Creates a temporary SQLite database but "
+             "doesn't require a Prefect server."
+    )
+    
     # Parse just enough to see if --list or flow_name
     args, remaining = parser.parse_known_args()
     
@@ -230,10 +258,20 @@ def main():
         
         print("\n" + "=" * 80)
         print("\nUsage:")
-        print("  python run_flow.py <flow_name> [--interactive] [--params file.json] [--param-name value ...]")
+        print("  python run_flow.py <flow_name> [--test] [--interactive] [--params file.json] [--param-name value ...]")
         print("\nExamples:")
         print("  python run_flow.py keywords_demo --interactive")
+        print("  python run_flow.py keywords_demo --test --query 'climate change' --start-date 2024-01-01")
         return
+    
+    # Check if --test was requested but not available
+    if args.test and not PREFECT_TESTING_AVAILABLE:
+        print("⚠️  Warning: --test flag requested but prefect.testing.utilities is not available.")
+        print("   Install Prefect to use the test harness, or run without --test flag.")
+        print("   Continuing without test harness...\n")
+        use_test_harness = False
+    else:
+        use_test_harness = args.test
     
     # Get flow
     flow_meta = get_flow(args.flow_name)
@@ -250,17 +288,24 @@ def main():
     print(f"Running Flow: {args.flow_name}")
     print("=" * 80)
     print(f"Description: {flow_meta['description']}")
+    if use_test_harness:
+        print("Mode: Test (using prefect_test_harness)")
+    else:
+        print("Mode: Direct execution (no Prefect context)")
     print("-" * 80)
     
     # Get parameters
     params_dict = {}
     
-    # Parse remaining arguments for --interactive and --params
+    # Parse remaining arguments for --interactive, --params, and --test
     use_interactive = "--interactive" in remaining or len(remaining) == 0
     params_file = None
     
     if "--interactive" in remaining:
         remaining.remove("--interactive")
+    
+    if "--test" in remaining:
+        remaining.remove("--test")
     
     if "--params" in remaining:
         idx = remaining.index("--params")
@@ -317,8 +362,30 @@ def main():
     print("\nRunning flow...\n")
     
     try:
-        # Run flow using .fn() - this bypasses Prefect orchestration
-        result = flow_func(params)
+        # Get the underlying function using .fn() to bypass Prefect orchestration
+        if hasattr(flow_func, 'fn'):
+            flow_func_fn = flow_func.fn
+        else:
+            flow_func_fn = flow_func
+        
+        # Set test mode environment variable when --test flag is used
+        # This enables automatic dry_run for B2 tasks and other test behaviors
+        test_mode_was_set = False
+        if use_test_harness:
+            os.environ["SOUS_CHEF_TEST_MODE"] = "1"
+            test_mode_was_set = True
+            print("ℹ️  Test mode enabled - B2 uploads will be skipped (dry_run)")
+        
+        # Run flow with or without test harness
+        if use_test_harness:
+            with prefect_test_harness():
+                result = flow_func_fn(params)
+        else:
+            result = flow_func_fn(params)
+        
+        # Clean up environment variable after execution (optional, but cleaner)
+        if test_mode_was_set:
+            os.environ.pop("SOUS_CHEF_TEST_MODE", None)
         
         print("=" * 80)
         print("Flow Execution Complete!")

@@ -9,8 +9,9 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from prefect import task
-from prefect.logging import get_run_logger
 from prefect_email import EmailServerCredentials, email_send_message
+
+from ..utils import get_logger
 
 
 # Get the directory where this file is located
@@ -53,7 +54,7 @@ def send_email(
         )
         ```
     """
-    logger = get_run_logger()
+    logger = get_logger()
     
     # Normalize email_to to a list
     if isinstance(email_to, str):
@@ -121,7 +122,7 @@ def send_templated_email(
         )
         ```
     """
-    logger = get_run_logger()
+    logger = get_logger()
     
     # Load and render template
     try:
@@ -197,7 +198,7 @@ def send_run_summary_email(
         )
         ```
     """
-    logger = get_run_logger()
+    logger = get_logger()
     
     # Convert artifacts to dicts if they're artifact objects
     query_summary_dict = None
