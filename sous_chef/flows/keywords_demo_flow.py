@@ -27,8 +27,8 @@ class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
 
 
 @register_flow(
-    name="keywords_demo",
-    description="Demo: Extract keywords from news articles matching a query",
+    name="yake_keywords",
+    description="Demo: Extract keywords from news articles matching a query using YAKE",
     params_model=KeywordsDemoParams,
     log_prints=True
 )
