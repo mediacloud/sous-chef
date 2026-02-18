@@ -11,22 +11,22 @@ Prefect features like logging or blocks without requiring a Prefect server.
 
 Usage:
     # List available flows
-    python run_flow_click.py --list
+    python run_flow.py --list
     
     # Run a flow with parameters (no Prefect test harness)
-    python run_flow_click.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+    python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
     
     # Run with test harness (recommended for testing)
-    python run_flow_click.py keywords_demo --test --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+    python run_flow.py keywords_demo --test --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
     
     # Run interactively (will prompt for parameters)
-    python run_flow_click.py keywords_demo --interactive
+    python run_flow.py keywords_demo --interactive
     
     # Run with test harness and interactive mode
-    python run_flow_click.py keywords_demo --test --interactive
+    python run_flow.py keywords_demo --test --interactive
     
     # Run with JSON parameters file
-    python run_flow_click.py keywords_demo --params params.json
+    python run_flow.py keywords_demo --params params.json
 """
 import sys
 import json
