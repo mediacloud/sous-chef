@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-General flow runner for testing flows locally.
+General flow runner for testing flows locally (Click-based version).
 
 This script allows you to run any registered flow using Prefect's .fn() method,
 which executes flows as plain Python functions without Prefect orchestration.
@@ -11,30 +11,31 @@ Prefect features like logging or blocks without requiring a Prefect server.
 
 Usage:
     # List available flows
-    python run_flow.py --list
+    python run_flow_click.py --list
     
     # Run a flow with parameters (no Prefect test harness)
-    python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+    python run_flow_click.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
     
     # Run with test harness (recommended for testing)
-    python run_flow.py keywords_demo --test --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+    python run_flow_click.py keywords_demo --test --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
     
     # Run interactively (will prompt for parameters)
-    python run_flow.py keywords_demo --interactive
+    python run_flow_click.py keywords_demo --interactive
     
     # Run with test harness and interactive mode
-    python run_flow.py keywords_demo --test --interactive
+    python run_flow_click.py keywords_demo --test --interactive
     
     # Run with JSON parameters file
-    python run_flow.py keywords_demo --params params.json
+    python run_flow_click.py keywords_demo --params params.json
 """
 import sys
 import json
-import argparse
 import os
 from pathlib import Path
 from datetime import date, datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
+
+import click
 
 # Add sous-chef to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -77,27 +78,38 @@ def parse_parameter_value(value: str, param_type: str) -> Any:
         return value
 
 
-def get_params_from_cli(args, schema: Dict[str, Any]) -> Dict[str, Any]:
-    """Extract parameters from CLI arguments."""
-    params = {}
+def parse_dynamic_params(remaining_args: Tuple[str, ...], schema: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parse dynamic flow parameters from remaining command-line arguments.
     
-    for param_name, param_info in schema.items():
-        param_type = param_info.get("type", "string")
+    Args:
+        remaining_args: Tuple of remaining arguments after fixed options
+        schema: Flow parameter schema
         
-        # Check for CLI argument (using --param-name)
-        cli_name = param_name.replace("_", "-")
-        value = getattr(args, param_name.replace("-", "_"), None)
-        
-        if value is not None:
-            params[param_name] = parse_parameter_value(str(value), param_type)
-        elif "default" in param_info and param_info["default"] is not None:
-            # Use default value
-            params[param_name] = param_info["default"]
-        elif param_type != "boolean":
-            # Required parameter missing
-            raise ValueError(f"Required parameter '{param_name}' not provided")
+    Returns:
+        Dictionary of parsed parameters
+    """
+    params_dict = {}
+    i = 0
     
-    return params
+    while i < len(remaining_args):
+        arg = remaining_args[i]
+        if arg.startswith("--"):
+            param_name = arg[2:].replace("-", "_")
+            if i + 1 < len(remaining_args) and not remaining_args[i + 1].startswith("--"):
+                value = remaining_args[i + 1]
+                param_info = schema.get(param_name, {})
+                param_type = param_info.get("type", "string")
+                params_dict[param_name] = parse_parameter_value(value, param_type)
+                i += 2
+            else:
+                # Boolean flag
+                params_dict[param_name] = True
+                i += 1
+        else:
+            i += 1
+    
+    return params_dict
 
 
 def get_params_interactive(schema: Dict[str, Any]) -> Dict[str, Any]:
@@ -162,8 +174,6 @@ def get_params_from_file(filepath: str) -> Dict[str, Any]:
     return params
 
 
-
-
 def format_result(result: Any, indent: int = 0) -> str:
     """Format flow result for display."""
     indent_str = "  " * indent
@@ -198,171 +208,132 @@ def format_result(result: Any, indent: int = 0) -> str:
         return f"{indent_str}{result}"
 
 
-def main():
-    """Main entry point for flow runner."""
-    parser = argparse.ArgumentParser(
-        description="Run sous-chef flows locally (without Prefect server)",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
-    )
+@click.command()
+@click.argument("flow_name", required=False)
+@click.option(
+    "--list",
+    "list_flows_flag",
+    is_flag=True,
+    default=False,
+    help="List all available flows"
+)
+@click.option(
+    "--test",
+    is_flag=True,
+    default=False,
+    help="Use prefect_test_harness() to provide Prefect context. "
+         "Recommended when testing flows that use Prefect features like "
+         "logging or blocks. Creates a temporary SQLite database but "
+         "doesn't require a Prefect server."
+)
+@click.option(
+    "--interactive",
+    is_flag=True,
+    default=False,
+    help="Prompt for parameters interactively"
+)
+@click.option(
+    "--params",
+    type=click.Path(exists=True, readable=True, path_type=Path),
+    help="Path to JSON file with parameters"
+)
+@click.argument("flow_params", nargs=-1)
+def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactive: bool, 
+         params: Optional[Path], flow_params: Tuple[str, ...]) -> None:
+    """
+    Run sous-chef flows locally (without Prefect server).
     
-    parser.add_argument(
-        "flow_name",
-        nargs="?",
-        help="Name of flow to run (use --list to see available flows)"
-    )
+    FLOW_NAME: Name of flow to run (use --list to see available flows)
     
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List all available flows"
-    )
-    
-    parser.add_argument(
-        "--interactive",
-        action="store_true",
-        help="Prompt for parameters interactively"
-    )
-    
-    parser.add_argument(
-        "--params",
-        type=str,
-        help="Path to JSON file with parameters"
-    )
-    
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="Use prefect_test_harness() to provide Prefect context. "
-             "Recommended when testing flows that use Prefect features like "
-             "logging or blocks. Creates a temporary SQLite database but "
-             "doesn't require a Prefect server."
-    )
-    
-    # Parse just enough to see if --list or flow_name
-    args, remaining = parser.parse_known_args()
-    
-    # List flows if requested
-    if args.list or not args.flow_name:
+    FLOW_PARAMS: Dynamic flow parameters as --param-name value pairs
+    """
+    # List flows if requested or no flow name provided
+    if list_flows_flag or not flow_name:
         flows = list_flows()
         if not flows:
-            print("No flows registered. Make sure flows are imported.")
+            click.echo("No flows registered. Make sure flows are imported.")
             return
         
-        print("=" * 80)
-        print("Available Flows")
-        print("=" * 80)
+        click.echo("=" * 80)
+        click.echo("Available Flows")
+        click.echo("=" * 80)
         for name, info in flows.items():
-            print(f"\n{name}")
-            print(f"  Description: {info['description']}")
+            click.echo(f"\n{name}")
+            click.echo(f"  Description: {info['description']}")
         
-        print("\n" + "=" * 80)
-        print("\nUsage:")
-        print("  python run_flow.py <flow_name> [--test] [--interactive] [--params file.json] [--param-name value ...]")
-        print("\nExamples:")
-        print("  python run_flow.py keywords_demo --interactive")
-        print("  python run_flow.py keywords_demo --test --query 'climate change' --start-date 2024-01-01")
+        click.echo("\n" + "=" * 80)
+        click.echo("\nUsage:")
+        click.echo("  python run_flow_click.py <flow_name> [--test] [--interactive] [--params file.json] [--param-name value ...]")
+        click.echo("\nExamples:")
+        click.echo("  python run_flow_click.py keywords_demo --interactive")
+        click.echo("  python run_flow_click.py keywords_demo --test --query 'climate change' --start-date 2024-01-01")
         return
     
     # Check if --test was requested but not available
-    if args.test and not PREFECT_TESTING_AVAILABLE:
-        print("⚠️  Warning: --test flag requested but prefect.testing.utilities is not available.")
-        print("   Install Prefect to use the test harness, or run without --test flag.")
-        print("   Continuing without test harness...\n")
+    if test and not PREFECT_TESTING_AVAILABLE:
+        click.echo("⚠️  Warning: --test flag requested but prefect.testing.utilities is not available.")
+        click.echo("   Install Prefect to use the test harness, or run without --test flag.")
+        click.echo("   Continuing without test harness...\n")
         use_test_harness = False
     else:
-        use_test_harness = args.test
+        use_test_harness = test
     
     # Get flow
-    flow_meta = get_flow(args.flow_name)
+    flow_meta = get_flow(flow_name)
     if not flow_meta:
-        print(f"Error: Flow '{args.flow_name}' not found.")
-        print("Use --list to see available flows.")
+        click.echo(f"Error: Flow '{flow_name}' not found.")
+        click.echo("Use --list to see available flows.")
         return
     
     flow_func = flow_meta["func"]
     params_model = flow_meta.get("params_model")
-    schema = get_flow_schema(args.flow_name)
+    schema = get_flow_schema(flow_name)
     
-    print("=" * 80)
-    print(f"Running Flow: {args.flow_name}")
-    print("=" * 80)
-    print(f"Description: {flow_meta['description']}")
+    click.echo("=" * 80)
+    click.echo(f"Running Flow: {flow_name}")
+    click.echo("=" * 80)
+    click.echo(f"Description: {flow_meta['description']}")
     if use_test_harness:
-        print("Mode: Test (using prefect_test_harness)")
+        click.echo("Mode: Test (using prefect_test_harness)")
     else:
-        print("Mode: Direct execution (no Prefect context)")
-    print("-" * 80)
+        click.echo("Mode: Direct execution (no Prefect context)")
+    click.echo("-" * 80)
     
     # Get parameters
     params_dict = {}
     
-    # Parse remaining arguments for --interactive, --params, and --test
-    use_interactive = "--interactive" in remaining or len(remaining) == 0
-    params_file = None
-    print(args)
-    print(remaining)
-    if "--interactive" in remaining:
-        remaining.remove("--interactive")
-    
-    if "--test" in remaining:
-        remaining.remove("--test")
-    
-    if "--params" in remaining:
-        print("params!")
-        idx = remaining.index("--params")
-        if idx + 1 < len(remaining):
-            params_file = remaining[idx + 1]
-            remaining = remaining[:idx] + remaining[idx+2:]
-    print(params_file)
-
-    # Load parameters
-    if params_file:
-        params_dict = get_params_from_file(params_file)
-    elif use_interactive:
-        # Prompt for parameters
+    # Determine parameter source: --params file, interactive, or CLI args
+    if params:
+        # Load from JSON file
+        params_dict = get_params_from_file(str(params))
+    elif interactive or len(flow_params) == 0:
+        # Prompt for parameters interactively
         params_dict = get_params_interactive(schema)
     else:
-        # Try to parse simple --key value pairs from remaining args
-        i = 0
-        while i < len(remaining):
-            arg = remaining[i]
-            if arg.startswith("--"):
-                param_name = arg[2:].replace("-", "_")
-                if i + 1 < len(remaining) and not remaining[i + 1].startswith("--"):
-                    value = remaining[i + 1]
-                    param_info = schema.get(param_name, {})
-                    param_type = param_info.get("type", "string")
-                    params_dict[param_name] = parse_parameter_value(value, param_type)
-                    i += 2
-                else:
-                    # Boolean flag
-                    params_dict[param_name] = True
-                    i += 1
-            else:
-                i += 1
+        # Parse dynamic parameters from remaining args
+        params_dict = parse_dynamic_params(flow_params, schema)
     
     # Validate and create params model
     if params_model:
         try:
             params = params_model(**params_dict)
         except Exception as e:
-            print(f"\n❌ Error validating parameters: {e}")
-            print(f"\nExpected parameters:")
+            click.echo(f"\n❌ Error validating parameters: {e}")
+            click.echo(f"\nExpected parameters:")
             for param_name, param_info in schema.items():
                 param_type = param_info.get("type", "string")
                 default = param_info.get("default")
                 req = "required" if default is None and param_type != "boolean" else "optional"
-                print(f"  {param_name} ({param_type}): {req}")
+                click.echo(f"  {param_name} ({param_type}): {req}")
             return
     else:
         params = params_dict
     
-    print(f"\nParameters:")
+    click.echo(f"\nParameters:")
     for key, value in params_dict.items():
-        print(f"  {key}: {value}")
-    print("-" * 80)
-    print("\nRunning flow...\n")
+        click.echo(f"  {key}: {value}")
+    click.echo("-" * 80)
+    click.echo("\nRunning flow...\n")
     
     try:
         # Get the underlying function using .fn() to bypass Prefect orchestration
@@ -377,7 +348,7 @@ def main():
         if use_test_harness:
             os.environ["SOUS_CHEF_TEST_MODE"] = "1"
             test_mode_was_set = True
-            print("ℹ️  Test mode enabled - B2 uploads will be skipped (dry_run)")
+            click.echo("ℹ️  Test mode enabled - B2 uploads will be skipped (dry_run)")
         
         # Run flow with or without test harness
         if use_test_harness:
@@ -390,28 +361,28 @@ def main():
         if test_mode_was_set:
             os.environ.pop("SOUS_CHEF_TEST_MODE", None)
         
-        print("=" * 80)
-        print("Flow Execution Complete!")
-        print("=" * 80)
-        print("\nResults:")
-        print("-" * 80)
-        print(format_result(result))
-        print("-" * 80)
+        click.echo("=" * 80)
+        click.echo("Flow Execution Complete!")
+        click.echo("=" * 80)
+        click.echo("\nResults:")
+        click.echo("-" * 80)
+        click.echo(format_result(result))
+        click.echo("-" * 80)
         
         # Special handling for DataFrames in results
         if isinstance(result, dict):
             for key, value in result.items():
                 if hasattr(value, "shape"):  # DataFrame
-                    print(f"\n{key} (DataFrame):")
-                    print(f"  Shape: {value.shape[0]} rows × {value.shape[1]} columns")
+                    click.echo(f"\n{key} (DataFrame):")
+                    click.echo(f"  Shape: {value.shape[0]} rows × {value.shape[1]} columns")
                     if not value.empty:
-                        print(f"\n  First few rows:")
-                        print(value.head(10).to_string())
+                        click.echo(f"\n  First few rows:")
+                        click.echo(value.head(10).to_string())
         
         return result
         
     except Exception as e:
-        print(f"\n❌ Error running flow: {e}")
+        click.echo(f"\n❌ Error running flow: {e}")
         import traceback
         traceback.print_exc()
         return None
