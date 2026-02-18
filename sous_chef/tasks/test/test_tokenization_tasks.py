@@ -24,7 +24,7 @@ class TestExtractSentences(unittest.TestCase):
         pattern = re.compile(r"premiere")
         sentences = extract_matching_sentences(self._nlp, FIXTURE_2, inclusion_filters=[pattern])
         self.assertEqual(len(sentences), 1)
-        self.assertIn("premiere", sentences[0])
+        self.assertIn("premiere", sentences[0][1])
 
     def test_multiple_inclusion_filters_match_multiple_sentence(self):
         patterns = [re.compile(r"crypto"), re.compile(r"World Liberty"), re.compile(r"stablecoin")]
@@ -32,7 +32,7 @@ class TestExtractSentences(unittest.TestCase):
         # ensure each pattern matched at least one returned sentence
         self.assertGreaterEqual(len(sentences), 3)
         for pat in patterns:
-            self.assertTrue(any(pat.search(s) for s in sentences), f"Pattern {pat.pattern} did not match any sentence")
+            self.assertTrue(any(pat.search(s[1]) for s in sentences), f"Pattern {pat.pattern} did not match any sentence")
 
     def test_one_inclusion_filter_matches_no_sentences(self):
         pattern = re.compile(r"moon*")
