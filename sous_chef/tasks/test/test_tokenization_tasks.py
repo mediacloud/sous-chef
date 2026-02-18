@@ -19,7 +19,11 @@ class TestExtractSentences(unittest.TestCase):
         sentences = extract_matching_sentences(self._nlp, FIXTURE_1, inclusion_filters=None)
         # expect multiple sentences and the first should reference the president
         self.assertTrue(len(sentences) == 18)
-        self.assertIn("President Donald Trump", sentences[0])
+        self.assertIn("President Donald Trump", sentences[0][1])
+        for s in sentences:
+            self.assertIsInstance(s, tuple)
+            self.assertIsInstance(s[0], int)
+            self.assertIsInstance(s[1], str)
 
     def test_one_inclusion_filter_matches_one_sentence(self):
         # use a pattern expected to appear in a single sentence in FIXTURE_2

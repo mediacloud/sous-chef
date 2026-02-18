@@ -1,8 +1,8 @@
-import spacy
 import re
 import pandas as pd
 from typing import List, Optional, Any, Tuple
 from prefect import task
+import logging
 
 # Lazy import to avoid requiring spacy at module load time
 try:
@@ -30,11 +30,11 @@ def extract_matching_sentences(
         List of tuples with sentence index and string
     """
     doc = nlp(text)
-    sentences = [sent.text.strip() for sent in doc.sents]
+    sentences = [(idx, sent.text.strip()) for (idx, sent) in enumerate(doc.sents)]
     if inclusion_filters:
         sentences = [
-            (idx, sent) for idx, sent in enumerate(sentences)
-            if any(pattern.search(sent) for pattern in inclusion_filters)
+            s for s in sentences
+            if any(pattern.search(s[1]) for pattern in inclusion_filters)
         ]
     return sentences
 
