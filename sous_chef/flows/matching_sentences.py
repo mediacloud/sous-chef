@@ -20,7 +20,7 @@ class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
 
 @register_flow(
     name="matching_sentences",
-    description="Demo: Extract named entities from news articles using SpaCy NER",
+    description="Split docs into sentences and filter to sentences matching inclusion criteria pattern(s)",
     params_model=MatchingSentencesParams,
     log_prints=True
 )
