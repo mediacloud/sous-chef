@@ -2,7 +2,7 @@ import pandas as pd
 from prefect import task
 
 
-def _dededupe(df: pd.DataFrame, title_column: str, source_name_column: str):
+def _dededupe(df: pd.DataFrame, title_column: str, source_name_column: str) -> pd.DataFrame:
     # this is a little silly...
     return df.drop_duplicates(subset=[title_column, source_name_column])
 

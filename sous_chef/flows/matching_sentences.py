@@ -25,7 +25,7 @@ class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     log_prints=True
 )
 def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
-        # Step 1: Query MediaCloud for articles
+    # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(
         query=params.query,
         collection_ids=params.collection_ids,
