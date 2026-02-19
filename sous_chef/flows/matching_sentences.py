@@ -13,7 +13,7 @@ from ..utils import create_url_safe_slug
 
 
 class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
-    """Parameters for the entities demo flow."""
+    """Parameters for the flow."""
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
     inclusion_filters: Optional[List[re.Pattern]] = None
 
@@ -46,7 +46,7 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
         inclusion_filters=params.inclusion_filters,
     )
     
-    # Optional Step 4: Export top entities to Backblaze B2 as CSV
+    # Optional Step 4: Export to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)
     object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}-sentences.csv"
@@ -65,7 +65,7 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
             email_to=params.email_to,
             query_summary=query_summary,
             b2_artifact=b2_artifact,
-            flow_name="entities_demo",
+            flow_name="matchine_sentences",
             query=params.query
         )
     
