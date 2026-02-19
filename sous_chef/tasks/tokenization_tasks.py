@@ -17,12 +17,12 @@ def extract_matching_sentences(
     inclusion_filters: Optional[List[re.Pattern]] = None,
 ) -> List[Tuple[int, str]]:
     """
-    Extract sentences from text using spaCy's sentence segmentation.
+    Extract sentences from text using spaCy's sentence segmentation. Does a case-insensitive search on any
+    supplied inclusion_filters.
 
     Args:
         nlp: spaCy Language object to use
         text: Text to extract keywords from
-        language: 
         inclusion_filters: Optional list of regex patterns to filter sentences (only include sentences that match
         any pattern)
 
@@ -32,9 +32,14 @@ def extract_matching_sentences(
     doc = nlp(text)
     sentences = [(idx, sent.text.strip()) for (idx, sent) in enumerate(doc.sents)]
     if inclusion_filters:
+        # Recompile patterns with IGNORECASE flag for case-insensitive matching
+        case_insensitive_patterns = [
+            re.compile(pattern.pattern, pattern.flags | re.IGNORECASE)
+            for pattern in inclusion_filters
+        ]
         sentences = [
             s for s in sentences
-            if any(pattern.search(s[1]) for pattern in inclusion_filters)
+            if any(pattern.search(s[1]) for pattern in case_insensitive_patterns)
         ]
     return sentences
 

@@ -46,13 +46,13 @@ class TestExtractSentences(unittest.TestCase):
         self.assertEqual(sentences, [])
 
     def test_real_input(self):
-        pattern = re.compile("Mamdani")
+        pattern = re.compile(r"Mamdani")
         sentences = extract_matching_sentences(self._nlp, FIXTURE_3, inclusion_filters=[pattern])
         self.assertEqual(len(sentences), 10)
         last_index = -1
         for s in sentences:
             self.assertGreaterEqual(s[0], last_index)  # ensure sentences are in order
-            self.assertIn("Mamdani", s[1])  # verify regex worked
+            self.assertIn("mamdani", s[1].lower())  # verify regex worked
             last_index = s[0]
 
 
