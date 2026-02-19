@@ -1,0 +1,12 @@
+{
+  "query": "climate change",
+  "collection_ids": [34412234],
+  "source_ids": [],
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-07",
+  "inclusion_filters": [
+    "climate.*change",
+    ".*warming",
+    "carbon.*emission"
+  ]
+}

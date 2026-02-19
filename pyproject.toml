@@ -35,8 +35,12 @@ dependencies = [
   "spacy",
   "spacy-download",
   "spacy-ngram",
+  "torch",
   "transformers >= 4.37.2",
   "uniseg",
+  "protobuf",
+  "sentencepiece",
+
   
   # Utilities
   "click >= 8.3.1",

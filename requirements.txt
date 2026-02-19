@@ -65,6 +65,7 @@ pathspec==1.0.3
 pluggy==1.6.0
 prefect==3.6.10
 prometheus_client==0.24.1
+protobuf==6.33.*
 py-key-value-aio==0.3.0
 py-key-value-shared==0.3.0
 pycparser==2.23

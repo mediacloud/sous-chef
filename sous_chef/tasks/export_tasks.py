@@ -221,8 +221,10 @@ def csv_to_b2(
         )
     else:
         local_file_name = f"test-{put_name}"
+
         tmp_dir = tempfile.gettempdir()
-        os.makedirs(tmp_dir, exist_ok=True)
+        final_dir = "/".join(local_file_name.split("/")[:-1])
+        os.makedirs(tmp_dir+"/"+final_dir, exist_ok=True)
         local_path = f"{tmp_dir}/{local_file_name}"
         df.to_csv(local_path, index=False)
         logger.info(f"[CSVToB2] Dry run mode - CSV also saved locally to {local_path} for inspection")

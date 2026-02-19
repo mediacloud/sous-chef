@@ -58,7 +58,6 @@ def add_targeted_sentiment(
     df = df.copy()
     df["target_sentiment"] = None
     df["target_sentiment_score"] = None
-
     df.loc[mask, "target_sentiment"] = [o["label"] for o in outputs]
     df.loc[mask, "target_sentiment_score"] = [round(o["score"], 4) for o in outputs]
 
