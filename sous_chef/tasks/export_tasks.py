@@ -5,9 +5,11 @@ Currently provides:
 - csv_to_b2: upload a pandas DataFrame as a CSV to Backblaze B2 using the
   S3-compatible API.
 """
+import os
 from datetime import date
 from io import BytesIO
 from typing import Dict, Any
+import tempfile
 
 import pandas as pd
 from prefect import task
@@ -64,7 +66,6 @@ def csv_to_b2(
     object_name: str,
     add_date_slug: bool = True,
     ensure_unique: bool = True,
-    normalize_name: bool = True,
     b2_block_name: str = "b2-s3-credentials",
     dry_run: bool = False,
     auto_dry_run_on_missing_creds: bool = True,
@@ -208,14 +209,23 @@ def csv_to_b2(
     }
     
     # Create artifact for frontend display
-    artifact = FileUploadArtifact(
-        url=url,
-        bucket=bucket_name,
-        object_key=put_name,
-        file_type="csv",
-        columns_saved=list(df.columns),
-        row_count=len(df)
-    )
-    
+    artifact = None
+    if not dry_run:
+        artifact = FileUploadArtifact(
+            url=url,
+            bucket=bucket_name,
+            object_key=put_name,
+            file_type="csv",
+            columns_saved=list(df.columns),
+            row_count=len(df)
+        )
+    else:
+        local_file_name = f"test-{put_name}"
+        tmp_dir = tempfile.gettempdir()
+        os.makedirs(tmp_dir, exist_ok=True)
+        local_path = f"{tmp_dir}/{local_file_name}"
+        df.to_csv(local_path, index=False)
+        logger.info(f"[CSVToB2] Dry run mode - CSV also saved locally to {local_path} for inspection")
+
     return metadata, artifact
 
