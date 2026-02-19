@@ -34,7 +34,7 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
         end_date=params.end_date
     )
     
-    # Step 2: Deduplicate storioes
+    # Step 2: Deduplicate stories
     deduplicaed_articles = deduplicate_on_title_source(
         articles,
     )
@@ -51,7 +51,7 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
     object_name = (
             f"{params.b2_object_prefix}/DATE/{slug}-sentences.csv"
     )
-    print(f"Exporting top entities to B2: {object_name}")
+    print(f"Exporting sentences to B2: {object_name}")
     b2_metadata, b2_artifact = csv_to_b2(
             sentences_df,
             object_name=object_name,
