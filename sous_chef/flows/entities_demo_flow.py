@@ -31,7 +31,7 @@ class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
 
 
 @register_flow(
-    name="entities_demo",
+    name="spacy_entities",
     description="Demo: Extract named entities from news articles using SpaCy NER",
     params_model=EntitiesDemoParams,
     log_prints=True
