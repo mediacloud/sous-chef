@@ -111,6 +111,9 @@ whenever==0.9.5
 wrapt==1.17.3
 yake==0.6.0
 zipp==3.23.0
+transformers==5.* # for sentiment
+torch==2.10.*  # for sentiment
+sentencepiece==0.2.* # for sentiment
 
 # Additional dependencies from old requirements.txt (not in requirements-2.txt)
 boto3
@@ -123,6 +126,5 @@ pytest==8.0.0
 spacy
 spacy-download
 spacy-ngram
-transformers==4.37.2
 uniseg
 wayback-news-search==1.2.*
