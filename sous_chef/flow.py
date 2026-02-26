@@ -8,6 +8,8 @@ def register_flow(
     name: str,
     description: str = "",
     params_model: Optional[type[BaseModel]] = None,
+    admin_only: bool = False,
+    restricted_fields: Optional[Dict[str, bool]] = None,
     **flow_kwargs  # Pass through to @flow decorator
 ):
     """
@@ -16,7 +18,7 @@ def register_flow(
     This decorator:
     1. Applies Prefect's @flow decorator
     2. Registers the flow for API discovery
-    3. Stores metadata (description, params model)
+    3. Stores metadata (description, params model, admin_only, restricted_fields)
     
     Usage:
         @register_flow(
@@ -26,6 +28,15 @@ def register_flow(
         )
         def keywords_flow(params: KeywordsFlowParams) -> Dict[str, Any]:
             ...
+    
+    Args:
+        name: Flow name
+        description: Flow description
+        params_model: Pydantic model for flow parameters
+        admin_only: If True, only admin users can access this flow
+        restricted_fields: Dict mapping output field names to True if they should
+            only be returned to users with full-text access
+        **flow_kwargs: Additional kwargs passed to Prefect's @flow decorator
     """
     def decorator(flow_func: Callable) -> Callable:
         # Apply Prefect @flow decorator first
@@ -37,7 +48,9 @@ def register_flow(
             "description": description,
             "func": prefect_flow_func,  # Store the Prefect-wrapped function
             "params_model": params_model,
-            "doc": flow_func.__doc__ or description
+            "doc": flow_func.__doc__ or description,
+            "admin_only": admin_only,
+            "restricted_fields": restricted_fields or {},
         }
         
         return prefect_flow_func
