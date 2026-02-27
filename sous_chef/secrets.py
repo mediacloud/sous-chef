@@ -49,6 +49,61 @@ def get_mediacloud_api_key(block_name: str = "mediacloud-api-key") -> str:
         f"Set Prefect block '{block_name}' or environment variable '{env_var}'"
     )
 
+
+def get_llm_api_key(
+    provider: str = "huggingface",
+    block_name: Optional[str] = None,
+) -> str:
+    """
+    Get an LLM provider API key from Prefect or environment.
+
+    Resolution order:
+      1. Prefect Secret block (preferred when running in Prefect)
+      2. Provider-specific env var (e.g., HUGGINGFACE_API_KEY, OPENAI_API_KEY)
+      3. Generic env var LLM_PROVIDER_KEY
+
+    Args:
+        provider: LLM provider identifier (e.g. "huggingface", "openai").
+        block_name: Optional Prefect Secret block name. If not provided,
+                    defaults to f"llm-{provider}-api-key".
+
+    Raises:
+        ValueError if no key is found.
+    """
+    # 1) Prefect Secret block
+    resolved_block = block_name or f"llm-{provider}-api-key"
+    try:
+        context = TaskRunContext.get()
+        if context:
+            secret = Secret.load(resolved_block)
+            return secret.get()
+    except Exception:
+        pass
+
+    # 2) Provider-specific env var
+    provider_env_map = {
+        "huggingface": "HUGGINGFACE_API_KEY",
+        "openai": "OPENAI_API_KEY",
+    }
+    env_var = provider_env_map.get(provider)
+    if env_var:
+        key = os.getenv(env_var)
+        if key:
+            return key
+
+    # 3) Generic fallback
+    generic_var = "LLM_PROVIDER_KEY"
+    key = os.getenv(generic_var)
+    if key:
+        return key
+
+    raise ValueError(
+        "LLM API key not found. Tried:\n"
+        f"- Prefect Secret block '{resolved_block}'\n"
+        f"- Provider env var '{env_var}'\n"
+        f"- Generic env var '{generic_var}'"
+    )
+
 def get_aws_credentials(block_name: str = "aws-s3-credentials"):
     """Get AWS credentials from Prefect block or environment."""
     try:

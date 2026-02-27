@@ -56,6 +56,10 @@ dependencies = [
   
   # AWS/B2 storage
   "boto3",
+
+  #LLM use,
+  "litellm",
+  "instructor"
 ]
 
 
