@@ -35,7 +35,7 @@ class LLMDemoFlowParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
 
 
 @register_flow(
-    name="llm_demo",
+    name="llm_summary_demo",
     description=(
         "Demo: Query MediaCloud and summarize articles with a structured LLM task."
     ),
