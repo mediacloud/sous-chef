@@ -118,6 +118,8 @@ sentencepiece==0.2.* # for sentiment
 
 # Additional dependencies from old requirements.txt (not in requirements-2.txt)
 boto3
+litellm
+instructor[litellm]
 matplotlib>=3.8.2
 mediacloud==4.1.3
 mc-providers==0.5.4
