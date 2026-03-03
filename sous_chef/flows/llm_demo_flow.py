@@ -20,7 +20,7 @@ from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
 #Not wired in yet...
-class Model(Enum):
+class GroqModelName(Enum):
     llama="llama-3.1-8b-instant" #Cheapest model
     qwen="qwen/qwen3-32b" #On the more expensive side but good at job
 
@@ -30,8 +30,8 @@ class LLMDemoFlowParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     Parameters for the LLM demo flow.
     """
 
-    model_name: str = Field(
-        default="llama-3.1-8b-instant", 
+    model_name: GroqModelName = Field(
+        default=GroqModelName.llama, 
         description="Model identifier to use via Groq.",
     )
     max_articles: int = Field(
@@ -84,7 +84,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> Dict[str, Any]:
         articles,
         text_col="text",
         title_col="title",
-        model_name=params.model_name,
+        model_name=params.model_name.value,
     )
 
     # Step 4: Prepare export data (remove full text column)
