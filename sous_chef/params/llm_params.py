@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from enum import Enum
 
-class GroqModelName(Enum):
+class GroqModelName(str, Enum):
     llama="llama-3.1-8b-instant" #Cheapest model
     qwen="qwen/qwen3-32b" #On the more expensive side but good at job
 
