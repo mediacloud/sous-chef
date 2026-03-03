@@ -7,33 +7,21 @@ Demo flow: query MediaCloud and summarize articles with an LLM task.
 from typing import Any, Dict
 
 from pydantic import Field
-from enum import Enum
 
 from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
+from ..params.llm_params import GroqModelParams
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.llm_article_summary import summarize_articles_llm
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
-#Not wired in yet...
-class GroqModelName(Enum):
-    llama="llama-3.1-8b-instant" #Cheapest model
-    qwen="qwen/qwen3-32b" #On the more expensive side but good at job
 
+class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, EmailRecipientParam):
 
-class LLMDemoFlowParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
-    """
-    Parameters for the LLM demo flow.
-    """
-
-    model_name: GroqModelName = Field(
-        default=GroqModelName.llama, 
-        description="Model identifier to use via Groq.",
-    )
     max_articles: int = Field(
         default=1,
         description="Maximum number of articles to summarize (for demos).",

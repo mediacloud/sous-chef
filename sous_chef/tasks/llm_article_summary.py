@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from .llm_base import BaseLLMTask, LLMModelClient, GroqClient, TaskOutcome
 from ..utils import get_logger
 from ..artifacts import LLMCostSummary, ArtifactResult
+from ..params import GroqModelName
 
 class SummarizeArticleInput(BaseModel):
     title: str
@@ -77,7 +78,7 @@ def summarize_articles_llm(
     df: pd.DataFrame,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: str = "qwen/qwen3-32b",
+    model_name: GroqModelName = "qwen/qwen3-32b",
     max_rows: Optional[int] = None,
 ) -> ArtifactResult[pd.DataFrame]:
     """
@@ -101,7 +102,7 @@ def summarize_articles_llm(
     if max_rows is not None and max_rows > 0:
         work_df = df.head(max_rows).copy()
 
-    client = GroqClient(model_name=model_name)
+    client = GroqClient(model_name=model_name.value)
     task_impl = SummarizeArticleTask(client=client)
 
     structs: List[Optional[dict[str, Any]]] = []
@@ -132,7 +133,7 @@ def summarize_articles_llm(
             err = outcome.metadata.get("error") if outcome.metadata else None
             errors.append(err or "LLM call failed")
 
-    groq_usage_summary = LLMCostSummary.from_groq_summaries(usage_summaries)
+    groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usage_summaries)
     logger.info(groq_usage_summary)
     work_df["llm_summary_struct"] = structs
     work_df["llm_summary_text"] = texts

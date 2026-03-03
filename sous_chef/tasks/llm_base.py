@@ -16,9 +16,11 @@ from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, TypedDict
 
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
+from ..params import GroqModelName
 import instructor
 from litellm import completion
 from groq import Groq
+
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -163,11 +165,11 @@ class GroqClient(LLMModelClient):
 
     def __init__(
         self,
-        model_name: str = "qwen/qwen3-32b",  # reasonable default
+        model_name: GroqModelName = GroqModelName.llama,  # reasonable default
         provider: str = "groq",
         **kwargs: Any,
     ) -> None:
-        super().__init__(model_name, provider=provider, **kwargs)
+        super().__init__(model_name.value, provider=provider, **kwargs)
 
         import os
 

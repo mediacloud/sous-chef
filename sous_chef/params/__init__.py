@@ -9,9 +9,13 @@ that can be used by the frontend to group related fields.
 from .mediacloud_query import MediacloudQuery
 from .csv_export import CsvExportParams
 from .email_recipient import EmailRecipientParam
+from .llm_params import GroqModelParams, GroqModelName, groq_costs
 
 __all__ = [
     "MediacloudQuery",
     "CsvExportParams",
     "EmailRecipientParam",
+    "GroqModelName",
+    "GroqModelParams",
+    "groq_costs"
 ]
