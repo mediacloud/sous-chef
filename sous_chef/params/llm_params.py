@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import ClassVar
 from enum import Enum
 
 class GroqModelName(str, Enum):
@@ -11,8 +12,11 @@ class GroqModelParams(BaseModel):
     Parameters for the LLM demo flow.
     """
 
+    _component_hint: ClassVar[str] = "LLMModelParams"
+
     model_name: GroqModelName = Field(
         default=GroqModelName.llama, 
+        title="LLM Model Identifier",
         description="Model identifier to use via Groq.",
     )
 
