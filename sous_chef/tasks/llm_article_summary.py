@@ -78,7 +78,7 @@ def summarize_articles_llm(
     df: pd.DataFrame,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: GroqModelName = "qwen/qwen3-32b",
+    model_name: GroqModelName = GroqModelName.llama,
     max_rows: Optional[int] = None,
 ) -> ArtifactResult[pd.DataFrame]:
     """

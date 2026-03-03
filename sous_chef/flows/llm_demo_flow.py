@@ -72,7 +72,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> Dict[str, Any]:
         articles,
         text_col="text",
         title_col="title",
-        model_name=params.model_name.value,
+        model_name=params.model_name,
     )
 
     # Step 4: Prepare export data (remove full text column)
