@@ -92,7 +92,7 @@ class LLMCostSummary(BaseArtifact):
 			f"({self.total_prompt_tokens} prompt, "
 			f"{self.total_completion_tokens} completion) "
 			f"across {self.total_requests} requests "
-			f"on {self.provider}:{self.model.value}"
+			f"on {self.provider}:{self.model}"
 		)
 		if self.total_cost_usd is not None:
 			return f"{base} (estimated cost: ${self.total_cost_usd:.4f} USD)"
