@@ -12,13 +12,13 @@ This module provides:
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, TypedDict
 
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
 import instructor
 from litellm import completion
-
+from groq import Groq
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -149,7 +149,87 @@ class LiteLLMClient(LLMModelClient):
             max_retries=max_retries,
             **kwargs,
         )
-        return result
+        return result, None
+
+
+
+class GroqClient(LLMModelClient):
+    """
+    LLM client using Groq + Instructor.
+
+    Default model is a Groq-hosted Qwen variant; override model_name
+    in flows/params as needed.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "qwen/qwen3-32b",  # reasonable default
+        provider: str = "groq",
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model_name, provider=provider, **kwargs)
+
+        import os
+
+        self.provider = provider
+
+        # Resolve API key via sous-chef secrets, then expose to Groq client
+        api_key = get_llm_api_key(provider=self.provider)
+
+        # Initialize raw Groq client for authentication
+        raw_client = Groq(api_key=api_key)
+
+        try:
+            # Wrap Groq client with Instructor using the provider string
+            # "groq/<model_name>" follows the from_provider convention
+            provider_str = f"groq/{self.model_name}"
+            self.client = instructor.from_provider(provider_str)
+            
+        except ImportError as exc:
+            raise ImportError(
+                "instructor with Groq support is required for GroqClient. "
+                "Install with: pip install 'instructor[groq]' groq"
+            ) from exc
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to initialize Instructor Groq client: {e}"
+            ) from e
+
+    def execute(
+        self,
+        prompt: str,
+        response_model: type[BaseModel],
+        system_prompt: Optional[str] = None,
+        max_retries: int = 3,
+        **kwargs: Any,
+    ) -> BaseModel:
+        """
+        Execute a prompt using Groq + Instructor and return a Pydantic model.
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        #Register a callback for the duration of this execution to aggregate usage statistics
+        usage_aggregator = []
+        def groq_response_callback_hook(response):
+            usage =  getattr(response, "usage", None)
+            if usage:
+                usage_aggregator.append(usage)
+
+        self.client.on("completion:response", groq_response_callback_hook)
+
+        result = self.client.create(
+            messages=messages,
+            response_model=response_model,
+            max_retries=max_retries,
+            **kwargs,
+        )
+
+        self.client.off("completion:response", groq_response_callback_hook)
+
+        return result, usage_aggregator
 
 
 InputModelT = TypeVar("InputModelT", bound=BaseModel)
@@ -199,16 +279,22 @@ class BaseLLMTask(Generic[InputModelT, OutputModelT]):
 
         try:
             prompt = self.build_prompt(data)
-            output = self.client.execute(
+            output, stats = self.client.execute(
                 prompt=prompt,
                 response_model=self.output_model,
                 system_prompt=None,
                 **client_kwargs,
             )
+
+            metadata: Dict[str, Any] = {}
+            if stats:
+                metadata["usage_summaries"] = stats
+
+
             return TaskOutcome[OutputModelT](
                 status=OutcomeStatus.SUCCESS,
                 output=output,
-                metadata={},
+                metadata=metadata,
                 raw_response={},
             )
         except Exception as exc:

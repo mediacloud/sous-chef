@@ -9,14 +9,15 @@ Provides:
 - summarize_articles_llm: Prefect task that applies the LLM task to a DataFrame
 """
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 import pandas as pd
 from prefect import task
 from pydantic import BaseModel, Field
 
-from .llm_base import BaseLLMTask, LiteLLMClient, TaskOutcome
-
+from .llm_base import BaseLLMTask, LLMModelClient, GroqClient, TaskOutcome
+from ..utils import get_logger
+from ..artifacts import LLMCostSummary, ArtifactResult
 
 class SummarizeArticleInput(BaseModel):
     title: str
@@ -60,7 +61,7 @@ class SummarizeArticleTask(
     input_model = SummarizeArticleInput
     output_model = SummarizeArticleOutput
 
-    def __init__(self, client: LiteLLMClient) -> None:
+    def __init__(self, client: LLMModelClient) -> None:
         super().__init__(
             client=client,
             task_name="summarize_article",
@@ -76,9 +77,9 @@ def summarize_articles_llm(
     df: pd.DataFrame,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: str = "hf:meta-llama/Meta-Llama-3-8B-Instruct",
+    model_name: str = "qwen/qwen3-32b",
     max_rows: Optional[int] = None,
-) -> pd.DataFrame:
+) -> ArtifactResult[pd.DataFrame]:
     """
     Run a structured LLM summarization task over each article row.
 
@@ -95,17 +96,19 @@ def summarize_articles_llm(
         df["llm_summary_error"] = []
         return df
 
+    logger = get_logger()
     work_df = df
     if max_rows is not None and max_rows > 0:
         work_df = df.head(max_rows).copy()
 
-    client = LiteLLMClient(model_name=model_name)
+    client = GroqClient(model_name=model_name)
     task_impl = SummarizeArticleTask(client=client)
 
     structs: List[Optional[dict[str, Any]]] = []
     texts: List[Optional[str]] = []
     confidences: List[Optional[bool]] = []
     errors: List[Optional[str]] = []
+    usage_summaries: List[Optional[Dict]] = [{}]
 
     for _, row in work_df.iterrows():
         title = str(row.get(title_col, "") or "")
@@ -119,6 +122,9 @@ def summarize_articles_llm(
             texts.append(out.summary)
             confidences.append(out.is_confident)
             errors.append(None)
+            usage_summary = outcome.metadata.get("usage_summaries")
+            if usage_summary:
+                usage_summaries += usage_summary
         else:
             structs.append(None)
             texts.append(None)
@@ -126,6 +132,8 @@ def summarize_articles_llm(
             err = outcome.metadata.get("error") if outcome.metadata else None
             errors.append(err or "LLM call failed")
 
+    groq_usage_summary = LLMCostSummary.from_groq_summaries(usage_summaries)
+    logger.info(groq_usage_summary)
     work_df["llm_summary_struct"] = structs
     work_df["llm_summary_text"] = texts
     work_df["llm_summary_is_confident"] = confidences
@@ -143,5 +151,5 @@ def summarize_articles_llm(
             df.loc[work_df.index, col] = work_df[col]
         return df
 
-    return work_df
+    return work_df, groq_usage_summary
 

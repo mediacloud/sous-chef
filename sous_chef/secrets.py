@@ -84,6 +84,7 @@ def get_llm_api_key(
     provider_env_map = {
         "huggingface": "HUGGINGFACE_API_KEY",
         "openai": "OPENAI_API_KEY",
+        "groq":"GROQ_API_KEY",
     }
     env_var = provider_env_map.get(provider)
     if env_var:

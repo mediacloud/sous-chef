@@ -7,6 +7,7 @@ Demo flow: query MediaCloud and summarize articles with an LLM task.
 from typing import Any, Dict
 
 from pydantic import Field
+from enum import Enum
 
 from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
@@ -18,6 +19,11 @@ from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
+#Not wired in yet...
+class Model(Enum):
+    llama="llama-3.1-8b-instant" #Cheapest model
+    qwen="qwen/qwen3-32b" #On the more expensive side but good at job
+
 
 class LLMDemoFlowParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """
@@ -25,11 +31,11 @@ class LLMDemoFlowParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
     """
 
     model_name: str = Field(
-        default="meta-llama/Meta-Llama-3-8B-Instruct",
-        description="Model identifier to use via LiteLLM.",
+        default="llama-3.1-8b-instant", 
+        description="Model identifier to use via Groq.",
     )
     max_articles: int = Field(
-        default=20,
+        default=1,
         description="Maximum number of articles to summarize (for demos).",
     )
 
@@ -74,7 +80,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> Dict[str, Any]:
         articles = articles.head(params.max_articles).copy()
 
     # Step 3: Run LLM summarization task
-    articles_with_summaries = summarize_articles_llm(
+    articles_with_summaries, cost_summary = summarize_articles_llm(
         articles,
         text_col="text",
         title_col="title",
@@ -111,5 +117,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> Dict[str, Any]:
     return {
         "query_summary": query_summary,
         "b2_artifact": b2_artifact,
+        "llm_cost": cost_summary
+
     }
 
