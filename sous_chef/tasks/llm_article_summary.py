@@ -102,7 +102,7 @@ def summarize_articles_llm(
     if max_rows is not None and max_rows > 0:
         work_df = df.head(max_rows).copy()
 
-    client = GroqClient(model_name=model_name.value)
+    client = GroqClient(model_name=model_name)
     task_impl = SummarizeArticleTask(client=client)
 
     structs: List[Optional[dict[str, Any]]] = []
