@@ -175,6 +175,8 @@ class GroqClient(LLMModelClient):
 
         # Resolve API key via sous-chef secrets, then expose to Groq client
         api_key = get_llm_api_key(provider=self.provider)
+        if api_key and not os.getenv("GROQ_API_KEY"):
+            os.environ["GROQ_API_KEY"] = api_key
 
         # Initialize raw Groq client for authentication
         raw_client = Groq(api_key=api_key)
