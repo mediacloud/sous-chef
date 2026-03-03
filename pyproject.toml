@@ -59,7 +59,8 @@ dependencies = [
 
   #LLM use,
   "litellm",
-  "instructor"
+  "instructor",
+  "groq"
 ]
 
 
