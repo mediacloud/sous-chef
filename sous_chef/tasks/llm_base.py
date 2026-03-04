@@ -12,7 +12,7 @@ This module provides:
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, TypedDict, Callable, List
+from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, Callable, List
 
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
@@ -74,6 +74,7 @@ class LLMModelClient(ABC):
         """
         Execute a prompt and return a validated Pydantic model.
         """
+
 
 
 class LiteLLMClient(LLMModelClient):
@@ -234,6 +235,7 @@ class GroqClient(LLMModelClient):
         self.client.off("completion:response", groq_response_callback_hook)
 
         return result, usage_aggregator
+
 
 
 InputModelT = TypeVar("InputModelT", bound=BaseModel)

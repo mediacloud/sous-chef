@@ -109,7 +109,7 @@ def summarize_articles_llm(
         work_df = df.head(max_rows).copy()
 
     
-    client = GroqClient(model_name=model_name)
+    client = GroqClient(model_name=model_name) #Hardcoded for now
     task_impl = SummarizeArticleTask(client=client)
 
     #Some local mapping callbacks, map the input and output columns to the task structure
@@ -133,7 +133,7 @@ def summarize_articles_llm(
         error_col="llm_summary_error"
     )
 
-    # Aggregate usage into LLMCostSummary artifact
+    # Aggregate usage into LLMCostSummary artifact - again hardcoded to groq for now
     groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usages)
 
     #Merge results back into the original dataframe
