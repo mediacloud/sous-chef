@@ -32,6 +32,7 @@ from typing import TypeVar, Tuple
 from .base import BaseArtifact
 from .mediacloud import MediacloudQuerySummary
 from .file_upload import FileUploadArtifact
+from .llm_cost import LLMCostSummary
 
 T = TypeVar('T')
 
@@ -61,4 +62,5 @@ __all__ = [
     "MediacloudQuerySummary",
     "FileUploadArtifact",
     "ArtifactResult",
+    "LLMCostSummary"
 ]

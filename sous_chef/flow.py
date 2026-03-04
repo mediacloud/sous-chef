@@ -88,6 +88,30 @@ def get_flow_schema(name: str) -> Dict[str, Any]:
         schema = params_model.model_json_schema()
         properties = schema.get("properties", {})
         
+        #Resolve $ref into $defs/definitions for eanums
+        defs = schema.get("$defs") or schema.get("definitions") or {}
+
+        for field_name, field_schema in list(properties.items()):
+            if not isinstance(field_schema, dict):
+                continue
+            ref = field_schema.get("$ref")
+            if not isinstance(ref, str):
+                continue
+
+            # Only handle local refs like "#/$defs/GroqModelName"
+            if ref.startswith("#/$defs/"):
+                def_name = ref.split("/")[-1]
+                ref_schema = defs.get(def_name)
+                if isinstance(ref_schema, dict):
+                    # Merge referenced schema into field schema, preserving any
+                    # field-level overrides (default, description, title, etc.)
+                    merged = {
+                        **ref_schema,
+                        **{k: v for k, v in field_schema.items() if k != "$ref"},
+                    }
+                    properties[field_name] = merged
+
+
         # Enhance with component hints if base models are used
         if hasattr(params_model, '__mro__'):
             # Build field-to-component mapping

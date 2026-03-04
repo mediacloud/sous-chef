@@ -1,10 +1,14 @@
 """
 Utilities for working with DataFrames in tasks.
 
-Common patterns for applying functions to DataFrame rows and adding results as columns.
+Common patterns for applying functions to DataFrame rows and adding results as columns,
+plus helpers for running LLM tasks over DataFrames.
 """
-from typing import Callable, List
+from typing import Callable, List, Tuple, Any, Dict
+from pydantic import BaseModel  
 import pandas as pd
+
+from .llm_base import BaseLLMTask, TaskOutcome, run_llm_task_over_rows
 
 
 def add_column_from_function(
@@ -31,20 +35,6 @@ def add_column_from_function(
         
     Returns:
         DataFrame with new column added
-        
-    Example:
-        def extract_keywords(text: str, language: str, top_n: int = 50) -> List[str]:
-            # Extract keywords from text
-            return keywords_list
-        
-        df = add_column_from_function(
-            articles_df,
-            extract_keywords,
-            input_cols=["text", "language"],
-            output_col="keywords",
-            top_n=100
-        )
-        # Result: DataFrame with "keywords" column added, keeping text and keywords together
     """
     if df.empty:
         df[output_col] = []
@@ -79,22 +69,6 @@ def add_columns_from_function(
         
     Returns:
         DataFrame with new columns added
-        
-    Example:
-        def extract_entities(text: str, language: str) -> dict:
-            # Extract entities
-            return {
-                "entities": entities_list,
-                "entity_count": len(entities_list)
-            }
-        
-        df = add_columns_from_function(
-            articles_df,
-            extract_entities,
-            input_cols=["text", "language"],
-            output_cols=["entities", "entity_count"]
-        )
-        # Result: DataFrame with both "entities" and "entity_count" columns added
     """
     if df.empty:
         for col in output_cols:
@@ -123,3 +97,70 @@ def add_columns_from_function(
         df[col] = result_df[col]
     
     return df
+
+
+def apply_llm_task_over_dataframe(
+    df: pd.DataFrame,
+    llm_task: BaseLLMTask[Any, Any],
+    build_input: Callable[[Dict[str, Any]], BaseModel],
+    map_output_to_row: Callable[[Any], Dict[str, Any]],
+    error_col: str | None = "llm_error",
+) -> Tuple[pd.DataFrame, List[Any], List[TaskOutcome[Any]]]:
+    """
+    Apply a BaseLLMTask over a DataFrame, adding columns derived from the output model.
+
+    This is a higher-level helper built on top of run_llm_task_over_rows. It:
+      - Converts the DataFrame to a list of row dicts
+      - Runs the LLM task over each row
+      - Uses map_output_to_row(output_model) -> {col: value} to build new columns
+      - Returns:
+          * The augmented DataFrame
+          * A list of usage objects (for cost aggregation)
+          * The list of TaskOutcome objects
+
+    Error handling / per-row failure policies are left to the caller, who can
+    inspect the TaskOutcome list if needed.
+    """
+    
+
+    if df.empty:
+        return df, [], []
+
+    # Represent rows as dicts so build_input is not tied to pandas types
+    rows: List[Dict[str, Any]] = df.to_dict(orient="records")
+
+    outcomes, usages = run_llm_task_over_rows(rows, llm_task, build_input)
+
+    # Determine columns from the first successful output
+    new_cols: Dict[str, List[Any]] = {}
+    num_rows = len(outcomes)
+
+    for idx, outcome in enumerate(outcomes):
+        if outcome.ok and outcome.output is not None:
+            values = map_output_to_row(outcome.output)
+            # Initialize storage for any new columns
+            for col in values.keys():
+                if col not in new_cols:
+                    new_cols[col] = [None] * num_rows
+            for col, val in values.items():
+                new_cols[col][idx] = val
+        else:
+            # For failed rows, we leave the default None values in place
+            continue
+
+    # 2) Build a generic error column if requested
+    if error_col is not None:
+        errors: list[Optional[str]] = []
+        for outcome in outcomes:
+            if outcome.ok:
+                errors.append(None)
+            else:
+                err = outcome.metadata.get("error") if outcome.metadata else None
+                errors.append(err or "LLM call failed")
+        df[error_col] = errors
+
+    for col, values in new_cols.items():
+        df[col] = values
+
+    return df, usages, outcomes
+
