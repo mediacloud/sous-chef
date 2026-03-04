@@ -12,7 +12,7 @@ This module provides:
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, TypedDict
+from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, TypedDict, Callable, List
 
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
@@ -319,4 +319,40 @@ class BaseLLMTask(Generic[InputModelT, OutputModelT]):
         """
 
         return [self.run(item, **client_kwargs) for item in items]
+
+
+def run_llm_task_over_rows(
+    rows: Iterable[Any],
+    llm_task: BaseLLMTask[Any, Any],
+    build_input: Callable[[Any], BaseModel],
+) -> tuple[List[TaskOutcome[Any]], List[Any]]:
+    """
+    Run a BaseLLMTask over an iterable of row-like objects.
+
+    This is a core abstraction that is agnostic to the input container
+    (DataFrame, list of dicts, etc). It returns:
+      - list of TaskOutcome objects
+      - list of provider usage objects (for cost aggregation), pulled from
+        TaskOutcome.metadata under 'usage_summaries' or 'llm_usage'.
+    """
+    outcomes: List[TaskOutcome[Any]] = []
+    usages: List[Any] = []
+
+    for row in rows:
+        outcome: TaskOutcome[Any] = llm_task.run(build_input(row))
+        outcomes.append(outcome)
+
+        if outcome.ok and outcome.metadata:
+            usage = (
+                outcome.metadata.get("usage_summaries")
+                or outcome.metadata.get("llm_usage")
+            )
+            if usage is not None:
+                # Allow either a single usage object or a list of them
+                if isinstance(usage, list):
+                    usages.extend(usage)
+                else:
+                    usages.append(usage)
+
+    return outcomes, usages
 

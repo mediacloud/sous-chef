@@ -16,6 +16,7 @@ from prefect import task
 from pydantic import BaseModel, Field
 
 from .llm_base import BaseLLMTask, LLMModelClient, GroqClient, TaskOutcome
+from .utils import apply_llm_task_over_dataframe
 from ..utils import get_logger
 from ..artifacts import LLMCostSummary, ArtifactResult
 from ..params import GroqModelName
@@ -90,67 +91,61 @@ def summarize_articles_llm(
       - llm_summary_is_confident: bool or None
       - llm_summary_error: error message if the LLM call failed
     """
-    if df.empty:
-        df["llm_summary_struct"] = []
-        df["llm_summary_text"] = []
-        df["llm_summary_is_confident"] = []
-        df["llm_summary_error"] = []
-        return df
-
     logger = get_logger()
+
+    #Initialize new columns
+    df["llm_summary_text"] = None
+    df["llm_summary_is_confident"] = None
+    df["llm_summary_error"] = None
+
+    #Bailout if empty
+    if df.empty:
+        cost_summary = LLMCostSummary.from_groq_summaries(model_name, [])
+        return df, cost_summary
+
+    #Work on a copy of the dataframe-easiest way to limit the number of rows.
     work_df = df
     if max_rows is not None and max_rows > 0:
         work_df = df.head(max_rows).copy()
 
+    
     client = GroqClient(model_name=model_name)
     task_impl = SummarizeArticleTask(client=client)
 
-    structs: List[Optional[dict[str, Any]]] = []
-    texts: List[Optional[str]] = []
-    confidences: List[Optional[bool]] = []
-    errors: List[Optional[str]] = []
-    usage_summaries: List[Optional[Dict]] = [{}]
-
-    for _, row in work_df.iterrows():
+    #Some local mapping callbacks, map the input and output columns to the task structure
+    def build_input(row: Dict[str, Any]) -> SummarizeArticleInput:
         title = str(row.get(title_col, "") or "")
         text = str(row.get(text_col, "") or "")
-        inp = SummarizeArticleInput(title=title, text=text)
-        outcome: TaskOutcome[SummarizeArticleOutput] = task_impl.run(inp)
+        return SummarizeArticleInput(title=title, text=text)
 
-        if outcome.ok and outcome.output is not None:
-            out = outcome.output
-            structs.append(out.model_dump())
-            texts.append(out.summary)
-            confidences.append(out.is_confident)
-            errors.append(None)
-            usage_summary = outcome.metadata.get("usage_summaries")
-            if usage_summary:
-                usage_summaries += usage_summary
-        else:
-            structs.append(None)
-            texts.append(None)
-            confidences.append(None)
-            err = outcome.metadata.get("error") if outcome.metadata else None
-            errors.append(err or "LLM call failed")
+    def map_output_to_row(output: SummarizeArticleOutput) -> Dict[str, Any]:
+        return {
+            "llm_summary_text": output.summary,
+            "llm_summary_is_confident": output.is_confident,
+        }
 
-    groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usage_summaries)
-    logger.info(groq_usage_summary)
-    work_df["llm_summary_struct"] = structs
-    work_df["llm_summary_text"] = texts
-    work_df["llm_summary_is_confident"] = confidences
-    work_df["llm_summary_error"] = errors
+    # Apply LLM task over the DataFrame
+    augmented_df, usages, outcomes = apply_llm_task_over_dataframe(
+        work_df.copy(),
+        task_impl,
+        build_input,
+        map_output_to_row,
+        error_col="llm_summary_error"
+    )
 
-    # If we worked on a subset copy, merge results back into the original frame
-    if work_df is not df:
+    # Aggregate usage into LLMCostSummary artifact
+    groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usages)
+
+    #Merge results back into the original dataframe
+    if augmented_df is not df:
         df = df.copy()
         for col in [
-            "llm_summary_struct",
             "llm_summary_text",
             "llm_summary_is_confident",
             "llm_summary_error",
         ]:
-            df.loc[work_df.index, col] = work_df[col]
-        return df
+            df.loc[augmented_df.index, col] = augmented_df[col]
+        return df, groq_usage_summary
 
-    return work_df, groq_usage_summary
+    return augmented_df, groq_usage_summary
 
