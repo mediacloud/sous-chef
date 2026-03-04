@@ -104,10 +104,9 @@ def summarize_articles_llm(
         return df, cost_summary
 
     #Work on a copy of the dataframe-easiest way to limit the number of rows.
-    work_df = df
     if max_rows is not None and max_rows > 0:
-        work_df = df.head(max_rows).copy()
-
+        df = df.head(max_rows).copy()
+    work_df = df
     
     client = GroqClient(model_name=model_name) #Hardcoded for now
     task_impl = SummarizeArticleTask(client=client)
@@ -136,16 +135,6 @@ def summarize_articles_llm(
     # Aggregate usage into LLMCostSummary artifact - again hardcoded to groq for now
     groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usages)
 
-    #Merge results back into the original dataframe
-    if augmented_df is not df:
-        df = df.copy()
-        for col in [
-            "llm_summary_text",
-            "llm_summary_is_confident",
-            "llm_summary_error",
-        ]:
-            df.loc[augmented_df.index, col] = augmented_df[col]
-        return df, groq_usage_summary
 
     return augmented_df, groq_usage_summary
 
