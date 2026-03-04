@@ -11,13 +11,14 @@ from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
+from ..params.webhook_callback import WebhookCallbackParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
 
-class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
+class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
     """Parameters for the full-text download flow."""
     pass
 
