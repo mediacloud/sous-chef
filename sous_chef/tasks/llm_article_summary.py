@@ -93,20 +93,17 @@ def summarize_articles_llm(
     """
     logger = get_logger()
 
-    #Initialize new columns
-    df["llm_summary_text"] = None
-    df["llm_summary_is_confident"] = None
-    df["llm_summary_error"] = None
-
-    #Bailout if empty
     if df.empty:
+        df = df.copy()
+        df["llm_summary_text"] = None
+        df["llm_summary_is_confident"] = None
+        df["llm_summary_error"] = None
         cost_summary = LLMCostSummary.from_groq_summaries(model_name, [])
         return df, cost_summary
 
-    #Work on a copy of the dataframe-easiest way to limit the number of rows.
+    # Truncate if max_rows is set (this becomes our working DataFrame)
     if max_rows is not None and max_rows > 0:
         df = df.head(max_rows).copy()
-    work_df = df
     
     client = GroqClient(model_name=model_name) #Hardcoded for now
     task_impl = SummarizeArticleTask(client=client)
@@ -125,7 +122,7 @@ def summarize_articles_llm(
 
     # Apply LLM task over the DataFrame
     augmented_df, usages, outcomes = apply_llm_task_over_dataframe(
-        work_df.copy(),
+        df.copy(),
         task_impl,
         build_input,
         map_output_to_row,
