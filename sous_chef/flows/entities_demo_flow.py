@@ -15,6 +15,7 @@ from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
+from ..params.webhook_callback import WebhookCallbackParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.extraction_tasks import extract_entities, top_n_entities
 from ..tasks.export_tasks import csv_to_b2
@@ -22,7 +23,7 @@ from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug
 
 
-class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
+class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
     """Parameters for the entities demo flow."""
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
     top_n: int = 20  # Number of top entities to return

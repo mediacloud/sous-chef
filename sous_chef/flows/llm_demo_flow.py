@@ -13,6 +13,7 @@ from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.llm_params import GroqModelParams
+from ..params.webhook_callback import WebhookCallbackParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.llm_article_summary import summarize_articles_llm
 from ..tasks.export_tasks import csv_to_b2
@@ -20,7 +21,7 @@ from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
 
-class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, EmailRecipientParam):
+class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
 
     max_articles: int = Field(
         default=1,

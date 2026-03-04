@@ -4,6 +4,7 @@ from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
+from ..params.webhook_callback import WebhookCallbackParam
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.deduplication_tasks import deduplicate_on_title_source
 from ..tasks.tokenization_tasks import matching_sentences
@@ -13,7 +14,7 @@ from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug
 
 
-class TargetedSentimentParams(MediacloudQuery, CsvExportParams, EmailRecipientParam):
+class TargetedSentimentParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
     """Parameters for flow."""
     spacy_model: str = "en_core_web_sm"  # SpaCy model to use for NER
     inclusion_filters: Optional[List[re.Pattern]] = None
