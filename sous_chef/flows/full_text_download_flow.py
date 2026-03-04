@@ -121,5 +121,4 @@ def full_text_download_flow(params: FullTextDownloadParams) -> Dict[str, Any]:
     return {
         "query_summary": query_summary,
         "b2_artifact": b2_artifact,
-        "full_text_data": full_text_df,
     }
