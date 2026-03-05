@@ -19,6 +19,24 @@ flows = list_flows()
 # Run a flow
 flow_meta = get_flow("keywords_demo")
 result = flow_meta["func"].fn(params)
+# result is Dict[str, BaseArtifact]
+```
+
+### Flow Return Types
+
+Flows must return `Dict[str, BaseArtifact]`. Use the `FlowReturn` type alias:
+
+```python
+from sous_chef.flow import register_flow, FlowReturn
+from sous_chef.artifacts import MediacloudQuerySummary, FileUploadArtifact
+
+@register_flow(name="my_flow", description="...", params_model=MyParams)
+def my_flow(params: MyParams) -> FlowReturn:
+    # ... flow logic ...
+    return {
+        "query_summary": MediacloudQuerySummary(...),
+        "b2_artifact": FileUploadArtifact(...),
+    }
 ```
 
 ### Running Flows Locally

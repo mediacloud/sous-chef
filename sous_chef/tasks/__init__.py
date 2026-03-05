@@ -37,6 +37,9 @@ This pattern ensures:
 - Less verbosity: Simple tasks don't require tuple unpacking
 - Type safety: Explicit return types with IDE support
 - Discoverability: Artifact presence visible in function signature
+
+Note: Flows must return `Dict[str, BaseArtifact]` (see `sous_chef.flow.FlowReturn`).
+Tasks return artifacts as tuples, but flows collect and return them as a dictionary.
 """
 
 from .discovery_tasks import query_online_news

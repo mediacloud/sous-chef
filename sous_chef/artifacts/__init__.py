@@ -9,6 +9,27 @@ parameter schemas structure input data. Artifacts are Pydantic models that:
 3. Include type identifiers for frontend styling
 4. Have useful string representations
 
+Flow Return Pattern
+-------------------
+
+Flows must return `Dict[str, BaseArtifact]`. Use the `FlowReturn` type alias
+from `sous_chef.flow`:
+
+    from sous_chef.flow import register_flow, FlowReturn
+    from sous_chef.artifacts import MediacloudQuerySummary, FileUploadArtifact
+    
+    @register_flow(name="my_flow", ...)
+    def my_flow(params: MyParams) -> FlowReturn:
+        # ... flow logic ...
+        return {
+            "query_summary": MediacloudQuerySummary(...),
+            "b2_artifact": FileUploadArtifact(...),
+        }
+
+All flow return values must be BaseArtifact instances. The kitchen will
+automatically serialize these using each artifact's `serialize_for_prefect()`
+method.
+
 Task Return Pattern
 -------------------
 
