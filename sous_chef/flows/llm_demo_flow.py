@@ -4,14 +4,15 @@ from __future__ import annotations
 Demo flow: query MediaCloud and summarize articles with an LLM task.
 """
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
-from ..flow import register_flow, FlowReturn
+from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.llm_params import GroqModelParams
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact, LLMCostSummary
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.llm_article_summary import summarize_articles_llm
 from ..tasks.export_tasks import csv_to_b2
@@ -27,15 +28,23 @@ class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, Email
     )
 
 
+class LLMDemoFlowOutput(BaseModel):
+    """Output artifacts for the LLM demo flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+    llm_cost: LLMCostSummary
+
+
 @register_flow(
     name="llm_summary_demo",
     description=(
         "Demo: Query MediaCloud and summarize articles with a structured LLM task."
     ),
     params_model=LLMDemoFlowParams,
+    output_model=LLMDemoFlowOutput,
     log_prints=True,
 )
-def llm_demo_flow(params: LLMDemoFlowParams) -> FlowReturn:
+def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
     """
     Demo flow that:
       1. Queries MediaCloud for articles matching a query.
@@ -100,11 +109,10 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> FlowReturn:
             query=params.query,
         )
 
-    # Return only artifact objects - these are saved as Prefect artifacts
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-        "llm_cost": cost_summary
-
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return LLMDemoFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+        llm_cost=cost_summary,
+    )
 

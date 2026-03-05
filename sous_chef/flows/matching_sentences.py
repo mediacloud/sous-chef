@@ -1,10 +1,13 @@
 from typing import Optional, List
 import re
-from ..flow import register_flow, FlowReturn
+from pydantic import BaseModel
+
+from ..flow import register_flow
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.deduplication_tasks import deduplicate_on_title_source
 from ..tasks.tokenization_tasks import matching_sentences
@@ -19,13 +22,20 @@ class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     inclusion_filters: Optional[List[re.Pattern]] = None
 
 
+class MatchingSentencesFlowOutput(BaseModel):
+    """Output artifacts for the matching sentences flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+
+
 @register_flow(
     name="matching_sentences",
     description="Split docs into sentences and filter to sentences matching inclusion criteria pattern(s)",
     params_model=MatchingSentencesParams,
+    output_model=MatchingSentencesFlowOutput,
     log_prints=True
 )
-def matching_sentences_flow(params: MatchingSentencesParams) -> FlowReturn:
+def matching_sentences_flow(params: MatchingSentencesParams) -> MatchingSentencesFlowOutput:
     # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(
         query=params.query,
@@ -70,8 +80,8 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> FlowReturn:
             query=params.query
         )
     
-    # Return only artifact objects - these are saved as Prefect artifacts
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return MatchingSentencesFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+    )
