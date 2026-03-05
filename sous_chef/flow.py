@@ -9,6 +9,22 @@ _FLOW_REGISTRY: Dict[str, Dict[str, Any]] = {}
 # Canonical flow return type: mapping of names to artifacts
 FlowReturn = Dict[str, BaseArtifact]
 
+
+class BaseFlowOutput(BaseModel):
+    """
+    Base class for all flow output models.
+    
+    FlowOutput models define the structure of artifacts returned by flows.
+    All fields should be BaseArtifact instances. This base class provides
+    type safety and enables consistent handling in the kitchen.
+    
+    Example:
+        class MyFlowOutput(BaseFlowOutput):
+            query_summary: MediacloudQuerySummary
+            b2_artifact: FileUploadArtifact
+    """
+    pass
+
 def register_flow(
     name: str,
     description: str = "",

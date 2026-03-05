@@ -6,7 +6,7 @@ Demo flow: query MediaCloud and summarize articles with an LLM task.
 
 from pydantic import BaseModel, Field
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -28,7 +28,7 @@ class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, Email
     )
 
 
-class LLMDemoFlowOutput(BaseModel):
+class LLMDemoFlowOutput(BaseFlowOutput):
     """Output artifacts for the LLM demo flow."""
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact

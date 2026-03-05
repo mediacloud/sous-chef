@@ -2,7 +2,7 @@ from typing import Optional, List
 import re
 from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -24,7 +24,7 @@ class TargetedSentimentParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     target_entity: str
 
 
-class TargetedSentimentFlowOutput(BaseModel):
+class TargetedSentimentFlowOutput(BaseFlowOutput):
     """Output artifacts for the targeted sentiment flow."""
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact

@@ -12,7 +12,7 @@ Can run with or without Prefect.
 from typing import Optional
 from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -33,7 +33,7 @@ class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, 
     sort_by: str = "total"  # Sort by "total" or "percentage"
 
 
-class EntitiesFlowOutput(BaseModel):
+class EntitiesFlowOutput(BaseFlowOutput):
     """Output artifacts for the entities demo flow."""
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact

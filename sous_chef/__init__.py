@@ -11,6 +11,8 @@ from .flow import (
     list_flows,
     get_flow_schema,
     get_flow_output_schema,
+    BaseFlowOutput,
+    FlowReturn,
 )
 
 __all__ = [
@@ -19,6 +21,8 @@ __all__ = [
     "list_flows",
     "get_flow_schema",
     "get_flow_output_schema",
+    "BaseFlowOutput",
+    "FlowReturn",
 ]
 
 __version__ = "3.0.0-alpha"

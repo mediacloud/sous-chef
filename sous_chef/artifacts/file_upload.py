@@ -51,13 +51,10 @@ class FileUploadArtifact(BaseArtifact):
     
     def to_table_row(self) -> Dict[str, Any]:
         """
-        Override to ensure URL is prominently displayed and include s3_url alias.
-        
-        The `s3_url` field is included for frontend compatibility with existing
-        code that looks for this field name.
+        Override to ensure URL is prominently displayed as download_url.
         """
         row = super().to_table_row()
-        # Ensure URL is first for easy access
+        # Ensure URL is prominently displayed as download_url
         if self.url:
             row["download_url"] = self.url
         return row

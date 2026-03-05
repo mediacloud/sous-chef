@@ -2,7 +2,7 @@ from typing import Optional, List
 import re
 from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -22,7 +22,7 @@ class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     inclusion_filters: Optional[List[re.Pattern]] = None
 
 
-class MatchingSentencesFlowOutput(BaseModel):
+class MatchingSentencesFlowOutput(BaseFlowOutput):
     """Output artifacts for the matching sentences flow."""
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact

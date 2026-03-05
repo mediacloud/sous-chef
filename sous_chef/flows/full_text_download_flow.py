@@ -7,7 +7,7 @@ basic metadata, and exports it as a CSV file to Backblaze B2.
 import pandas as pd
 from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -24,7 +24,7 @@ class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientPar
     pass
 
 
-class FullTextDownloadFlowOutput(BaseModel):
+class FullTextDownloadFlowOutput(BaseFlowOutput):
     """Output artifacts for the full-text download flow."""
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact
