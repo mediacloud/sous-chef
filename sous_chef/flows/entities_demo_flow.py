@@ -9,9 +9,9 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from typing import Dict, Any, Optional
+from typing import Optional
 
-from ..flow import register_flow
+from ..flow import register_flow, FlowReturn
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -37,7 +37,7 @@ class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, 
     params_model=EntitiesDemoParams,
     log_prints=True
 )
-def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
+def entities_demo_flow(params: EntitiesDemoParams) -> FlowReturn:
     """
     Extract named entities from news articles matching a query.
     

@@ -1,6 +1,6 @@
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 import re
-from ..flow import register_flow
+from ..flow import register_flow, FlowReturn
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -27,7 +27,7 @@ class TargetedSentimentParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     params_model=TargetedSentimentParams,
     log_prints=True
 )
-def targeted_sentiment_flow(params: TargetedSentimentParams) -> Dict[str, Any]:
+def targeted_sentiment_flow(params: TargetedSentimentParams) -> FlowReturn:
     # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(
         query=params.query,

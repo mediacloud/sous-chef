@@ -1,6 +1,6 @@
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 import re
-from ..flow import register_flow
+from ..flow import register_flow, FlowReturn
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -25,7 +25,7 @@ class MatchingSentencesParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     params_model=MatchingSentencesParams,
     log_prints=True
 )
-def matching_sentences_flow(params: MatchingSentencesParams) -> Dict[str, Any]:
+def matching_sentences_flow(params: MatchingSentencesParams) -> FlowReturn:
     # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(
         query=params.query,

@@ -42,6 +42,13 @@ class FileUploadArtifact(BaseArtifact):
         else:
             return f"File uploaded: {self.bucket}/{self.object_key}"
     
+    def get_artifact_description(self) -> str:
+        """Generate a description for Prefect artifact display."""
+        file_info = f"{self.file_type.upper()} file"
+        if self.row_count is not None:
+            file_info += f" ({self.row_count:,} rows)"
+        return f"File Upload: {self.object_key} ({file_info})"
+    
     def to_table_row(self) -> Dict[str, Any]:
         """
         Override to ensure URL is prominently displayed and include s3_url alias.
@@ -53,5 +60,4 @@ class FileUploadArtifact(BaseArtifact):
         # Ensure URL is first for easy access
         if self.url:
             row["download_url"] = self.url
-            row["s3_url"] = self.url  # Frontend compatibility
         return row

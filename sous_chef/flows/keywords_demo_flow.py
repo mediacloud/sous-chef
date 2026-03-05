@@ -8,9 +8,8 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from typing import Dict, Any
 
-from ..flow import register_flow
+from ..flow import register_flow, FlowReturn
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -33,7 +32,7 @@ class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, 
     params_model=KeywordsDemoParams,
     log_prints=True
 )
-def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
+def keywords_demo_flow(params: KeywordsDemoParams) -> FlowReturn:
     """
     Extract keywords from news articles matching a query.
     

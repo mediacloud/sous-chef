@@ -2,7 +2,12 @@ from prefect import flow as prefect_flow
 from typing import Dict, Callable, Any, Optional
 from pydantic import BaseModel
 
+from .artifacts import BaseArtifact
+
 _FLOW_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+# Canonical flow return type: mapping of names to artifacts
+FlowReturn = Dict[str, BaseArtifact]
 
 def register_flow(
     name: str,
@@ -26,7 +31,7 @@ def register_flow(
             description="Extract top keywords from news articles",
             params_model=KeywordsFlowParams
         )
-        def keywords_flow(params: KeywordsFlowParams) -> Dict[str, Any]:
+        def keywords_flow(params: KeywordsFlowParams) -> FlowReturn:
             ...
     
     Args:

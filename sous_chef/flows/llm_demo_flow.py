@@ -4,11 +4,9 @@ from __future__ import annotations
 Demo flow: query MediaCloud and summarize articles with an LLM task.
 """
 
-from typing import Any, Dict
-
 from pydantic import Field
 
-from ..flow import register_flow
+from ..flow import register_flow, FlowReturn
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -37,7 +35,7 @@ class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, Email
     params_model=LLMDemoFlowParams,
     log_prints=True,
 )
-def llm_demo_flow(params: LLMDemoFlowParams) -> Dict[str, Any]:
+def llm_demo_flow(params: LLMDemoFlowParams) -> FlowReturn:
     """
     Demo flow that:
       1. Queries MediaCloud for articles matching a query.
