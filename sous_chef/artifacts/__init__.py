@@ -12,14 +12,15 @@ parameter schemas structure input data. Artifacts are Pydantic models that:
 Flow Return Pattern
 -------------------
 
-Flows must return a FlowOutput model (Pydantic BaseModel with BaseArtifact fields).
-Define a FlowOutput model for each flow and use it in the `@register_flow` decorator:
+Flows must return a FlowOutput model (subclass of `BaseFlowOutput` with
+`BaseArtifact` fields). Define a FlowOutput model for each flow and use it
+in the `@register_flow` decorator:
 
     from pydantic import BaseModel
-    from sous_chef.flow import register_flow
+    from sous_chef.flow import register_flow, BaseFlowOutput
     from sous_chef.artifacts import MediacloudQuerySummary, FileUploadArtifact
     
-    class MyFlowOutput(BaseModel):
+    class MyFlowOutput(BaseFlowOutput):
         \"\"\"Output artifacts for my flow.\"\"\"
         query_summary: MediacloudQuerySummary
         b2_artifact: FileUploadArtifact

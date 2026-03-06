@@ -16,7 +16,21 @@ There's a small library of 'tasks', resuable chunks of code decorated with a pre
 
 Inputs to flows are defined by composable pydantic models found in `sous_chef/params`- there's a small library of often reused input types (like mediacloud queries, for example) so when composing an input schema for a new flow you only need to author inputs for parameters that are unique/novel to your flow. 
 
-Outputs from flows are always dictionaries of artifacts: `Dict[str, BaseArtifact]`. the Base Artifact handles serialization so that it can be stored in a prefect artifact store ephemerally, or sent as json via webhook etc. These are not raw data from a flow, rather they are records of the side-effects of the flow (like an Upload URL or an LLM Cost Summary). I'd say it's unlikely you'll need to author new artifacts, except in the case of some new external dependency or some newly desired system behavior. They live in `sous_chef/artifacts`
+Outputs from flows are always **artifacts**, represented as fields on a FlowOutput
+model (a subclass of `BaseFlowOutput`) whose fields are `BaseArtifact` instances.
+The `BaseArtifact` handles serialization so that it can be stored in a prefect
+artifact store ephemerally, or sent as json via webhook etc. These are not raw
+data from a flow, rather they are records of the side-effects of the flow (like
+an Upload URL or an LLM Cost Summary). I'd say it's unlikely you'll need to author
+new artifacts, except in the case of some new external dependency or some newly
+desired system behavior. They live in `sous_chef/artifacts`
+
+#### FlowOutput Models
+
+Flow outputs are defined as Pydantic models inheriting from `BaseFlowOutput`.
+Each field should be a `BaseArtifact`. This keeps type information close to
+the flow, and the kitchen can derive an output schema for API/UX from the model.
+See `sous_chef.flow.BaseFlowOutput` for details.
 
 
 ### Inter-stack Dependencies
