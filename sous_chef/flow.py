@@ -97,30 +97,78 @@ def list_flows() -> Dict[str, Dict[str, Any]]:
 
 def get_flow_output_schema(name: str) -> Dict[str, Any]:
     """
-    Get JSON schema for flow outputs.
-    
-    Returns the JSON schema for the flow's output model, which describes
-    what artifacts the flow returns. This makes output formats discoverable
-    via the API.
-    
+    Get a useful schema for flow outputs.
+
+    Instead of returning the raw JSON schema (which often contains only
+    $ref entries), this function inspects the FlowOutput model and returns,
+    for each output field, the artifact type and its flattened field schema.
+
+    Example structure:
+
+        {
+          "query_summary": {
+            "artifact_type": "mediacloud_query_summary",
+            "fields": { ... MediacloudQuerySummary properties ... }
+          },
+          "b2_artifact": {
+            "artifact_type": "file_upload",
+            "fields": { ... FileUploadArtifact properties ... }
+          }
+        }
+
     Args:
         name: Flow name
-        
+
     Returns:
-        JSON schema dict describing the flow outputs, or empty dict if
-        no output_model is defined
+        Dict mapping output field name -> {artifact_type, fields}
     """
     flow = _FLOW_REGISTRY.get(name)
     if not flow:
         return {}
     
     output_model = flow.get("output_model")
-    if output_model:
-        # Pydantic model -> JSON schema
-        schema = output_model.model_json_schema()
-        return schema.get("properties", {})
-    
-    return {}
+    if not output_model:
+        return {}
+
+    outputs: Dict[str, Any] = {}
+
+    for field_name, field in output_model.model_fields.items():
+        artifact_cls = field.annotation
+
+        # Only handle artifact fields
+        if not isinstance(artifact_cls, type) or not issubclass(artifact_cls, BaseArtifact):
+            continue
+
+        # Get artifact JSON schema
+        schema = artifact_cls.model_json_schema()
+        properties = schema.get("properties", {})
+
+        # Resolve local $ref entries (e.g. enums) into concrete field schemas
+        defs = schema.get("$defs") or schema.get("definitions") or {}
+        for prop_name, prop_schema in list(properties.items()):
+            if not isinstance(prop_schema, dict):
+                continue
+            ref = prop_schema.get("$ref")
+            if not isinstance(ref, str):
+                continue
+
+            # Only handle local refs like "#/$defs/SomeEnum"
+            if ref.startswith("#/$defs/"):
+                def_name = ref.split("/")[-1]
+                ref_schema = defs.get(def_name)
+                if isinstance(ref_schema, dict):
+                    merged = {
+                        **ref_schema,
+                        **{k: v for k, v in prop_schema.items() if k != "$ref"},
+                    }
+                    properties[prop_name] = merged
+
+        outputs[field_name] = {
+            "artifact_type": getattr(artifact_cls, "artifact_type", artifact_cls.__name__),
+            "fields": properties,
+        }
+
+    return outputs
 
 
 def get_flow_schema(name: str) -> Dict[str, Any]:
