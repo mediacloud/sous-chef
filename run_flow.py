@@ -178,6 +178,18 @@ def format_result(result: Any, indent: int = 0) -> str:
     """Format flow result for display."""
     indent_str = "  " * indent
     
+    # Handle Pydantic BaseModel instances (FlowOutput models)
+    from pydantic import BaseModel as PydanticBaseModel
+    if isinstance(result, PydanticBaseModel):
+        # Convert FlowOutput model to dict for formatting
+        result = result.model_dump()
+    
+    # Try to import BaseArtifact to check for artifact instances
+    try:
+        from sous_chef.artifacts import BaseArtifact
+    except ImportError:
+        BaseArtifact = None
+    
     if isinstance(result, dict):
         lines = ["{"]
         for key, value in result.items():
@@ -190,6 +202,9 @@ def format_result(result: Any, indent: int = 0) -> str:
                     lines.append(f"{indent_str}    Columns: {', '.join(value.columns.tolist()[:5])}")
                     if len(value.columns) > 5:
                         lines.append(f"{indent_str}    ... and {len(value.columns) - 5} more")
+            elif BaseArtifact is not None and isinstance(value, BaseArtifact):
+                # Use artifact's string representation (which calls _summary())
+                lines.append(f"{indent_str}  {key}: {value}")
             else:
                 lines.append(f"{indent_str}  {key}: {value}")
         lines.append(f"{indent_str}}}")

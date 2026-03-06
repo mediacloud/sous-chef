@@ -10,6 +10,9 @@ from .flow import (
     get_flow,
     list_flows,
     get_flow_schema,
+    get_flow_output_schema,
+    BaseFlowOutput,
+    FlowReturn,
 )
 
 __all__ = [
@@ -17,6 +20,9 @@ __all__ = [
     "get_flow",
     "list_flows",
     "get_flow_schema",
+    "get_flow_output_schema",
+    "BaseFlowOutput",
+    "FlowReturn",
 ]
 
 __version__ = "3.0.0-alpha"

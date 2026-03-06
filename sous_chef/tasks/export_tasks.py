@@ -228,6 +228,14 @@ def csv_to_b2(
         local_path = f"{tmp_dir}/{local_file_name}"
         df.to_csv(local_path, index=False)
         logger.info(f"[CSVToB2] Dry run mode - CSV also saved locally to {local_path} for inspection")
+        artifact = FileUploadArtifact(
+            url=None,                    
+            bucket="test-bucket",          # or "test-bucket" if you prefer
+            object_key=local_path,         # includes "test-" prefix
+            file_type="csv",
+            columns_saved=list(df.columns),
+            row_count=len(df),
+        )
 
     return metadata, artifact
 

@@ -4,14 +4,15 @@ Flow that downloads full text from MediaCloud queries and exports to CSV.
 This flow queries MediaCloud for articles, extracts the full text along with
 basic metadata, and exports it as a CSV file to Backblaze B2.
 """
-from typing import Dict, Any
 import pandas as pd
+from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
@@ -23,15 +24,22 @@ class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientPar
     pass
 
 
+class FullTextDownloadFlowOutput(BaseFlowOutput):
+    """Output artifacts for the full-text download flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+
+
 @register_flow(
     name="full_text_download",
     description="Download full article text from MediaCloud queries and export to CSV",
     params_model=FullTextDownloadParams,
+    output_model=FullTextDownloadFlowOutput,
     admin_only=True,
     restricted_fields={"full_text_data": True},
     log_prints=True,
 )
-def full_text_download_flow(params: FullTextDownloadParams) -> Dict[str, Any]:
+def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadFlowOutput:
     """
     Download full text from articles matching a MediaCloud query.
     
@@ -116,10 +124,8 @@ def full_text_download_flow(params: FullTextDownloadParams) -> Dict[str, Any]:
             query=params.query,
         )
 
-    # Return artifacts
-    # full_text_data is marked as restricted, so it will only be visible to full-text authorized users
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-        "full_text_data": full_text_df,
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return FullTextDownloadFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+    )

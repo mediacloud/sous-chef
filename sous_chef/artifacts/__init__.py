@@ -9,6 +9,39 @@ parameter schemas structure input data. Artifacts are Pydantic models that:
 3. Include type identifiers for frontend styling
 4. Have useful string representations
 
+Flow Return Pattern
+-------------------
+
+Flows must return a FlowOutput model (subclass of `BaseFlowOutput` with
+`BaseArtifact` fields). Define a FlowOutput model for each flow and use it
+in the `@register_flow` decorator:
+
+    from pydantic import BaseModel
+    from sous_chef.flow import register_flow, BaseFlowOutput
+    from sous_chef.artifacts import MediacloudQuerySummary, FileUploadArtifact
+    
+    class MyFlowOutput(BaseFlowOutput):
+        \"\"\"Output artifacts for my flow.\"\"\"
+        query_summary: MediacloudQuerySummary
+        b2_artifact: FileUploadArtifact
+    
+    @register_flow(
+        name="my_flow",
+        params_model=MyParams,
+        output_model=MyFlowOutput,
+        ...
+    )
+    def my_flow(params: MyParams) -> MyFlowOutput:
+        # ... flow logic ...
+        return MyFlowOutput(
+            query_summary=MediacloudQuerySummary(...),
+            b2_artifact=FileUploadArtifact(...),
+        )
+
+All FlowOutput model fields must be BaseArtifact instances. The kitchen will
+automatically serialize these using each artifact's `serialize_for_prefect()`
+method. FlowOutput models make output schemas discoverable via the API.
+
 Task Return Pattern
 -------------------
 

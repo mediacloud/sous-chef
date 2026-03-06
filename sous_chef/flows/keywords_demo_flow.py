@@ -8,13 +8,13 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from typing import Dict, Any
-
-from ..flow import register_flow
+from pydantic import BaseModel
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.keyword_tasks import extract_keywords
 from ..tasks.aggregator_tasks import top_n_unique_values
@@ -27,13 +27,20 @@ class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, 
     top_n: int = 50  # Number of keywords to extract per article
 
 
+class KeywordsFlowOutput(BaseFlowOutput):
+    """Output artifacts for the keywords demo flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+
+
 @register_flow(
     name="yake_keywords",
     description="Demo: Extract keywords from news articles matching a query using YAKE",
     params_model=KeywordsDemoParams,
+    output_model=KeywordsFlowOutput,
     log_prints=True
 )
-def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
+def keywords_demo_flow(params: KeywordsDemoParams) -> KeywordsFlowOutput:
     """
     Extract keywords from news articles matching a query.
     
@@ -104,8 +111,8 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> Dict[str, Any]:
         )
 
 
-    # Return only artifact objects - these are saved as Prefect artifacts
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return KeywordsFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+    )

@@ -55,3 +55,7 @@ class MediacloudQuerySummary(BaseArtifact):
             f"Scope: {collections_str}, {sources_str} | "
             f"Stories: {self.story_count}"
         )
+    
+    def get_artifact_description(self) -> str:
+        """Generate a description for Prefect artifact display."""
+        return f"MediaCloud Query Summary: '{self.query}' ({self.story_count} stories)"

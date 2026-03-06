@@ -9,13 +9,15 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from typing import Dict, Any, Optional
+from typing import Optional
+from pydantic import BaseModel
 
-from ..flow import register_flow
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.extraction_tasks import extract_entities, top_n_entities
 from ..tasks.export_tasks import csv_to_b2
@@ -31,13 +33,20 @@ class EntitiesDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, 
     sort_by: str = "total"  # Sort by "total" or "percentage"
 
 
+class EntitiesFlowOutput(BaseFlowOutput):
+    """Output artifacts for the entities demo flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+
+
 @register_flow(
     name="spacy_entities",
     description="Demo: Extract named entities from news articles using SpaCy NER",
     params_model=EntitiesDemoParams,
+    output_model=EntitiesFlowOutput,
     log_prints=True
 )
-def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
+def entities_demo_flow(params: EntitiesDemoParams) -> EntitiesFlowOutput:
     """
     Extract named entities from news articles matching a query.
     
@@ -107,8 +116,8 @@ def entities_demo_flow(params: EntitiesDemoParams) -> Dict[str, Any]:
             query=params.query
         )
     
-    # Return only artifact objects - these are saved as Prefect artifacts
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return EntitiesFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+    )

@@ -1,10 +1,13 @@
-from typing import Dict, Any, Optional, List
+from typing import Optional, List
 import re
-from ..flow import register_flow
+from pydantic import BaseModel
+
+from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
+from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.deduplication_tasks import deduplicate_on_title_source
 from ..tasks.tokenization_tasks import matching_sentences
@@ -21,13 +24,20 @@ class TargetedSentimentParams(MediacloudQuery, CsvExportParams, EmailRecipientPa
     target_entity: str
 
 
+class TargetedSentimentFlowOutput(BaseFlowOutput):
+    """Output artifacts for the targeted sentiment flow."""
+    query_summary: MediacloudQuerySummary
+    b2_artifact: FileUploadArtifact
+
+
 @register_flow(
     name="targeted_sentiment",
     description="Split docs into sentences, filter to sentences matching inclusion criteria pattern(s), add sentiment score towards target entity",
     params_model=TargetedSentimentParams,
+    output_model=TargetedSentimentFlowOutput,
     log_prints=True
 )
-def targeted_sentiment_flow(params: TargetedSentimentParams) -> Dict[str, Any]:
+def targeted_sentiment_flow(params: TargetedSentimentParams) -> TargetedSentimentFlowOutput:
     # Step 1: Query MediaCloud for articles
     articles, query_summary = query_online_news(
         query=params.query,
@@ -78,8 +88,8 @@ def targeted_sentiment_flow(params: TargetedSentimentParams) -> Dict[str, Any]:
             query=params.query
         )
     
-    # Return only artifact objects - these are saved as Prefect artifacts
-    return {
-        "query_summary": query_summary,
-        "b2_artifact": b2_artifact,
-    }
+    # Return FlowOutput model instance - these are saved as Prefect artifacts
+    return TargetedSentimentFlowOutput(
+        query_summary=query_summary,
+        b2_artifact=b2_artifact,
+    )

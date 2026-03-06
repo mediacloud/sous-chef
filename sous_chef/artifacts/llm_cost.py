@@ -97,3 +97,10 @@ class LLMCostSummary(BaseArtifact):
 		if self.total_cost_usd is not None:
 			return f"{base} (estimated cost: ${self.total_cost_usd:.4f} USD)"
 		return base
+	
+	def get_artifact_description(self) -> str:
+		"""Generate a description for Prefect artifact display."""
+		cost_info = ""
+		if self.total_cost_usd is not None:
+			cost_info = f" - ${self.total_cost_usd:.4f} USD"
+		return f"LLM Cost Summary: {self.provider}:{self.model} ({self.total_tokens:,} tokens{cost_info})"

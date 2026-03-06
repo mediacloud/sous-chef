@@ -37,36 +37,69 @@ class BaseArtifact(BaseModel, ABC):
     
     # Artifact type identifier for frontend styling
     artifact_type: ClassVar[str] = "base"
-    
+
+    # ------------------------------------------------------------------
+    # Core serialization helpers
+    # ------------------------------------------------------------------
     def to_table_row(self) -> Dict[str, Any]:
         """
         Convert artifact to a single-row dict suitable for Prefect table artifacts.
-        
+
         Returns a flat dict with all fields serialized to JSON-compatible types.
-        The `_artifact_type` field is added automatically for frontend identification.
-        
-        Dates and datetimes are converted to ISO format strings for JSON compatibility.
-        
+        The `_artifact_type` field is added automatically for frontend
+        identification.
+
+        Dates and datetimes are converted to ISO format strings for JSON
+        compatibility via Pydantic's `model_dump(mode="json")`.
+
         Returns:
-            Dict with all artifact fields plus `_artifact_type` field
+            Dict with all artifact fields plus `_artifact_type` field.
         """
         # Use mode='json' to get JSON-serializable values (dates become strings)
-        data = self.model_dump(mode='json')
+        data = self.model_dump(mode="json")
         # Add artifact type for frontend identification
         data["_artifact_type"] = self.artifact_type
         return data
-    
+
     def to_table(self) -> list[Dict[str, Any]]:
         """
         Convert artifact to table format (list of rows).
-        
+
         Most artifacts are single-row, but this allows for multi-row artifacts
         if needed in the future.
-        
+
         Returns:
-            List containing a single dict (the table row)
+            List containing a single dict (the table row).
         """
         return [self.to_table_row()]
+
+    def get_artifact_description(self) -> str:
+        """
+        Human‑readable description for use in artifact UIs.
+
+        Subclasses can override this to provide richer descriptions. The default
+        is deliberately generic and based on the artifact type.
+        """
+        return f"{self.__class__.__name__} ({self.artifact_type})"
+
+    def serialize_for_prefect(self) -> Dict[str, Any]:
+        """
+        Serialize this artifact into a structure suitable for Prefect
+        `create_table_artifact`.
+
+        This keeps all formatting decisions close to the artifact type, so the
+        kitchen only needs to know how to call this method instead of
+        hard‑coding serialization logic per type.
+
+        Returns:
+            Dict with at least:
+                - ``table``: list of row dicts (JSON‑serializable)
+                - ``description``: human‑readable description string
+        """
+        return {
+            "table": self.to_table(),
+            "description": self.get_artifact_description(),
+        }
     
     def __str__(self) -> str:
         """Canonical string representation of the artifact."""

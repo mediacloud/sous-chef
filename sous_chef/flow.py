@@ -2,12 +2,34 @@ from prefect import flow as prefect_flow
 from typing import Dict, Callable, Any, Optional
 from pydantic import BaseModel
 
+from .artifacts import BaseArtifact
+
 _FLOW_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+# Canonical flow return type: mapping of names to artifacts
+FlowReturn = Dict[str, BaseArtifact]
+
+
+class BaseFlowOutput(BaseModel):
+    """
+    Base class for all flow output models.
+    
+    FlowOutput models define the structure of artifacts returned by flows.
+    All fields should be BaseArtifact instances. This base class provides
+    type safety and enables consistent handling in the kitchen.
+    
+    Example:
+        class MyFlowOutput(BaseFlowOutput):
+            query_summary: MediacloudQuerySummary
+            b2_artifact: FileUploadArtifact
+    """
+    pass
 
 def register_flow(
     name: str,
     description: str = "",
     params_model: Optional[type[BaseModel]] = None,
+    output_model: Optional[type[BaseModel]] = None,
     admin_only: bool = False,
     restricted_fields: Optional[Dict[str, bool]] = None,
     **flow_kwargs  # Pass through to @flow decorator
@@ -18,21 +40,23 @@ def register_flow(
     This decorator:
     1. Applies Prefect's @flow decorator
     2. Registers the flow for API discovery
-    3. Stores metadata (description, params model, admin_only, restricted_fields)
+    3. Stores metadata (description, params model, output model, admin_only, restricted_fields)
     
     Usage:
         @register_flow(
             name="keywords",
             description="Extract top keywords from news articles",
-            params_model=KeywordsFlowParams
+            params_model=KeywordsFlowParams,
+            output_model=KeywordsFlowOutput
         )
-        def keywords_flow(params: KeywordsFlowParams) -> Dict[str, Any]:
+        def keywords_flow(params: KeywordsFlowParams) -> KeywordsFlowOutput:
             ...
     
     Args:
         name: Flow name
         description: Flow description
         params_model: Pydantic model for flow parameters
+        output_model: Pydantic model for flow outputs (FlowOutput model with BaseArtifact fields)
         admin_only: If True, only admin users can access this flow
         restricted_fields: Dict mapping output field names to True if they should
             only be returned to users with full-text access
@@ -48,6 +72,7 @@ def register_flow(
             "description": description,
             "func": prefect_flow_func,  # Store the Prefect-wrapped function
             "params_model": params_model,
+            "output_model": output_model,
             "doc": flow_func.__doc__ or description,
             "admin_only": admin_only,
             "restricted_fields": restricted_fields or {},
@@ -69,6 +94,34 @@ def list_flows() -> Dict[str, Dict[str, Any]]:
         }
         for name, flow in _FLOW_REGISTRY.items()
     }
+
+def get_flow_output_schema(name: str) -> Dict[str, Any]:
+    """
+    Get JSON schema for flow outputs.
+    
+    Returns the JSON schema for the flow's output model, which describes
+    what artifacts the flow returns. This makes output formats discoverable
+    via the API.
+    
+    Args:
+        name: Flow name
+        
+    Returns:
+        JSON schema dict describing the flow outputs, or empty dict if
+        no output_model is defined
+    """
+    flow = _FLOW_REGISTRY.get(name)
+    if not flow:
+        return {}
+    
+    output_model = flow.get("output_model")
+    if output_model:
+        # Pydantic model -> JSON schema
+        schema = output_model.model_json_schema()
+        return schema.get("properties", {})
+    
+    return {}
+
 
 def get_flow_schema(name: str) -> Dict[str, Any]:
     """

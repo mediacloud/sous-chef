@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version = "v3.3.2"
+version = "v3.4.0"
 description = "Sous-Chef data pipeline tool - Media cloud NLP pipeline configured via Python flows"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,12 +48,6 @@ dependencies = [
   "python-dotenv >= 1.2.1",
   "jinja2 >= 3.1.0",
   
-  # Testing
-  "pytest >= 8.0.0",
-  
-  # Visualization (requires numpy < 2.0)
-  "matplotlib >= 3.8.2",
-  
   # AWS/B2 storage
   "boto3",
 
@@ -61,6 +55,11 @@ dependencies = [
   "litellm",
   "instructor",
   "groq"
+]
+
+dev = [
+  # Testing
+  "pytest >= 8.0.0",
 ]
 
 
