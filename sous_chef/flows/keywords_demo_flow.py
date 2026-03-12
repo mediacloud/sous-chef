@@ -8,7 +8,6 @@ This flow demonstrates:
 
 Can run with or without Prefect.
 """
-from pydantic import BaseModel
 from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
@@ -22,8 +21,14 @@ from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_email, send_templated_email, send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
-class KeywordsDemoParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
+class KeywordsDemoParams(
+    MediacloudQuery,
+    CsvExportParams,
+    EmailRecipientParam,
+    WebhookCallbackParam,
+):
     """Parameters for the keywords demo flow."""
+
     top_n: int = 50  # Number of keywords to extract per article
 
 
@@ -60,16 +65,16 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> KeywordsFlowOutput:
     """
     logger = get_logger()
     logger.info("starting keyword demo run")
-    # Step 1: Query MediaCloud for articles
+    # Step 1: Query MediaCloud for articles (with optional deduplication)
     articles, query_summary = query_online_news(
         query=params.query,
         collection_ids=params.collection_ids,
         source_ids=params.source_ids,
         start_date=params.start_date,
-        end_date=params.end_date
+        end_date=params.end_date,
+        dedup_articles=params.dedup_articles,
     )
 
-    
     # Step 2: Extract keywords from each article
     # This adds a 'keywords' column to the DataFrame
     articles = extract_keywords(

@@ -21,3 +21,4 @@ class MediacloudQuery(BaseModel):
     source_ids: List[int] = []
     start_date: date
     end_date: date
+    dedup_articles: bool = False

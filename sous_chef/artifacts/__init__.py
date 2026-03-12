@@ -63,7 +63,7 @@ that a task returns an artifact, and IDEs will show this in autocomplete.
 from typing import TypeVar, Tuple
 
 from .base import BaseArtifact
-from .mediacloud import MediacloudQuerySummary
+from .mediacloud import MediacloudQuerySummary, ArticleDeduplicationSummary
 from .file_upload import FileUploadArtifact
 from .llm_cost import LLMCostSummary
 
@@ -93,7 +93,8 @@ Example:
 __all__ = [
     "BaseArtifact",
     "MediacloudQuerySummary",
+    "ArticleDeduplicationSummary",
     "FileUploadArtifact",
     "ArtifactResult",
-    "LLMCostSummary"
+    "LLMCostSummary",
 ]

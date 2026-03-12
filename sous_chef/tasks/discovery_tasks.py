@@ -7,18 +7,19 @@ from datetime import date
 from typing import List
 import requests
 import time
-from ..artifacts import ArtifactResult, MediacloudQuerySummary
+from ..artifacts import ArtifactResult, MediacloudQuerySummary, ArticleDeduplicationSummary
+from .deduplication_tasks import deduplicate_articles
 
 
 @task
 def query_online_news(
-    	query: str,
-    	start_date: date,
-    	end_date: date,
-        collection_ids: List[int] = [],
-        source_ids: List[int] = [],
-    	# Clean signature!
-		) -> ArtifactResult[pd.DataFrame]:
+    query: str,
+    start_date: date,
+    end_date: date,
+    collection_ids: List[int] = [],
+    source_ids: List[int] = [],
+    dedup_articles: bool = False,
+) -> ArtifactResult[pd.DataFrame]:
     """
     Query MediaCloud for news articles matching a search query.
     
@@ -67,6 +68,33 @@ def query_online_news(
         more_stories = pagination_token is not None
 
     stories_df = pd.concat(stories)
+
+    dedup_summary = None
+    duplicates_df = None
+    if dedup_articles:
+        deduped_df, dedup_stats_df = deduplicate_articles(
+            stories_df,
+            dedup_by_title=True,
+            dedup_by_text=False,
+            dedup_title_column="title",
+            dedup_text_column="text",
+            dedup_date_column="publish_date",
+            keep_earliest=True,
+            return_stats=True,
+        )
+        dedup_summary = ArticleDeduplicationSummary(
+            input_story_count=len(stories_df),
+            deduplicated_story_count=len(deduped_df),
+            duplicate_story_count=len(dedup_stats_df) if dedup_stats_df is not None else 0,
+            dedup_by_title=True,
+            dedup_by_text=False,
+            dedup_title_column="title",
+            dedup_text_column="text",
+            dedup_date_column="publish_date",
+            duplicates_file=None,
+        )
+        stories_df = deduped_df
+        duplicates_df = dedup_stats_df
     
     # Create summary artifact
     summary = MediacloudQuerySummary(
@@ -75,7 +103,9 @@ def query_online_news(
         end_date=end_date,
         collection_ids=collection_ids,
         source_ids=source_ids,
-        story_count=len(stories_df)
+        story_count=len(stories_df),
+        dedup_summary=dedup_summary,
+        duplicates_df=duplicates_df,
     )
     
     return stories_df, summary
