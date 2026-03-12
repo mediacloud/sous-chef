@@ -5,9 +5,10 @@ This model provides the standard parameters needed for querying MediaCloud
 for news articles. It can be inherited by flow parameter models to avoid
 duplication.
 """
-from pydantic import BaseModel
-from typing import List, ClassVar
 from datetime import date
+from typing import ClassVar, List
+
+from pydantic import BaseModel, Field
 
 
 class MediacloudQuery(BaseModel):
@@ -21,4 +22,12 @@ class MediacloudQuery(BaseModel):
     source_ids: List[int] = []
     start_date: date
     end_date: date
-    dedup_articles: bool = False
+    dedup_articles: bool = Field(
+        default=False,
+        title="Deduplicate articles",
+        description=(
+            "If enabled, remove duplicate stories by normalized title, keeping the "
+            "earliest publish date only. Deduplication happens in the MediaCloud "
+            "discovery step before downstream processing."
+        ),
+    )
