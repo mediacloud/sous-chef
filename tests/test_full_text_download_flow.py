@@ -8,9 +8,9 @@ from sous_chef.flows.full_text_download_flow import (
 
 
 class TestFullTextDownloadFlow(unittest.TestCase):
-    def test_params_include_dedup_and_export_flags(self):
+    def test_params_include_dedup_flag(self):
         """
-        Basic smoke test: constructing params should support dedup and export flags.
+        Basic smoke test: constructing params should support dedup_articles flag.
         """
         params = FullTextDownloadParams(
             query="test",
@@ -19,15 +19,13 @@ class TestFullTextDownloadFlow(unittest.TestCase):
             start_date=date(2024, 1, 1),
             end_date=date(2024, 1, 2),
             dedup_articles=False,
-            export_dedup_stats=False,
         )
 
         # Note: this test does not actually hit the MediaCloud API; in real
         # environments you would mock query_online_news. Here we only assert
         # that the flow can be imported and that params schema includes our
-        # dedup fields.
+        # dedup flag.
         self.assertFalse(params.dedup_articles)
-        self.assertFalse(params.export_dedup_stats)
 
 
 if __name__ == "__main__":

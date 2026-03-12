@@ -1,10 +1,9 @@
 """
 MediaCloud-related artifacts.
 """
-from typing import List, Optional, ClassVar
+from typing import ClassVar, List, Optional
 from datetime import date
-from pydantic import Field
-import pandas as pd
+
 from .base import BaseArtifact
 from .file_upload import FileUploadArtifact
 
@@ -42,12 +41,6 @@ class MediacloudQuerySummary(BaseArtifact):
 
     # Optional deduplication statistics for this query
     dedup_summary: Optional["ArticleDeduplicationSummary"] = None
-
-    # Internal field for detailed duplicates DataFrame (not serialized as artifact)
-    duplicates_df: Optional["pd.DataFrame"] = Field(
-        default=None,
-        exclude=True,
-    )
     
     def _summary(self) -> str:
         """Generate a human-readable summary."""

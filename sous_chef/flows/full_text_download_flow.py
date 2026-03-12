@@ -13,10 +13,8 @@ from ..params.webhook_callback import WebhookCallbackParam
 from ..artifacts import (
     MediacloudQuerySummary,
     FileUploadArtifact,
-    ArticleDeduplicationSummary,
 )
 from ..tasks.discovery_tasks import query_online_news
-from ..tasks.deduplication_tasks import deduplicate_articles
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
@@ -29,9 +27,6 @@ class FullTextDownloadParams(
     WebhookCallbackParam,
 ):
     """Parameters for the full-text download flow."""
-
-    # Optional: export a CSV of duplicate stories (those removed by deduplication)
-    export_dedup_stats: bool = False
 
 
 class FullTextDownloadFlowOutput(BaseFlowOutput):
@@ -86,28 +81,6 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
 
     # Use the returned articles directly; any deduplication has already been applied
     articles_to_use = articles
-
-    # Optionally export a CSV of duplicate stories using stats from the query summary
-    if (
-        params.export_dedup_stats
-        and getattr(query_summary, "duplicates_df", None) is not None
-        and not query_summary.duplicates_df.empty
-    ):
-        slug = create_url_safe_slug(params.query)
-        dedup_object_name = (
-            f"{params.b2_object_prefix}/DATE/{slug}-dedup-duplicates.csv"
-        )
-        logger.info(f"Exporting deduplication duplicates to B2: {dedup_object_name}")
-        _, duplicates_file_artifact = csv_to_b2(
-            query_summary.duplicates_df,
-            object_name=dedup_object_name,
-            add_date_slug=params.b2_add_date_slug,
-            ensure_unique=params.b2_ensure_unique,
-        )
-
-        # Attach the file artifact back onto the dedup summary, if present
-        if getattr(query_summary, "dedup_summary", None) is not None:
-            query_summary.dedup_summary.duplicates_file = duplicates_file_artifact
 
     # Step 2: Extract full text with metadata
     # Select relevant columns for the CSV export
@@ -165,5 +138,4 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
     return FullTextDownloadFlowOutput(
         query_summary=query_summary,
         b2_artifact=b2_artifact,
-        dedup_summary=dedup_summary,
     )

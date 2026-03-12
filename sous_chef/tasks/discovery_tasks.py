@@ -70,7 +70,6 @@ def query_online_news(
     stories_df = pd.concat(stories)
 
     dedup_summary = None
-    duplicates_df = None
     if dedup_articles:
         deduped_df, dedup_stats_df = deduplicate_articles(
             stories_df,
@@ -94,7 +93,6 @@ def query_online_news(
             duplicates_file=None,
         )
         stories_df = deduped_df
-        duplicates_df = dedup_stats_df
     
     # Create summary artifact
     summary = MediacloudQuerySummary(
@@ -105,7 +103,6 @@ def query_online_news(
         source_ids=source_ids,
         story_count=len(stories_df),
         dedup_summary=dedup_summary,
-        duplicates_df=duplicates_df,
     )
     
     return stories_df, summary
