@@ -71,7 +71,8 @@ def entities_demo_flow(params: EntitiesDemoParams) -> EntitiesFlowOutput:
         collection_ids=params.collection_ids,
         source_ids=params.source_ids,
         start_date=params.start_date,
-        end_date=params.end_date
+        end_date=params.end_date,
+        dedup_articles=params.dedup_articles,
     )
     
     # Step 2: Extract named entities from each article
