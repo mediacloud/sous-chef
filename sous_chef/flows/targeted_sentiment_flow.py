@@ -45,7 +45,7 @@ def targeted_sentiment_flow(params: TargetedSentimentParams) -> TargetedSentimen
         source_ids=params.source_ids,
         start_date=params.start_date,
         end_date=params.end_date,
-        dedup_articles=params.dedup_articles,
+        dedup_strategy=params.dedup_strategy,
     )
     
     # Step 2: Deduplicate stories

@@ -6,9 +6,18 @@ for news articles. It can be inherited by flow parameter models to avoid
 duplication.
 """
 from datetime import date
+from enum import Enum
 from typing import ClassVar, List
 
 from pydantic import BaseModel, Field
+
+
+class DedupStrategy(str, Enum):
+    """Article-level deduplication strategy for MediaCloud stories."""
+
+    none = "none"
+    title_source = "title_source"
+    title = "title"
 
 
 class MediacloudQuery(BaseModel):
@@ -22,12 +31,12 @@ class MediacloudQuery(BaseModel):
     source_ids: List[int] = []
     start_date: date
     end_date: date
-    dedup_articles: bool = Field(
-        default=False,
-        title="Deduplicate articles",
+    dedup_strategy: DedupStrategy = Field(
+        default=DedupStrategy.none,
+        title="Deduplication strategy",
         description=(
-            "If enabled, remove duplicate stories by normalized title, keeping the "
-            "earliest publish date only. Deduplication happens in the MediaCloud "
-            "discovery step before downstream processing."
+            "How to deduplicate MediaCloud stories before downstream processing. "
+            "'none' keeps all stories; 'title_source' keeps one story per title+source; "
+            "'title' keeps one story per title across all sources."
         ),
     )

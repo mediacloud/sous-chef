@@ -75,18 +75,24 @@ python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-0
 
 Sous-Chef includes a reusable article-deduplication helper for MediaCloud story
 data. Deduplication happens “up front” in the MediaCloud discovery step and is
-controlled by the `dedup_articles` flag on `MediacloudQuery`. When enabled,
-the discovery task removes duplicate stories (by normalized title, keeping the
-earliest publish date) before passing articles to downstream tasks.
+controlled by the `dedup_strategy` field on `MediacloudQuery`. When enabled,
+the discovery task removes duplicate stories according to the selected strategy
+before passing articles to downstream tasks.
+
+Available strategies:
+
+- `none`: no deduplication (all stories are kept)
+- `title_source`: keep one story per `(title, source)` pair
+- `title`: keep one story per `title` across all sources (earliest publish date wins)
 
 ```python
 from sous_chef.tasks.deduplication_tasks import deduplicate_articles
 from sous_chef.tasks.discovery_tasks import query_online_news
-from sous_chef.params.mediacloud_query import MediacloudQuery
+from sous_chef.params.mediacloud_query import MediacloudQuery, DedupStrategy
 
 class MyParams(MediacloudQuery, CsvExportParams):
     # Use core MediaCloud params, including:
-    # dedup_articles: bool = False  (defined on MediacloudQuery)
+    # dedup_strategy: DedupStrategy = DedupStrategy.none
 
 def my_flow(params: MyParams) -> MyFlowOutput:
     articles, query_summary = query_online_news(
@@ -95,25 +101,15 @@ def my_flow(params: MyParams) -> MyFlowOutput:
         source_ids=params.source_ids,
         start_date=params.start_date,
         end_date=params.end_date,
-        dedup_articles=params.dedup_articles,
+        dedup_strategy=params.dedup_strategy,
     )
     ...
 ```
 
-The helper keeps the earliest story in each duplicate group (by `publish_date`
-when available) and, when `return_stats=True`, produces a secondary DataFrame
-of dropped duplicates. For convenience, `query_online_news`:
-
-- Returns the **deduplicated** articles DataFrame when `dedup_articles=True`.
-- Attaches an `ArticleDeduplicationSummary` (high-level counts/config) and a
-  non-serialized `duplicates_df` (the detailed duplicates DataFrame) onto the
-  `MediacloudQuerySummary` artifact so flows can optionally export or inspect
-  duplicates.
-
-For example, `full_text_download_flow` exposes an `export_dedup_stats` flag on
-its params. When `dedup_articles=True` and `export_dedup_stats=True`, it uploads
-`query_summary.duplicates_df` as a CSV to B2 and links the resulting
-`FileUploadArtifact` from the dedup summary artifact for easy analysis.
+The helper keeps the earliest story in each duplicate group when deduplication
+is enabled and attaches an `ArticleDeduplicationSummary` (high-level counts and
+configuration) to the `MediacloudQuerySummary` artifact so flows can see how
+many stories were removed.
 
 ### Package Structure
 

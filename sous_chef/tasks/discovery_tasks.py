@@ -8,6 +8,7 @@ from typing import List
 import requests
 import time
 from ..artifacts import ArtifactResult, MediacloudQuerySummary, ArticleDeduplicationSummary
+from ..params.mediacloud_query import DedupStrategy
 from .deduplication_tasks import deduplicate_articles
 
 
@@ -18,7 +19,7 @@ def query_online_news(
     end_date: date,
     collection_ids: List[int] = [],
     source_ids: List[int] = [],
-    dedup_articles: bool = False,
+    dedup_strategy: DedupStrategy = DedupStrategy.none,
 ) -> ArtifactResult[pd.DataFrame]:
     """
     Query MediaCloud for news articles matching a search query.
@@ -70,22 +71,34 @@ def query_online_news(
     stories_df = pd.concat(stories)
 
     dedup_summary = None
-    if dedup_articles:
-        deduped_df, dedup_stats_df = deduplicate_articles(
-            stories_df,
-            dedup_by_title=True,
-            dedup_by_text=False,
-            dedup_title_column="title",
-            dedup_text_column="text",
-            dedup_date_column="publish_date",
-            keep_earliest=True,
-            return_stats=True,
-        )
+    if dedup_strategy != DedupStrategy.none:
+        if dedup_strategy == DedupStrategy.title:
+            deduped_df, dedup_stats_df = deduplicate_articles(
+                stories_df,
+                dedup_by_title=True,
+                dedup_by_text=False,
+                dedup_title_column="title",
+                dedup_text_column="text",
+                dedup_date_column="publish_date",
+                keep_earliest=True,
+                return_stats=True,
+            )
+        elif dedup_strategy == DedupStrategy.title_source:
+            # Drop duplicates by (title, media_name) within a source
+            deduped_df = stories_df.drop_duplicates(
+                subset=["title", "media_name"], keep="first"
+            )
+            dup_mask = ~stories_df.index.isin(deduped_df.index)
+            dedup_stats_df = stories_df[dup_mask].copy()
+        else:
+            deduped_df = stories_df
+            dedup_stats_df = pd.DataFrame()
+
         dedup_summary = ArticleDeduplicationSummary(
             input_story_count=len(stories_df),
             deduplicated_story_count=len(deduped_df),
-            duplicate_story_count=len(dedup_stats_df) if dedup_stats_df is not None else 0,
-            dedup_by_title=True,
+            duplicate_story_count=len(dedup_stats_df),
+            dedup_by_title=(dedup_strategy != DedupStrategy.none),
             dedup_by_text=False,
             dedup_title_column="title",
             dedup_text_column="text",
