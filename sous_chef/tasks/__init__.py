@@ -50,6 +50,7 @@ from .aggregator_tasks import top_n_unique_values
 from .export_tasks import csv_to_b2
 from .email_tasks import send_email, send_templated_email, send_run_summary_email
 from .llm_article_summary import summarize_articles_llm
+from .llm_aboutness import score_aboutness_llm
 
 __all__ = [
     "query_online_news",
@@ -62,4 +63,5 @@ __all__ = [
     "send_templated_email",
     "send_run_summary_email",
     "summarize_articles_llm",
+    "score_aboutness_llm",
 ]

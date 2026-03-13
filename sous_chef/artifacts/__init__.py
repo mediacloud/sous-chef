@@ -66,6 +66,7 @@ from .base import BaseArtifact
 from .mediacloud import MediacloudQuerySummary, ArticleDeduplicationSummary
 from .file_upload import FileUploadArtifact
 from .llm_cost import LLMCostSummary
+from .aboutness import AboutnessFilterSummary
 
 T = TypeVar('T')
 
@@ -97,4 +98,5 @@ __all__ = [
     "FileUploadArtifact",
     "ArtifactResult",
     "LLMCostSummary",
+    "AboutnessFilterSummary",
 ]
