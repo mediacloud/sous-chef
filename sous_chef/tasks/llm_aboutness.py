@@ -76,8 +76,10 @@ class AboutnessOutput(BaseModel):
 _ABOUTNESS_PROMPT = """
 You are an expert judge evaluating how much a news article is ABOUT a particular subject.
 
-Your job is to decide whether the article is substantially about the subject, and to rate
-your confidence / degree of aboutness on a 0.0–1.0 scale.
+Assume the article was selected because it already matches a query related to this subject.
+Your primary job is to catch cases where the subject is only mentioned incidentally or
+clearly refers to something else, and to rate your confidence / degree of aboutness on
+a 0.0–1.0 scale.
 
 Subject (the thing we care about):
 \"\"\"{target}\"\"\"
@@ -91,21 +93,34 @@ Article text:
 Additional background about the subject (may be empty if not provided):
 \"\"\"{context}\"\"\"
 
-Guidelines:
-- The article is ABOUT the subject when the subject, its situation, actions, policies,
-  impacts, or closely related events are a central focus of the story.
-- Passing mentions or minor references without substantive discussion should NOT count
-  as being about the subject.
-- However, if the subject's government, institutions, or closely tied entities are
-  clearly the focus, you should treat that as being about the subject.
-- Default behavior: if there is clear, substantive discussion of the subject, treat
-  it as about the subject. Only mark it as not about the subject when the connection
-  is clearly incidental or absent.
+Guidelines (negative filter):
+- By default, assume the article is about the subject, because it was selected by a
+  query that already searched for this subject.
+- Mark the article as NOT about the subject only when there is clear evidence that:
+  * The subject is mentioned only briefly or incidentally (for example, in a long list
+    of places, organizations, people, or in a single short dateline or quote), AND
+    there is no meaningful discussion of the subject’s situation, actions, decisions,
+    impacts, or related events; OR
+  * The subject clearly refers to something else entirely (for example, a different
+    person, company, product, or place that happens to share the same name), and not
+    to the intended subject; OR
+  * The subject appears only in boilerplate or background text with no connection to
+    the main story.
+- If the subject appears multiple times, is involved in the main events being
+  described, or there is any sustained discussion related to the subject, you should
+  treat the article as being ABOUT the subject.
+- When you are unsure, or when there is some sustained discussion of the subject,
+  lean toward treating the article as being ABOUT the subject rather than rejecting it.
+
+Scoring:
+- Let "score" be how strongly you believe the article SHOULD be kept as being about the
+  subject (higher score = more clearly about the subject).
 
 Output format:
 Return ONLY a JSON object with the following fields:
-- "is_about": boolean, true if the article is substantially about the subject.
-- "score": number between 0.0 and 1.0 indicating how strongly it is about the subject.
+- "is_about": boolean, true if the article should be treated as about the subject.
+- "score": number between 0.0 and 1.0 indicating how strongly it should be kept as
+  about the subject.
 - "reason": short string explaining your judgment.
 - "supporting_evidence": array of short strings giving evidence that it IS about the subject.
 - "counter_evidence": array of short strings giving evidence that it is NOT about the subject.
