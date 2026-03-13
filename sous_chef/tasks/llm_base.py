@@ -32,7 +32,7 @@ class OutcomeStatus(str, Enum):
     FAILURE = "failure"
 
 
-class TaskOutcome(Generic[T], BaseModel):
+class TaskOutcome(BaseModel, Generic[T]):
     """
     Container for the result of a structured LLM task.
 
