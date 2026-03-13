@@ -21,7 +21,8 @@ class AboutnessTargetKind(str, Enum):
     person = "person"
     organization = "organization"
     topic = "topic"
-    other = "other"
+    generic = "generic"
+    custom = "custom"
 
 
 class AboutnessParams(BaseModel):
@@ -44,21 +45,22 @@ class AboutnessParams(BaseModel):
 
     about_context: Optional[str] = Field(
         default=None,
-        title="Aboutness context (optional)",
+        title="Aboutness context (used when kind is Custom)",
         description=(
-            "Optional background description to help the LLM judge aboutness. "
-            "For example: a list of LGAs for a state, a topic definition, or "
-            "key details about the target."
+            "Used only when target kind is \"Custom\". Provide your own background "
+            "description to help the LLM judge aboutness (e.g., a list of LGAs, "
+            "a topic definition, or key details about the target). Ignored for "
+            "other target kinds."
         ),
     )
 
-    about_target_kind: Optional[AboutnessTargetKind] = Field(
-        default=None,
-        title="Aboutness target kind (optional)",
+    about_target_kind: AboutnessTargetKind = Field(
+        default=AboutnessTargetKind.generic,
+        title="Aboutness target kind",
         description=(
-            "High-level type of the aboutness target. If provided and no custom "
-            "about_context is set, a default context description may be generated "
-            "for the LLM (e.g., geography, person, organization, or topic)."
+            "Type of the aboutness target. A preset context is generated for "
+            "Geography, Person, Organization, Topic, or Generic. Choose \"Custom\" "
+            "to supply your own context in the Aboutness context field."
         ),
     )
 
@@ -101,12 +103,15 @@ def build_default_about_context(kind: AboutnessTargetKind, target: str) -> str:
             "or policies that are clearly centered on the topic."
         )
 
-    if kind == AboutnessTargetKind.other:
+    if kind == AboutnessTargetKind.generic:
         return (
             "The subject is the main thing we care about in this analysis. Stories "
             "should be treated as about this subject when they discuss it in a "
             "meaningful way, rather than only mentioning it briefly or incidentally."
         )
+
+    # custom: caller should use about_context; fallback below if build_default_about_context
+    # is ever called with custom.
 
     # Fallback: very generic guidance if a new kind is introduced without
     # updating this function.
