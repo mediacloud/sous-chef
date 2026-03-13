@@ -1,7 +1,7 @@
 """
 Aboutness filter flow artifacts.
 """
-from typing import ClassVar, List
+from typing import ClassVar, List, Optional
 
 from .base import BaseArtifact
 
@@ -28,6 +28,13 @@ class AboutnessFilterSummary(BaseArtifact):
 
     threshold: float = 0.0
     """Aboutness score threshold used for filtering."""
+
+    target_kind: Optional[str] = None
+    """
+    Optional high-level type of the aboutness target (e.g., 'geography',
+    'person', 'organization', 'topic', 'other'). Mirrored from the
+    AboutnessTargetKind enum when available.
+    """
 
     score_histogram_counts: List[int] = []
     """

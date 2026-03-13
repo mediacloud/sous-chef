@@ -5,6 +5,6 @@
   "end_date": "2024-10-10",
   "dedup_strategy": "title",
   "about_target":"Gaza",
-  "about_context":"We are interested in whether an article is substantially about a specific place, understood as a geographic region and its residents and government. Treat an article as about the place when it focuses on events, policies, government actions, public services, infrastructure, social or economic conditions, or other developments that primarily concern that place or people living there. If the article’s main focus is some other place or topic and the place is only mentioned briefly (for example as a location in a dateline or a passing reference), then it should not be considered about that place. Government institutions and officials of the place are considered part of the place, so stories about their decisions, debates, or actions count as being about the place.",
+  "about_target_kind":"geography",
   "max_articles_for_llm":  50
 }

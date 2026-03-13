@@ -21,6 +21,7 @@ from ..params import (
     GroqModelParams,
     AboutnessParams,
 )
+from ..params.aboutness import build_default_about_context
 from ..artifacts import (
     MediacloudQuerySummary,
     FileUploadArtifact,
@@ -133,6 +134,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
             threshold=params.aboutness_threshold,
             score_histogram_counts=[0] * 10,
             score_histogram_edges=bins,
+            target_kind=(params.about_target_kind.value if getattr(params, "about_target_kind", None) else None),
         )
         llm_cost = LLMCostSummary.from_groq_summaries(
             model=params.model_name,
@@ -150,10 +152,18 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
     max_rows = params.max_articles_for_llm
 
     # Step 2: Apply LLM aboutness scoring
+    # If no explicit about_context was provided, but a target kind was, build a
+    # generic default context string to help the LLM.
+    context = params.about_context
+    if (context is None or context.strip() == "") and getattr(
+        params, "about_target_kind", None
+    ):
+        context = build_default_about_context(params.about_target_kind, params.about_target)
+
     scored_df, cost_summary = score_aboutness_llm(
         articles,
         target=params.about_target,
-        context=params.about_context,
+        context=context,
         text_col="text",
         title_col="title",
         model_name=params.model_name,
@@ -195,6 +205,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         threshold=threshold,
         score_histogram_counts=hist_counts,
         score_histogram_edges=bins,
+        target_kind=(params.about_target_kind.value if getattr(params, "about_target_kind", None) else None),
     )
 
     # Step 4: Export scored and filtered results to B2 as CSV
