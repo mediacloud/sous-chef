@@ -5,27 +5,33 @@ This flow queries MediaCloud for articles, extracts the full text along with
 basic metadata, and exports it as a CSV file to Backblaze B2.
 """
 import pandas as pd
-from pydantic import BaseModel
-
 from ..flow import register_flow, BaseFlowOutput
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.webhook_callback import WebhookCallbackParam
-from ..artifacts import MediacloudQuerySummary, FileUploadArtifact
+from ..artifacts import (
+    MediacloudQuerySummary,
+    FileUploadArtifact,
+)
 from ..tasks.discovery_tasks import query_online_news
 from ..tasks.export_tasks import csv_to_b2
 from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
 
-class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
+class FullTextDownloadParams(
+    MediacloudQuery,
+    CsvExportParams,
+    EmailRecipientParam,
+    WebhookCallbackParam,
+):
     """Parameters for the full-text download flow."""
-    pass
 
 
 class FullTextDownloadFlowOutput(BaseFlowOutput):
     """Output artifacts for the full-text download flow."""
+
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact
 
@@ -61,16 +67,21 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
     logger = get_logger()
     logger.info("Starting full_text_download flow")
 
-    # Step 1: Query MediaCloud for articles
+    # Step 1: Query MediaCloud for articles (with optional deduplication)
     articles, query_summary = query_online_news(
         query=params.query,
         collection_ids=params.collection_ids,
         source_ids=params.source_ids,
         start_date=params.start_date,
         end_date=params.end_date,
+        dedup_strategy=params.dedup_strategy,
+        upload_dedup_summary=params.upload_dedup_summary,
     )
 
     logger.info(f"Retrieved {len(articles)} articles")
+
+    # Use the returned articles directly; any deduplication has already been applied
+    articles_to_use = articles
 
     # Step 2: Extract full text with metadata
     # Select relevant columns for the CSV export
@@ -78,25 +89,25 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
     columns_to_include = []
     
     # Always include text if available
-    if "text" in articles.columns:
+    if "text" in articles_to_use.columns:
         columns_to_include.append("text")
     
     # Include metadata columns if available
     metadata_columns = ["stories_id", "title", "url", "publish_date", "media_id", "language"]
     for col in metadata_columns:
-        if col in articles.columns:
+        if col in articles_to_use.columns:
             columns_to_include.append(col)
     
     # Create DataFrame with selected columns
     if columns_to_include:
-        full_text_df = articles[columns_to_include].copy()
+        full_text_df = articles_to_use[columns_to_include].copy()
     else:
         # Fallback: if no expected columns, just use the text column or all columns
-        if "text" in articles.columns:
-            full_text_df = articles[["text"]].copy()
+        if "text" in articles_to_use.columns:
+            full_text_df = articles_to_use[["text"]].copy()
         else:
             logger.warning("No 'text' column found, using all available columns")
-            full_text_df = articles.copy()
+            full_text_df = articles_to_use.copy()
 
     logger.info(f"Prepared full text data with {len(full_text_df)} articles and {len(full_text_df.columns)} columns")
 

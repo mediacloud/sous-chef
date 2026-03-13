@@ -1,9 +1,11 @@
 """
 MediaCloud-related artifacts.
 """
-from typing import List, Optional, ClassVar
+from typing import ClassVar, List, Optional
 from datetime import date
+
 from .base import BaseArtifact
+from .file_upload import FileUploadArtifact
 
 
 class MediacloudQuerySummary(BaseArtifact):
@@ -36,6 +38,9 @@ class MediacloudQuerySummary(BaseArtifact):
     # Summary statistics
     story_count: int
     total_stories: Optional[int] = None  # If pagination was used
+
+    # Optional deduplication statistics for this query
+    dedup_summary: Optional["ArticleDeduplicationSummary"] = None
     
     def _summary(self) -> str:
         """Generate a human-readable summary."""
@@ -59,3 +64,40 @@ class MediacloudQuerySummary(BaseArtifact):
     def get_artifact_description(self) -> str:
         """Generate a description for Prefect artifact display."""
         return f"MediaCloud Query Summary: '{self.query}' ({self.story_count} stories)"
+
+
+class ArticleDeduplicationSummary(BaseArtifact):
+    """
+    Artifact summarizing article-level deduplication.
+
+    Captures high-level statistics about how many stories were removed as
+    duplicates, as well as basic configuration context. Detailed duplicates
+    can be exported separately as a CSV if needed.
+    """
+
+    artifact_type: ClassVar[str] = "article_deduplication_summary"
+
+    # Input/output counts
+    input_story_count: int
+    deduplicated_story_count: int
+    duplicate_story_count: int
+
+    # Strategy used ("none", "title", "title_source", etc.)
+    strategy: str
+
+    # Optional CSV export of detailed duplicates
+    duplicates_file: Optional[FileUploadArtifact] = None
+
+    def _summary(self) -> str:
+        return (
+            f"Deduplicated {self.input_story_count} stories -> "
+            f"{self.deduplicated_story_count} unique "
+            f"({self.duplicate_story_count} duplicates removed)"
+        )
+
+    def get_artifact_description(self) -> str:
+        return (
+            f"Article Deduplication: {self.input_story_count} -> "
+            f"{self.deduplicated_story_count} stories "
+            f"({self.duplicate_story_count} duplicates removed)"
+        )

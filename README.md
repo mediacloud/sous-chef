@@ -71,6 +71,46 @@ python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-0
 - **Tasks**: Prefect-decorated functions that perform individual operations (querying, processing, exporting)
 - **Flow Registry**: Automatic discovery of flows via decorator registration
 
+### Article deduplication
+
+Sous-Chef includes a reusable article-deduplication helper for MediaCloud story
+data. Deduplication happens “up front” in the MediaCloud discovery step and is
+controlled by the `dedup_strategy` field on `MediacloudQuery`. When enabled,
+the discovery task removes duplicate stories according to the selected strategy
+before passing articles to downstream tasks.
+
+Available strategies:
+
+- `none`: no deduplication (all stories are kept)
+- `title_source`: keep one story per `(title, source)` pair
+- `title`: keep one story per `title` across all sources (earliest publish date wins)
+
+```python
+from sous_chef.tasks.deduplication_tasks import deduplicate_articles
+from sous_chef.tasks.discovery_tasks import query_online_news
+from sous_chef.params.mediacloud_query import MediacloudQuery, DedupStrategy
+
+class MyParams(MediacloudQuery, CsvExportParams):
+    # Use core MediaCloud params, including:
+    # dedup_strategy: DedupStrategy = DedupStrategy.none
+
+def my_flow(params: MyParams) -> MyFlowOutput:
+    articles, query_summary = query_online_news(
+        query=params.query,
+        collection_ids=params.collection_ids,
+        source_ids=params.source_ids,
+        start_date=params.start_date,
+        end_date=params.end_date,
+        dedup_strategy=params.dedup_strategy,
+    )
+    ...
+```
+
+The helper keeps the earliest story in each duplicate group when deduplication
+is enabled and attaches an `ArticleDeduplicationSummary` (high-level counts and
+configuration) to the `MediacloudQuerySummary` artifact so flows can see how
+many stories were removed.
+
 ### Package Structure
 
 ```
