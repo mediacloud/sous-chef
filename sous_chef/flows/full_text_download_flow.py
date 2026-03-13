@@ -75,6 +75,7 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
         start_date=params.start_date,
         end_date=params.end_date,
         dedup_strategy=params.dedup_strategy,
+        upload_dedup_summary=params.upload_dedup_summary,
     )
 
     logger.info(f"Retrieved {len(articles)} articles")
