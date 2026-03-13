@@ -82,12 +82,8 @@ class ArticleDeduplicationSummary(BaseArtifact):
     deduplicated_story_count: int
     duplicate_story_count: int
 
-    # Configuration context
-    dedup_by_title: bool = True
-    dedup_by_text: bool = False
-    dedup_title_column: str = "title"
-    dedup_text_column: str = "content"
-    dedup_date_column: str = "publish_date"
+    # Strategy used ("none", "title", "title_source", etc.)
+    strategy: str
 
     # Optional CSV export of detailed duplicates
     duplicates_file: Optional[FileUploadArtifact] = None

@@ -9,6 +9,8 @@ import requests
 import time
 from ..artifacts import ArtifactResult, MediacloudQuerySummary, ArticleDeduplicationSummary
 from ..params.mediacloud_query import DedupStrategy
+from ..tasks.export_tasks import csv_to_b2
+from ..utils import create_url_safe_slug, get_logger
 from .deduplication_tasks import deduplicate_articles
 
 
@@ -20,6 +22,7 @@ def query_online_news(
     collection_ids: List[int] = [],
     source_ids: List[int] = [],
     dedup_strategy: DedupStrategy = DedupStrategy.none,
+    upload_dedup_summary: bool = False,
 ) -> ArtifactResult[pd.DataFrame]:
     """
     Query MediaCloud for news articles matching a search query.
@@ -37,6 +40,7 @@ def query_online_news(
             end_date=date(2024, 1, 31)
         )
     """
+    logger = get_logger()
     api_key = get_mediacloud_api_key()
     mc_search = mediacloud.api.SearchApi(api_key)
     stories = []
@@ -71,6 +75,7 @@ def query_online_news(
     stories_df = pd.concat(stories)
 
     dedup_summary = None
+    duplicates_file_artifact = None
     if dedup_strategy != DedupStrategy.none:
         if dedup_strategy == DedupStrategy.title:
             deduped_df, dedup_stats_df = deduplicate_articles(
@@ -94,16 +99,24 @@ def query_online_news(
             deduped_df = stories_df
             dedup_stats_df = pd.DataFrame()
 
+        # Optionally upload detailed duplicates as a CSV when requested
+        if upload_dedup_summary and not dedup_stats_df.empty:
+            slug = create_url_safe_slug(query)
+            object_name = f"sous-chef-output/DATE/mediacloud-dedup-{slug}.csv"
+            logger.info(f"Uploading deduplication summary to B2: {object_name}")
+            _, duplicates_file_artifact = csv_to_b2(
+                dedup_stats_df,
+                object_name=object_name,
+                add_date_slug=True,
+                ensure_unique=True,
+            )
+
         dedup_summary = ArticleDeduplicationSummary(
             input_story_count=len(stories_df),
             deduplicated_story_count=len(deduped_df),
             duplicate_story_count=len(dedup_stats_df),
-            dedup_by_title=(dedup_strategy != DedupStrategy.none),
-            dedup_by_text=False,
-            dedup_title_column="title",
-            dedup_text_column="text",
-            dedup_date_column="publish_date",
-            duplicates_file=None,
+            strategy=dedup_strategy.value,
+            duplicates_file=duplicates_file_artifact,
         )
         stories_df = deduped_df
     
