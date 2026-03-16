@@ -50,26 +50,24 @@ class AboutnessInput(BaseModel):
 class AboutnessOutput(BaseModel):
     """
     Structured output from the aboutness judge.
+
+    Kept intentionally simple for robustness: a boolean decision, a numeric
+    score, and a short free-text explanation.
     """
 
     is_about: bool = Field(
-        description="True if the article is substantially about the target subject."
+        description="True if the article should be treated as being about the target subject."
     )
     score: float = Field(
         ge=0.0,
         le=1.0,
-        description="Confidence/degree of aboutness on a 0.0–1.0 scale.",
+        description="How strongly this article should be kept as about the subject, on a 0.0–1.0 scale.",
     )
     reason: str = Field(
-        description="Short explanation of why the article is or is not about the target."
-    )
-    supporting_evidence: List[str] = Field(
-        default_factory=list,
-        description="Optional bullet points indicating evidence that the article is about the target.",
-    )
-    counter_evidence: List[str] = Field(
-        default_factory=list,
-        description="Optional bullet points indicating evidence that the article is not about the target.",
+        description=(
+            "Short explanation of your judgment, ideally mentioning both why it might "
+            "be about the subject and why it might not. Keep this to 1–3 short sentences."
+        )
     )
 
 
@@ -121,9 +119,9 @@ Return ONLY a JSON object with the following fields:
 - "is_about": boolean, true if the article should be treated as about the subject.
 - "score": number between 0.0 and 1.0 indicating how strongly it should be kept as
   about the subject.
-- "reason": short string explaining your judgment.
-- "supporting_evidence": array of short strings giving evidence that it IS about the subject.
-- "counter_evidence": array of short strings giving evidence that it is NOT about the subject.
+- "reason": short string explaining your judgment. In this field, briefly mention both
+  any evidence that it IS about the subject and any evidence that it is NOT, keeping
+  the explanation to 1–3 short sentences.
 """.strip()
 
 
