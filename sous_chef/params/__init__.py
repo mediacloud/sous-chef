@@ -11,6 +11,7 @@ from .csv_export import CsvExportParams
 from .email_recipient import EmailRecipientParam
 from .webhook_callback import WebhookCallbackParam
 from .llm_params import GroqModelParams, GroqModelName, groq_costs
+from .aboutness import AboutnessParams
 
 __all__ = [
     "MediacloudQuery",
@@ -19,5 +20,6 @@ __all__ = [
     "WebhookCallbackParam",
     "GroqModelName",
     "GroqModelParams",
-    "groq_costs"
+    "groq_costs",
+    "AboutnessParams",
 ]

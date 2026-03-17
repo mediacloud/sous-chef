@@ -178,7 +178,9 @@ def deduplicate_articles(
         kept_lookup = kept.copy()
         # build a mapping from group keys to kept story metadata (if IDs exist)
         merge_on = key_cols
-        dups_with_keys = working.loc[dups.index, key_cols].copy()
+        # Use reindex so that we always get exactly one row per duplicate index,
+        # even if the input DataFrame has a non-unique index.
+        dups_with_keys = working.reindex(dups.index)[key_cols].copy()
         dups_with_keys["__dup_index"] = dups.index
 
         kept_for_merge = kept_lookup.copy()

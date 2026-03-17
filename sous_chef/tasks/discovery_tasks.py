@@ -72,7 +72,9 @@ def query_online_news(
         stories.append(df)
         more_stories = pagination_token is not None
 
-    stories_df = pd.concat(stories)
+    # Concatenate all pages into a single DataFrame and reset index to avoid
+    # duplicate indices across pages, which can break downstream dedup logic.
+    stories_df = pd.concat(stories, ignore_index=True)
 
     dedup_summary = None
     duplicates_file_artifact = None
