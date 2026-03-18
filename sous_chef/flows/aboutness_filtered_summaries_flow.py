@@ -93,6 +93,9 @@ _EXPORT_COLUMNS: list[str] = [
     "llm_summary_text",
     "llm_summary_is_confident",
     "llm_summary_error",
+    # Placeholder for downstream zero-shot classifier integration.
+    # TODO: populate this column once the zero-shot classifier task exists.
+    "zero-shot-tags",
 ]
 
 
@@ -101,7 +104,10 @@ _EXPORT_COLUMNS: list[str] = [
     description=(
         "Query MediaCloud, deduplicate by story title, score/filter with the "
         "LLM aboutness judge, summarize with the LLM summarizer, and upload "
-        "a core-metadata CSV (no full text) to B2."
+        "a core-metadata CSV (no full text) to B2. "
+        "Includes a placeholder `zero-shot-tags` column for future "
+        "zero-shot classification (TODO: populate when the classifier task "
+        "is available)."
     ),
     params_model=AboutnessFilteredSummariesParams,
     output_model=AboutnessFilteredSummariesFlowOutput,
