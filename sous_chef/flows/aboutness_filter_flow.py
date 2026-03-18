@@ -135,6 +135,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
             score_histogram_counts=[0] * 10,
             score_histogram_edges=bins,
             target_kind=params.about_target_kind.value,
+            about_target=params.about_target,
         )
         llm_cost = LLMCostSummary.from_groq_summaries(
             model=params.model_name,
@@ -205,6 +206,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         score_histogram_counts=hist_counts,
         score_histogram_edges=bins,
         target_kind=params.about_target_kind.value,
+        about_target=params.about_target,
     )
 
     # Step 4: Export scored and filtered results to B2 as CSV

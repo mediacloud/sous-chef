@@ -77,12 +77,11 @@ class AboutnessFilteredSummariesFlowOutput(BaseFlowOutput):
 
 _EXPORT_COLUMNS: list[str] = [
     # Core metadata (best-effort: included if present in the MediaCloud frame)
-    "stories_id",
+    "story_id",
     "title",
     "url",
     "publish_date",
     "media_name",
-    "media_id",
     "language",
     # Aboutness judge outputs
     "about_score",
@@ -155,6 +154,7 @@ def aboutness_filtered_summaries_flow(
             score_histogram_counts=[0] * 10,
             score_histogram_edges=bins,
             target_kind=params.about_target_kind.value,
+            about_target=params.about_target,
         )
 
         empty_cost = LLMCostSummary.from_groq_summaries(
@@ -221,6 +221,7 @@ def aboutness_filtered_summaries_flow(
         score_histogram_counts=hist_counts,
         score_histogram_edges=bins,
         target_kind=params.about_target_kind.value,
+        about_target=params.about_target,
     )
 
     logger.info(
