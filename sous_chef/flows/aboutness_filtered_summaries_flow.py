@@ -61,8 +61,8 @@ class AboutnessFilteredSummariesParams(
     )
 
     aboutness_threshold: float = 0.5
-    max_articles_for_llm: Optional[int] = None
-    max_articles_for_summarizer: Optional[int] = None
+    # Cap how many articles are sent to each LLM step (aboutness, then summarization).
+    max_articles_per_step: Optional[int] = None
 
 
 class AboutnessFilteredSummariesFlowOutput(BaseFlowOutput):
@@ -164,8 +164,7 @@ def aboutness_filtered_summaries_flow(
             b2_artifact=b2_artifact,
         )
 
-    max_rows_aboutness = params.max_articles_for_llm
-    max_rows_summarizer = params.max_articles_for_summarizer
+    max_rows = params.max_articles_per_step
 
     # Step 2: Build aboutness context (mirrors `aboutness_filter_flow`)
     if params.about_target_kind == AboutnessTargetKind.custom:
@@ -184,7 +183,7 @@ def aboutness_filtered_summaries_flow(
         text_col="text",
         title_col="title",
         model_name=params.model_name,
-        max_rows=max_rows_aboutness,
+        max_rows=max_rows,
     )
 
     # Step 4: Filter by aboutness threshold
@@ -231,7 +230,7 @@ def aboutness_filtered_summaries_flow(
         text_col="text",
         title_col="title",
         model_name=params.model_name,
-        max_rows=max_rows_summarizer,
+        max_rows=max_rows,
     )
 
     # Step 6: Export (no full text)
