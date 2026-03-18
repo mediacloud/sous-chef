@@ -36,6 +36,11 @@ class AboutnessFilterSummary(BaseArtifact):
     AboutnessTargetKind enum when available.
     """
 
+    about_target: Optional[str] = None
+    """
+    The specific target string being filtered for (the user's `about_target`).
+    """
+
     score_histogram_counts: List[int] = []
     """
     Counts of articles in each aboutness score bin. Intended for a small,
