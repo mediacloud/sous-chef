@@ -1,0 +1,12 @@
+{
+  "query": "ICE",
+  "collection_ids": [34412234],
+  "start_date": "2025-01-06",
+  "end_date": "2025-01-10",
+  "dedup_strategy": "title",
+  "about_target": "Minneapolis",
+  "about_target_kind": "geography",
+  "aboutness_threshold": 0.5,
+  "max_articles_per_step": 200
+}
+
