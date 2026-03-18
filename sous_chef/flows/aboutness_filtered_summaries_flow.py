@@ -77,12 +77,11 @@ class AboutnessFilteredSummariesFlowOutput(BaseFlowOutput):
 
 _EXPORT_COLUMNS: list[str] = [
     # Core metadata (best-effort: included if present in the MediaCloud frame)
-    "stories_id",
+    "story_id",
     "title",
     "url",
     "publish_date",
     "media_name",
-    "media_id",
     "language",
     # Aboutness judge outputs
     "about_score",
