@@ -15,11 +15,7 @@
   "classification_labels": ["politics", "economy", "environment", "science"],
   "hypothesis_template": "This text is about {}",
   "multi_label": true,
-  "zeroshot_model": "MoritzLaurer/bge-m3-zeroshot-v2.0",
-  "text_column": "text",
   "text_max_chars": 12000,
   "max_stories": 5,
-  "classify_device": -1,
-  "zeroshot_score_threshold": null,
-  "csv_story_columns": null
+  "zeroshot_score_threshold": null
 }

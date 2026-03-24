@@ -14,6 +14,10 @@ from transformers import pipeline
 
 DEFAULT_ZEROSHOT_MODEL = "MoritzLaurer/bge-m3-zeroshot-v2.0"
 
+# Flow-owned defaults (not user parameters): MediaCloud stories use `text`; CPU unless you change this constant.
+ZEROSHOT_STORY_TEXT_COLUMN = "text"
+ZEROSHOT_CLASSIFY_DEVICE = -1
+
 # Default metadata columns for CSV export (never includes full story `text`).
 ZEROSHOT_DEFAULT_STORY_COLUMNS: List[str] = [
     "story_id",
@@ -144,23 +148,16 @@ def compute_zero_shot_label_counts(
     return counts, no_pred
 
 
-def story_dataframe_for_zeroshot_csv(
-    df: pd.DataFrame,
-    story_columns: Optional[List[str]] = None,
-) -> pd.DataFrame:
+def story_dataframe_for_zeroshot_csv(df: pd.DataFrame) -> pd.DataFrame:
     """
     Build a dataframe for B2 CSV export: drops full text and keeps metadata + zeroshot_*.
 
-    ``text`` is never included, even if present in ``story_columns``.
-    If story_columns is None, uses ZEROSHOT_DEFAULT_STORY_COLUMNS plus every
-    column whose name starts with ``zeroshot_``.
+    ``text`` is never included. Uses ZEROSHOT_DEFAULT_STORY_COLUMNS (intersected with df)
+    plus every column whose name starts with ``zeroshot_``.
     """
     zeroshot_cols = [c for c in df.columns if str(c).startswith("zeroshot_")]
-    if story_columns is not None:
-        cols = [c for c in story_columns if c in df.columns and c != "text"]
-    else:
-        cols = [c for c in ZEROSHOT_DEFAULT_STORY_COLUMNS if c in df.columns]
-        cols = cols + zeroshot_cols
+    cols = [c for c in ZEROSHOT_DEFAULT_STORY_COLUMNS if c in df.columns]
+    cols = cols + zeroshot_cols
 
     seen: set[str] = set()
     ordered: list[str] = []

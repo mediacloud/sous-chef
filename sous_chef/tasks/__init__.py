@@ -52,6 +52,9 @@ from .email_tasks import send_email, send_templated_email, send_run_summary_emai
 from .llm_article_summary import summarize_articles_llm
 from .llm_aboutness import score_aboutness_llm
 from .zeroshot_tasks import (
+    DEFAULT_ZEROSHOT_MODEL,
+    ZEROSHOT_CLASSIFY_DEVICE,
+    ZEROSHOT_STORY_TEXT_COLUMN,
     add_zero_shot_classification,
     compute_zero_shot_label_counts,
     story_dataframe_for_zeroshot_csv,
@@ -72,6 +75,9 @@ __all__ = [
     "score_aboutness_llm",
     "add_zero_shot_classification",
     "compute_zero_shot_label_counts",
+    "DEFAULT_ZEROSHOT_MODEL",
+    "ZEROSHOT_CLASSIFY_DEVICE",
+    "ZEROSHOT_STORY_TEXT_COLUMN",
     "story_dataframe_for_zeroshot_csv",
     "zero_shot_classify_stories",
 ]
