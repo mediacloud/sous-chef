@@ -17,6 +17,8 @@ DEFAULT_ZEROSHOT_MODEL = "MoritzLaurer/bge-m3-zeroshot-v2.0"
 # Flow-owned defaults (not user parameters): MediaCloud stories use `text`; CPU unless you change this constant.
 ZEROSHOT_STORY_TEXT_COLUMN = "text"
 ZEROSHOT_CLASSIFY_DEVICE = -1
+# Truncation before inference (task default; not a Kitchen param unless a flow exposes it).
+ZEROSHOT_TEXT_MAX_CHARS_DEFAULT = 12000
 
 # Default metadata columns for CSV export (never includes full story `text`).
 ZEROSHOT_DEFAULT_STORY_COLUMNS: List[str] = [
@@ -182,11 +184,14 @@ def add_zero_shot_classification(
     multi_label: bool = True,
     model: str = DEFAULT_ZEROSHOT_MODEL,
     device: int = -1,
-    text_max_chars: Optional[int] = 12000,
+    text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
 ) -> pd.DataFrame:
     """
     Add zero-shot classification columns to a story DataFrame.
+
+    ``text_max_chars`` defaults here (like ``ngram_max`` on ``extract_keywords``); flows
+    need not mirror it on ``params_model`` unless operators should tune it per run.
 
     Adds:
       - zeroshot_labels_json: JSON list of labels (scores descending)
@@ -261,7 +266,7 @@ def zero_shot_classify_stories(
     multi_label: bool = True,
     model: str = DEFAULT_ZEROSHOT_MODEL,
     device: int = -1,
-    text_max_chars: Optional[int] = 12000,
+    text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
 ) -> pd.DataFrame:
     """Prefect task wrapper for add_zero_shot_classification."""

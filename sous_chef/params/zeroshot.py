@@ -32,11 +32,6 @@ class ZeroShotClassificationParams(BaseModel):
         title="Multi-label",
         description="If true, scores all labels; if false, the pipeline picks a single best label.",
     )
-    text_max_chars: Optional[int] = Field(
-        default=12000,
-        title="Max characters per story",
-        description="Truncate text before inference (speed/memory). Null = no truncation.",
-    )
     max_stories: Optional[int] = Field(
         default=None,
         ge=1,

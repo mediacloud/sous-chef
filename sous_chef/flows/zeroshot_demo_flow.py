@@ -77,7 +77,6 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         multi_label=params.multi_label,
         model=DEFAULT_ZEROSHOT_MODEL,
         device=ZEROSHOT_CLASSIFY_DEVICE,
-        text_max_chars=params.text_max_chars,
         passing_score_threshold=params.zeroshot_score_threshold,
     )
 

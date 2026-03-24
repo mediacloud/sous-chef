@@ -55,6 +55,7 @@ from .zeroshot_tasks import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_CLASSIFY_DEVICE,
     ZEROSHOT_STORY_TEXT_COLUMN,
+    ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     add_zero_shot_classification,
     compute_zero_shot_label_counts,
     story_dataframe_for_zeroshot_csv,
@@ -78,6 +79,7 @@ __all__ = [
     "DEFAULT_ZEROSHOT_MODEL",
     "ZEROSHOT_CLASSIFY_DEVICE",
     "ZEROSHOT_STORY_TEXT_COLUMN",
+    "ZEROSHOT_TEXT_MAX_CHARS_DEFAULT",
     "story_dataframe_for_zeroshot_csv",
     "zero_shot_classify_stories",
 ]
