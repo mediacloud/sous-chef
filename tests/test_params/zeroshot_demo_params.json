@@ -15,6 +15,6 @@
   "classification_labels": ["politics", "economy", "environment", "science"],
   "hypothesis_template": "This text is about {}",
   "multi_label": true,
-  "max_stories": 5,
+  "max_stories": 100,
   "zeroshot_score_threshold": null
 }

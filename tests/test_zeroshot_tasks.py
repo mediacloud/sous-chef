@@ -8,6 +8,7 @@ import pytest
 from sous_chef.tasks.zeroshot_tasks import (
     add_zero_shot_classification,
     compute_zero_shot_label_counts,
+    get_zeroshot_backend,
     story_dataframe_for_zeroshot_csv,
     _truncate,
 )
@@ -37,11 +38,12 @@ def test_add_zero_shot_classification_mocked():
 
     df = pd.DataFrame({"text": ["hello world", "", None]})
 
-    with patch("sous_chef.tasks.zeroshot_tasks.pipeline", return_value=mock_clf):
+    with patch("sous_chef.tasks.zeroshot.local.pipeline", return_value=mock_clf):
         out = add_zero_shot_classification(
             df,
             ["politics", "economy"],
             text_max_chars=5,
+            backend="local",
         )
 
     assert len(out) == 3
@@ -55,17 +57,97 @@ def test_add_zero_shot_classification_mocked():
     assert first_kw[0][0] == "hello"
 
 
+def test_get_zeroshot_backend_invalid():
+    with pytest.raises(ValueError, match="Invalid"):
+        get_zeroshot_backend("not_a_backend")
+
+
+def test_add_zero_shot_hf_inference_mocked():
+    pol = MagicMock()
+    pol.label = "politics"
+    pol.score = 0.91
+    econ = MagicMock()
+    econ.label = "economy"
+    econ.score = 0.12
+    mock_client = MagicMock()
+    mock_client.zero_shot_classification.return_value = [pol, econ]
+
+    df = pd.DataFrame({"text": ["hello world"]})
+
+    with patch(
+        "sous_chef.tasks.zeroshot.hf_inference._hf_token_optional",
+        return_value=None,
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.get_hf_bill_to",
+        return_value="my-org",
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.InferenceClient",
+        return_value=mock_client,
+    ) as mock_inference_client:
+        out = add_zero_shot_classification(
+            df,
+            ["politics", "economy"],
+            backend="hf_inference",
+        )
+
+    mock_inference_client.assert_called_once_with(
+        token=None, bill_to="my-org"
+    )
+    assert out.loc[0, "zeroshot_top_label"] == "politics"
+    mock_client.zero_shot_classification.assert_called_once()
+    call_kw = mock_client.zero_shot_classification.call_args
+    assert call_kw[0][0] == "hello world"
+    assert call_kw[1]["candidate_labels"] == ["politics", "economy"]
+
+
+def test_add_zero_shot_hf_inference_mocked_without_bill_to():
+    pol = MagicMock()
+    pol.label = "politics"
+    pol.score = 0.91
+    econ = MagicMock()
+    econ.label = "economy"
+    econ.score = 0.12
+    mock_client = MagicMock()
+    mock_client.zero_shot_classification.return_value = [pol, econ]
+
+    df = pd.DataFrame({"text": ["hello world"]})
+
+    with patch(
+        "sous_chef.tasks.zeroshot.hf_inference._hf_token_optional",
+        return_value=None,
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.get_hf_bill_to",
+        return_value=None,
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.InferenceClient",
+        return_value=mock_client,
+    ) as mock_inference_client:
+        out = add_zero_shot_classification(
+            df,
+            ["politics", "economy"],
+            backend="hf_inference",
+        )
+
+    mock_inference_client.assert_called_once_with(token=None)
+    assert out.loc[0, "zeroshot_top_label"] == "politics"
+    mock_client.zero_shot_classification.assert_called_once()
+    call_kw = mock_client.zero_shot_classification.call_args
+    assert call_kw[0][0] == "hello world"
+    assert call_kw[1]["candidate_labels"] == ["politics", "economy"]
+
+
 def test_add_zero_shot_passing_threshold_column_mocked():
     mock_clf = MagicMock()
     mock_clf.return_value = {"labels": ["politics", "economy"], "scores": [0.91, 0.12]}
 
     df = pd.DataFrame({"text": ["hello"]})
 
-    with patch("sous_chef.tasks.zeroshot_tasks.pipeline", return_value=mock_clf):
+    with patch("sous_chef.tasks.zeroshot.local.pipeline", return_value=mock_clf):
         out = add_zero_shot_classification(
             df,
             ["politics", "economy"],
             passing_score_threshold=0.5,
+            backend="local",
         )
 
     passed = json.loads(out.loc[0, "zeroshot_labels_passing_threshold_json"])

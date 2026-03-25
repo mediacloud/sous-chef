@@ -37,6 +37,7 @@ dependencies = [
   "spacy-ngram",
   "torch",
   "transformers >= 4.37.2",
+  "huggingface_hub >= 0.34.4",
   "uniseg",
   "protobuf",
   "sentencepiece",
