@@ -28,8 +28,8 @@ ZeroshotBackend = Literal["local", "hf_inference"]
 
 
 def get_zeroshot_backend(explicit: str | None = None) -> ZeroshotBackend:
-    """Resolve backend: explicit arg, then ``ZEROSHOT_BACKEND`` env, default ``local``."""
-    raw = (explicit or os.environ.get(ZEROSHOT_BACKEND_ENV) or "local").strip().lower()
+    """Resolve backend: explicit arg, then ``ZEROSHOT_BACKEND`` env, default ``hf_inference``."""
+    raw = (explicit or os.environ.get(ZEROSHOT_BACKEND_ENV) or "hf_inference").strip().lower()
     if raw in ("local",):
         return "local"
     if raw in ("hf_inference", "hf", "hosted", "inference_api"):

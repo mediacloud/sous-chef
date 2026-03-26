@@ -384,6 +384,10 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
             click.echo("\nRuntime timeline:")
             click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
         
+        if runtime_rec is not None:
+            click.echo("\nRuntime timeline:")
+            click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
+        
         click.echo("=" * 80)
         click.echo("Flow Execution Complete!")
         click.echo("=" * 80)

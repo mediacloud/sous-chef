@@ -25,7 +25,9 @@ class RuntimeTimelineArtifact(BaseArtifact):
     rows: List[Dict[str, Any]] = Field(default_factory=list)
 
     def to_table(self) -> List[Dict[str, Any]]:
-        return [{**row, "_artifact_type": self.artifact_type} for row in self.rows]
+        return [
+            {**row, "_artifact_type": self.artifact_type} for row in self.rows
+        ]
 
     def _summary(self) -> str:
         n = len(self.rows)
@@ -38,5 +40,5 @@ class RuntimeTimelineArtifact(BaseArtifact):
         dur = self.total_duration_ms
         n = len(self.rows)
         if dur is not None:
-            return f"Runtime timeline: {self.recipe_name} - {dur / 1000.0:.2f}s, {n} events"
-        return f"Runtime timeline: {self.recipe_name} - {n} events"
+            return f"Runtime timeline: {self.recipe_name} — {dur / 1000.0:.2f}s, {n} events"
+        return f"Runtime timeline: {self.recipe_name} — {n} events"
