@@ -2,6 +2,7 @@
 Demo flow: MediaCloud query → zero-shot classification (BGE-M3 zeroshot) → CSV on B2.
 """
 from ..flow import BaseFlowOutput, register_flow
+from ..runtime import mark_step
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
 from ..params.mediacloud_query import MediacloudQuery
@@ -69,6 +70,14 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
     if params.max_stories is not None:
         articles = articles.head(params.max_stories).copy()
 
+    mark_step(
+        "zeroshot_classification_start",
+        meta={
+            "stories": len(articles),
+            "labels": len(params.classification_labels),
+            "multi_label": params.multi_label,
+        },
+    )
     articles = zero_shot_classify_stories(
         articles,
         params.classification_labels,
@@ -78,6 +87,10 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         model=DEFAULT_ZEROSHOT_MODEL,
         device=ZEROSHOT_CLASSIFY_DEVICE,
         passing_score_threshold=params.zeroshot_score_threshold,
+    )
+    mark_step(
+        "zeroshot_classification_end",
+        meta={"stories": len(articles)},
     )
 
     label_counts, stories_without_prediction = compute_zero_shot_label_counts(
