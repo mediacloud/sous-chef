@@ -87,8 +87,6 @@ class RuntimeRecorder:
         self._append("recipe_start", name="")
 
     def mark_step(self, name: str, meta: Optional[Dict[str, Any]] = None) -> None:
-        if self._at_capacity():
-            return
         self._append("mark_step", name=name, meta=meta)
 
     def record_recipe_end(
@@ -111,9 +109,6 @@ class RuntimeRecorder:
 
         rows: List[Dict[str, Any]] = []
         for e in self._events:
-            meta_json: Optional[str] = None
-            if e.meta:
-                meta_json = json.dumps(e.meta, default=str)
             rows.append(
                 {
                     "recipe_name": self.recipe_name,
@@ -126,7 +121,7 @@ class RuntimeRecorder:
                     "event_kind": e.event_kind,
                     "name": e.name,
                     "offset_ms": round(e.offset_ms, 3),
-                    "meta_json": meta_json,
+                    "meta_json": json.dumps(e.meta, default=str) if e.meta else None,
                     "error_message": e.error_message,
                 }
             )

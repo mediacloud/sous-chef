@@ -367,7 +367,7 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
             test_mode_was_set = True
             click.echo("ℹ️  Test mode enabled - B2 uploads will be skipped (dry_run)")
         
-        # Run flow with or without test harness (runtime timeline matches kitchen behavior)
+        # Run flow with or without test harness (runtime timeline mirrors kitchen behavior)
         if use_test_harness:
             with prefect_test_harness():
                 with runtime_session(recipe_name=flow_name) as runtime_rec:
@@ -379,6 +379,10 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
         # Clean up environment variable after execution (optional, but cleaner)
         if test_mode_was_set:
             os.environ.pop("SOUS_CHEF_TEST_MODE", None)
+
+        if runtime_rec is not None:
+            click.echo("\nRuntime timeline:")
+            click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
         
         if runtime_rec is not None:
             click.echo("\nRuntime timeline:")
