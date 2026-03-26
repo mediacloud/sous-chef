@@ -1,0 +1,20 @@
+{
+  "query": "climate change",
+  "collection_ids": [],
+  "source_ids": [],
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-07",
+  "dedup_strategy": "none",
+  "upload_dedup_summary": false,
+  "b2_object_prefix": "sous-chef-output",
+  "b2_add_date_slug": true,
+  "b2_ensure_unique": true,
+  "email_to": [],
+  "webhook_url": null,
+  "webhook_secret": null,
+  "classification_labels": ["politics", "economy", "environment", "science"],
+  "hypothesis_template": "This text is about {}",
+  "multi_label": true,
+  "max_stories": 100,
+  "zeroshot_score_threshold": null
+}

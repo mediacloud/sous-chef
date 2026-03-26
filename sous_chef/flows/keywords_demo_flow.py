@@ -9,6 +9,7 @@ This flow demonstrates:
 Can run with or without Prefect.
 """
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -78,19 +79,23 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> KeywordsFlowOutput:
 
     # Step 2: Extract keywords from each article
     # This adds a 'keywords' column to the DataFrame
+    mark_step("keyword_extraction_start", meta={"articles": len(articles)})
     articles = extract_keywords(
         articles,
         text_column="text",
         language_column="language",
         top_n=params.top_n
     )
+    mark_step("keyword_extraction_end", meta={"articles": len(articles)})
     
     # Step 3: Aggregate keywords to find the top 50 most common keywords
+    mark_step("keyword_aggregation_start")
     top_keywords = top_n_unique_values(
         articles,
         column="keywords",
         top_n=50
     )
+    mark_step("keyword_aggregation_end", meta={"rows": len(top_keywords)})
 
     # Optional Step 4: Export top keywords to Backblaze B2 as CSV
  

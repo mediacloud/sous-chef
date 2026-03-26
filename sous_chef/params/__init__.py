@@ -12,6 +12,7 @@ from .email_recipient import EmailRecipientParam
 from .webhook_callback import WebhookCallbackParam
 from .llm_params import GroqModelParams, GroqModelName, groq_costs
 from .aboutness import AboutnessParams
+from .zeroshot import ZeroShotClassificationParams
 
 __all__ = [
     "MediacloudQuery",
@@ -22,4 +23,5 @@ __all__ = [
     "GroqModelParams",
     "groq_costs",
     "AboutnessParams",
+    "ZeroShotClassificationParams",
 ]

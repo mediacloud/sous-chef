@@ -67,6 +67,8 @@ from .mediacloud import MediacloudQuerySummary, ArticleDeduplicationSummary
 from .file_upload import FileUploadArtifact
 from .llm_cost import LLMCostSummary
 from .aboutness import AboutnessFilterSummary
+from .zeroshot import ZeroShotClassificationSummary
+from .runtime_timeline import RuntimeTimelineArtifact
 
 T = TypeVar('T')
 
@@ -99,4 +101,6 @@ __all__ = [
     "ArtifactResult",
     "LLMCostSummary",
     "AboutnessFilterSummary",
+    "ZeroShotClassificationSummary",
+    "RuntimeTimelineArtifact",
 ]

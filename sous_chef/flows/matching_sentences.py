@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -48,16 +49,20 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> MatchingSentence
     )
     
     # Step 2: Deduplicate stories
+    mark_step("title_source_dedup_start", meta={"articles": len(articles)})
     deduplicaed_articles = deduplicate_on_title_source(
         articles,
     )
+    mark_step("title_source_dedup_end", meta={"articles": len(deduplicaed_articles)})
     
     # Step 3: Get matching sentences
+    mark_step("sentence_matching_start")
     sentences_df = matching_sentences(
         deduplicaed_articles,
         model=params.spacy_model,
         inclusion_filters=params.inclusion_filters,
     )
+    mark_step("sentence_matching_end", meta={"rows": len(sentences_df)})
     
     # Optional Step 4: Export to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)

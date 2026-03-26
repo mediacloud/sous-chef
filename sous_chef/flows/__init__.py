@@ -13,6 +13,7 @@ from .full_text_download_flow import full_text_download_flow
 from .llm_demo_flow import llm_demo_flow
 from .aboutness_filter_flow import aboutness_filter_flow
 from .aboutness_filtered_summaries_flow import aboutness_filtered_summaries_flow
+from .zeroshot_demo_flow import zeroshot_demo_flow
 
 __all__ = [
     "keywords_demo_flow",
@@ -23,4 +24,5 @@ __all__ = [
     "llm_demo_flow",
     "aboutness_filter_flow",
     "aboutness_filtered_summaries_flow",
+    "zeroshot_demo_flow",
 ]

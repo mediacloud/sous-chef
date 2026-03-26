@@ -13,6 +13,7 @@ from typing import Optional
 import pandas as pd
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params import (
     MediacloudQuery,
     CsvExportParams,
@@ -160,6 +161,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
     else:
         context = build_default_about_context(params.about_target_kind, params.about_target)
 
+    mark_step("aboutness_scoring_start", meta={"articles": len(articles)})
     scored_df, cost_summary = score_aboutness_llm(
         articles,
         target=params.about_target,
@@ -169,6 +171,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         model_name=params.model_name,
         max_rows=max_rows,
     )
+    mark_step("aboutness_scoring_end", meta={"articles": len(scored_df)})
 
     # Step 3: Filter by aboutness threshold
     threshold = params.aboutness_threshold

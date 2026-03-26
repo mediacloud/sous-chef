@@ -51,6 +51,18 @@ from .export_tasks import csv_to_b2
 from .email_tasks import send_email, send_templated_email, send_run_summary_email
 from .llm_article_summary import summarize_articles_llm
 from .llm_aboutness import score_aboutness_llm
+from .zeroshot_tasks import (
+    DEFAULT_ZEROSHOT_MODEL,
+    ZEROSHOT_BACKEND_ENV,
+    ZEROSHOT_CLASSIFY_DEVICE,
+    ZEROSHOT_STORY_TEXT_COLUMN,
+    ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
+    add_zero_shot_classification,
+    compute_zero_shot_label_counts,
+    get_zeroshot_backend,
+    story_dataframe_for_zeroshot_csv,
+    zero_shot_classify_stories,
+)
 
 __all__ = [
     "query_online_news",
@@ -64,4 +76,14 @@ __all__ = [
     "send_run_summary_email",
     "summarize_articles_llm",
     "score_aboutness_llm",
+    "add_zero_shot_classification",
+    "compute_zero_shot_label_counts",
+    "DEFAULT_ZEROSHOT_MODEL",
+    "ZEROSHOT_BACKEND_ENV",
+    "ZEROSHOT_CLASSIFY_DEVICE",
+    "ZEROSHOT_STORY_TEXT_COLUMN",
+    "ZEROSHOT_TEXT_MAX_CHARS_DEFAULT",
+    "get_zeroshot_backend",
+    "story_dataframe_for_zeroshot_csv",
+    "zero_shot_classify_stories",
 ]

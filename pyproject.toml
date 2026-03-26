@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version = "v3.7.1"
+version = "v3.8.0"
 description = "Sous-Chef data pipeline tool - Media cloud NLP pipeline configured via Python flows"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,6 +37,7 @@ dependencies = [
   "spacy-ngram",
   "torch",
   "transformers >= 4.37.2",
+  "huggingface_hub >= 0.34.4",
   "uniseg",
   "protobuf",
   "sentencepiece",

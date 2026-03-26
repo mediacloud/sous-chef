@@ -105,6 +105,39 @@ def get_llm_api_key(
         f"- Generic env var '{generic_var}'"
     )
 
+def get_hf_bill_to(
+    variable_name: str = "llm-huggingface-bill-to",
+) -> Optional[str]:
+    """
+    Optional Hugging Face org billing target for routed inference.
+
+    Resolution order:
+      1. Prefect Variable named ``variable_name`` (preferred when running in Prefect)
+      2. Environment variable ``HUGGINGFACE_BILL_TO`` (fallback for local/testing)
+
+    Returns:
+        The org name to send as the ``bill_to`` / ``X-HF-Bill-To`` billing target,
+        or ``None`` if not configured.
+    """
+    # 1) Prefect Variable
+    try:
+        context = TaskRunContext.get()
+        if context:
+            val = Variable.get(variable_name)
+            if val:
+                return str(val).strip()
+    except Exception:
+        pass
+
+    # 2) Environment fallback
+    env_val = os.getenv("HUGGINGFACE_BILL_TO")
+    if env_val:
+        env_val_str = str(env_val).strip()
+        if env_val_str:
+            return env_val_str
+
+    return None
+
 def get_aws_credentials(block_name: str = "aws-s3-credentials"):
     """Get AWS credentials from Prefect block or environment."""
     try:

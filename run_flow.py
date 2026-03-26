@@ -52,6 +52,7 @@ except ImportError:
 from sous_chef.flows import *  # This imports and registers all flows
 
 from sous_chef.flow import list_flows, get_flow, get_flow_schema
+from sous_chef.runtime import runtime_session
 
 
 def parse_date(date_str: str) -> date:
@@ -350,6 +351,7 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
     click.echo("-" * 80)
     click.echo("\nRunning flow...\n")
     
+    runtime_rec = None
     try:
         # Get the underlying function using .fn() to bypass Prefect orchestration
         if hasattr(flow_func, 'fn'):
@@ -365,16 +367,26 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
             test_mode_was_set = True
             click.echo("ℹ️  Test mode enabled - B2 uploads will be skipped (dry_run)")
         
-        # Run flow with or without test harness
+        # Run flow with or without test harness (runtime timeline mirrors kitchen behavior)
         if use_test_harness:
             with prefect_test_harness():
-                result = flow_func_fn(params)
+                with runtime_session(recipe_name=flow_name) as runtime_rec:
+                    result = flow_func_fn(params)
         else:
-            result = flow_func_fn(params)
+            with runtime_session(recipe_name=flow_name) as runtime_rec:
+                result = flow_func_fn(params)
         
         # Clean up environment variable after execution (optional, but cleaner)
         if test_mode_was_set:
             os.environ.pop("SOUS_CHEF_TEST_MODE", None)
+
+        if runtime_rec is not None:
+            click.echo("\nRuntime timeline:")
+            click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
+        
+        if runtime_rec is not None:
+            click.echo("\nRuntime timeline:")
+            click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
         
         click.echo("=" * 80)
         click.echo("Flow Execution Complete!")
@@ -398,6 +410,9 @@ def main(flow_name: Optional[str], list_flows_flag: bool, test: bool, interactiv
         
     except Exception as e:
         click.echo(f"\n❌ Error running flow: {e}")
+        if runtime_rec is not None:
+            click.echo("\nRuntime timeline (partial):")
+            click.echo(json.dumps(runtime_rec.to_timeline_artifact().to_table(), indent=2))
         import traceback
         traceback.print_exc()
         return None
