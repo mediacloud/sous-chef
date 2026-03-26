@@ -7,6 +7,7 @@ Demo flow: query MediaCloud and summarize articles with an LLM task.
 from pydantic import BaseModel, Field
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -78,12 +79,14 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
         articles = articles.head(params.max_articles).copy()
 
     # Step 3: Run LLM summarization task
+    mark_step("llm_summarization_start", meta={"articles": len(articles)})
     articles_with_summaries, cost_summary = summarize_articles_llm(
         articles,
         text_col="text",
         title_col="title",
         model_name=params.model_name,
     )
+    mark_step("llm_summarization_end", meta={"articles": len(articles_with_summaries)})
 
     # Step 4: Prepare export data (remove full text column)
     export_df = articles_with_summaries.drop(columns=["text"], errors="ignore").copy()

@@ -13,6 +13,7 @@ import pandas as pd
 from pydantic import Field
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params import (
     MediacloudQuery,
     CsvExportParams,
@@ -182,6 +183,7 @@ def aboutness_filtered_summaries_flow(
         )
 
     # Step 3: LLM aboutness scoring
+    mark_step("aboutness_scoring_start", meta={"articles": len(articles)})
     scored_df, aboutness_cost = score_aboutness_llm(
         articles,
         target=params.about_target,
@@ -191,6 +193,7 @@ def aboutness_filtered_summaries_flow(
         model_name=params.model_name,
         max_rows=max_rows,
     )
+    mark_step("aboutness_scoring_end", meta={"articles": len(scored_df)})
 
     # Step 4: Filter by aboutness threshold
     threshold = params.aboutness_threshold
@@ -232,6 +235,7 @@ def aboutness_filtered_summaries_flow(
     )
 
     # Step 5: LLM summarization over the filtered subset
+    mark_step("llm_summarization_start", meta={"articles": len(filtered_df)})
     summarized_df, summarizer_cost = summarize_articles_llm(
         filtered_df,
         text_col="text",
@@ -239,6 +243,7 @@ def aboutness_filtered_summaries_flow(
         model_name=params.model_name,
         max_rows=max_rows,
     )
+    mark_step("llm_summarization_end", meta={"articles": len(summarized_df)})
 
     # Step 6: Export (no full text)
     export_df = summarized_df.drop(columns=["text"], errors="ignore").copy()

@@ -6,6 +6,7 @@ basic metadata, and exports it as a CSV file to Backblaze B2.
 """
 import pandas as pd
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -99,6 +100,7 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
             columns_to_include.append(col)
     
     # Create DataFrame with selected columns
+    mark_step("full_text_selection_start", meta={"articles": len(articles_to_use)})
     if columns_to_include:
         full_text_df = articles_to_use[columns_to_include].copy()
     else:
@@ -108,6 +110,10 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
         else:
             logger.warning("No 'text' column found, using all available columns")
             full_text_df = articles_to_use.copy()
+    mark_step(
+        "full_text_selection_end",
+        meta={"rows": len(full_text_df), "columns": len(full_text_df.columns)},
+    )
 
     logger.info(f"Prepared full text data with {len(full_text_df)} articles and {len(full_text_df.columns)} columns")
 

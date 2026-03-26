@@ -13,6 +13,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
 from ..params.csv_export import CsvExportParams
 from ..params.email_recipient import EmailRecipientParam
@@ -79,13 +80,16 @@ def entities_demo_flow(params: EntitiesDemoParams) -> EntitiesFlowOutput:
     # Step 2: Extract named entities from each article
     # This adds an 'entities' column to the DataFrame
     # Each entity is a dict with {"text": "...", "type": "..."}
+    mark_step("entity_extraction_start", meta={"articles": len(articles)})
     articles = extract_entities(
         articles,
         text_column="text",
         model=params.spacy_model
     )
+    mark_step("entity_extraction_end", meta={"articles": len(articles)})
     
     # Step 3: Aggregate entities to find the top entities
+    mark_step("entity_aggregation_start")
     top_entities = top_n_entities(
         articles,
         entities_column="entities",
@@ -93,6 +97,7 @@ def entities_demo_flow(params: EntitiesDemoParams) -> EntitiesFlowOutput:
         filter_type=params.filter_type,
         sort_by=params.sort_by
     )
+    mark_step("entity_aggregation_end", meta={"rows": len(top_entities)})
     
     # Optional Step 4: Export top entities to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)
