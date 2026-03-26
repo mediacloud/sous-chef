@@ -13,6 +13,7 @@ from typing import Optional
 import pandas as pd
 
 from ..flow import register_flow, BaseFlowOutput
+from ..runtime import mark_step
 from ..params import (
     MediacloudQuery,
     CsvExportParams,
@@ -99,6 +100,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         dedup_strategy=params.dedup_strategy,
         upload_dedup_summary=params.upload_dedup_summary,
     )
+    mark_step("mediacloud_query_complete")
 
     if articles.empty:
         logger.info("no articles returned from MediaCloud; skipping aboutness scoring")
