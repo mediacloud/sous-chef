@@ -7,6 +7,7 @@ CSV (no full `text` column).
 
 from __future__ import annotations
 
+import json
 from typing import Optional
 
 import pandas as pd
@@ -22,17 +23,24 @@ from ..params import (
 )
 from ..params.mediacloud_query import DedupStrategy
 from ..params.aboutness import AboutnessParams, AboutnessTargetKind, build_default_about_context
+from ..params.zeroshot import ZeroShotClassificationParams
 from ..artifacts import (
     MediacloudQuerySummary,
     FileUploadArtifact,
     LLMCostSummary,
     AboutnessFilterSummary,
+    ZeroShotClassificationSummary,
 )
 from ..tasks import (
     query_online_news,
     score_aboutness_llm,
     summarize_articles_llm,
     csv_to_b2,
+    DEFAULT_ZEROSHOT_MODEL,
+    ZEROSHOT_CLASSIFY_DEVICE,
+    ZEROSHOT_STORY_TEXT_COLUMN,
+    compute_zero_shot_label_counts,
+    zero_shot_classify_stories,
 )
 from ..utils import create_url_safe_slug, get_logger
 
@@ -40,6 +48,7 @@ from ..utils import create_url_safe_slug, get_logger
 class AboutnessFilteredSummariesParams(
     MediacloudQuery,
     AboutnessParams,
+    ZeroShotClassificationParams,
     GroqModelParams,
     CsvExportParams,
     WebhookCallbackParam,
@@ -73,6 +82,7 @@ class AboutnessFilteredSummariesFlowOutput(BaseFlowOutput):
     filter_summary: AboutnessFilterSummary
     aboutness_llm_cost: LLMCostSummary
     summarizer_llm_cost: LLMCostSummary
+    zeroshot_summary: ZeroShotClassificationSummary
     b2_artifact: FileUploadArtifact
 
 
@@ -93,8 +103,7 @@ _EXPORT_COLUMNS: list[str] = [
     "llm_summary_text",
     "llm_summary_is_confident",
     "llm_summary_error",
-    # Placeholder for downstream zero-shot classifier integration.
-    # TODO: populate this column once the zero-shot classifier task exists.
+    # Zero-shot matching labels for each row (JSON list as string).
     "zero-shot-tags",
 ]
 
@@ -104,10 +113,8 @@ _EXPORT_COLUMNS: list[str] = [
     description=(
         "Query MediaCloud, deduplicate by story title, score/filter with the "
         "LLM aboutness judge, summarize with the LLM summarizer, and upload "
-        "a core-metadata CSV (no full text) to B2. "
-        "Includes a placeholder `zero-shot-tags` column for future "
-        "zero-shot classification (TODO: populate when the classifier task "
-        "is available)."
+        "a core-metadata CSV (no full text) to B2, including a "
+        "`zero-shot-tags` column populated by zero-shot classification."
     ),
     params_model=AboutnessFilteredSummariesParams,
     output_model=AboutnessFilteredSummariesFlowOutput,
@@ -129,6 +136,9 @@ def aboutness_filtered_summaries_flow(
         dedup_strategy=DedupStrategy.title,
         upload_dedup_summary=params.upload_dedup_summary,
     )
+
+    if params.max_stories is not None:
+        articles = articles.head(params.max_stories).copy()
 
     # Stable empty-case upload contract
     if articles.empty:
@@ -162,12 +172,28 @@ def aboutness_filtered_summaries_flow(
             model=params.model_name,
             usages=[],
         )
+        zeroshot_summary = ZeroShotClassificationSummary(
+            input_labels=params.classification_labels,
+            label_counts=[0] * len(params.classification_labels),
+            stories_classified=0,
+            stories_without_prediction=0,
+            summary_score_threshold=params.zeroshot_score_threshold,
+            distribution_mode=(
+                "threshold_ge"
+                if params.zeroshot_score_threshold is not None
+                else "top_label"
+            ),
+            multi_label=params.multi_label,
+            hypothesis_template=params.hypothesis_template,
+            model_id=DEFAULT_ZEROSHOT_MODEL,
+        )
 
         return AboutnessFilteredSummariesFlowOutput(
             query_summary=query_summary,
             filter_summary=filter_summary,
             aboutness_llm_cost=empty_cost,
             summarizer_llm_cost=empty_cost,
+            zeroshot_summary=zeroshot_summary,
             b2_artifact=b2_artifact,
         )
 
@@ -245,8 +271,67 @@ def aboutness_filtered_summaries_flow(
     )
     mark_step("llm_summarization_end", meta={"articles": len(summarized_df)})
 
-    # Step 6: Export (no full text)
-    export_df = summarized_df.drop(columns=["text"], errors="ignore").copy()
+    # Step 6: Zero-shot classification on original article text for filtered rows.
+    mark_step(
+        "zeroshot_classification_start",
+        meta={
+            "stories": len(summarized_df),
+            "labels": len(params.classification_labels),
+            "multi_label": params.multi_label,
+        },
+    )
+    if summarized_df.empty:
+        classified_df = summarized_df.copy()
+    else:
+        classified_df = zero_shot_classify_stories(
+            summarized_df,
+            params.classification_labels,
+            text_column=ZEROSHOT_STORY_TEXT_COLUMN,
+            hypothesis_template=params.hypothesis_template,
+            multi_label=params.multi_label,
+            model=DEFAULT_ZEROSHOT_MODEL,
+            device=ZEROSHOT_CLASSIFY_DEVICE,
+            passing_score_threshold=params.zeroshot_score_threshold,
+        )
+    mark_step("zeroshot_classification_end", meta={"stories": len(classified_df)})
+
+    label_counts, stories_without_prediction = compute_zero_shot_label_counts(
+        classified_df,
+        params.classification_labels,
+        params.zeroshot_score_threshold,
+    )
+    zeroshot_summary = ZeroShotClassificationSummary(
+        input_labels=params.classification_labels,
+        label_counts=label_counts,
+        stories_classified=len(classified_df),
+        stories_without_prediction=stories_without_prediction,
+        summary_score_threshold=params.zeroshot_score_threshold,
+        distribution_mode=(
+            "threshold_ge"
+            if params.zeroshot_score_threshold is not None
+            else "top_label"
+        ),
+        multi_label=params.multi_label,
+        hypothesis_template=params.hypothesis_template,
+        model_id=DEFAULT_ZEROSHOT_MODEL,
+    )
+
+    # Populate placeholder output column with matching zero-shot labels.
+    if params.zeroshot_score_threshold is not None:
+        classified_df["zero-shot-tags"] = classified_df.get(
+            "zeroshot_labels_passing_threshold_json", "[]"
+        )
+    else:
+        tags_col: list[str] = []
+        for label in classified_df.get("zeroshot_top_label", []):
+            if isinstance(label, str) and label.strip():
+                tags_col.append(json.dumps([label]))
+            else:
+                tags_col.append("[]")
+        classified_df["zero-shot-tags"] = tags_col
+
+    # Step 7: Export (no full text)
+    export_df = classified_df.drop(columns=["text"], errors="ignore").copy()
 
     # Ensure stable column contract/order for downstream CSV ingestion.
     for col in _EXPORT_COLUMNS:
@@ -271,6 +356,7 @@ def aboutness_filtered_summaries_flow(
         filter_summary=filter_summary,
         aboutness_llm_cost=aboutness_cost,
         summarizer_llm_cost=summarizer_cost,
+        zeroshot_summary=zeroshot_summary,
         b2_artifact=b2_artifact,
     )
 
