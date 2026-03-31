@@ -45,7 +45,7 @@ from ..tasks import (
 from ..utils import create_url_safe_slug, get_logger
 
 
-class AboutnessFilteredSummariesParams(
+class TaggedFilteredSummariesParams(
     MediacloudQuery,
     AboutnessParams,
     ZeroShotClassificationParams,
@@ -75,8 +75,8 @@ class AboutnessFilteredSummariesParams(
     max_articles_per_step: Optional[int] = None
 
 
-class AboutnessFilteredSummariesFlowOutput(BaseFlowOutput):
-    """Output artifacts for the aboutness-filtered summaries flow."""
+class TaggedFilteredSummariesFlowOutput(BaseFlowOutput):
+    """Output artifacts for the tagged-filtered summaries flow."""
 
     query_summary: MediacloudQuerySummary
     filter_summary: AboutnessFilterSummary
@@ -109,22 +109,21 @@ _EXPORT_COLUMNS: list[str] = [
 
 
 @register_flow(
-    name="aboutness_filtered_summaries",
+    name="tagged_filtered_summaries",
     description=(
-        "Query MediaCloud, deduplicate by story title, score/filter with the "
-        "LLM aboutness judge, summarize with the LLM summarizer, and upload "
-        "a core-metadata CSV (no full text) to B2, including a "
-        "`zero-shot-tags` column populated by zero-shot classification."
+        "Query MediaCloud, deduplicate by story title, filter with the LLM "
+        "aboutness judge, summarize with the LLM summarizer, then add "
+        "zero-shot tags and upload a core-metadata CSV (no full text) to B2."
     ),
-    params_model=AboutnessFilteredSummariesParams,
-    output_model=AboutnessFilteredSummariesFlowOutput,
+    params_model=TaggedFilteredSummariesParams,
+    output_model=TaggedFilteredSummariesFlowOutput,
     log_prints=True,
 )
-def aboutness_filtered_summaries_flow(
-    params: AboutnessFilteredSummariesParams,
-) -> AboutnessFilteredSummariesFlowOutput:
+def tagged_filtered_summaries_flow(
+    params: TaggedFilteredSummariesParams,
+) -> TaggedFilteredSummariesFlowOutput:
     logger = get_logger()
-    logger.info("starting aboutness_filtered_summaries flow")
+    logger.info("starting tagged_filtered_summaries flow")
 
     # Step 1: Query MediaCloud for articles (title-based dedup enforced)
     articles, query_summary = query_online_news(
@@ -147,7 +146,7 @@ def aboutness_filtered_summaries_flow(
 
         slug = create_url_safe_slug(params.query or params.about_target)
         object_name = (
-            f"{params.b2_object_prefix}/DATE/{slug}-aboutness-filtered-summaries.csv"
+            f"{params.b2_object_prefix}/DATE/{slug}-tagged-filtered-summaries.csv"
         )
 
         _, b2_artifact = csv_to_b2(
@@ -188,7 +187,7 @@ def aboutness_filtered_summaries_flow(
             model_id=DEFAULT_ZEROSHOT_MODEL,
         )
 
-        return AboutnessFilteredSummariesFlowOutput(
+        return TaggedFilteredSummariesFlowOutput(
             query_summary=query_summary,
             filter_summary=filter_summary,
             aboutness_llm_cost=empty_cost,
@@ -254,7 +253,7 @@ def aboutness_filtered_summaries_flow(
     )
 
     logger.info(
-        "aboutness_filtered_summaries: %d of %d passed threshold %.2f",
+        "tagged_filtered_summaries: %d of %d passed threshold %.2f",
         passed_count,
         total_scored,
         threshold,
@@ -341,7 +340,7 @@ def aboutness_filtered_summaries_flow(
 
     slug = create_url_safe_slug(params.query or params.about_target)
     object_name = (
-        f"{params.b2_object_prefix}/DATE/{slug}-aboutness-filtered-summaries.csv"
+        f"{params.b2_object_prefix}/DATE/{slug}-tagged-filtered-summaries.csv"
     )
 
     _, b2_artifact = csv_to_b2(
@@ -351,7 +350,7 @@ def aboutness_filtered_summaries_flow(
         ensure_unique=params.b2_ensure_unique,
     )
 
-    return AboutnessFilteredSummariesFlowOutput(
+    return TaggedFilteredSummariesFlowOutput(
         query_summary=query_summary,
         filter_summary=filter_summary,
         aboutness_llm_cost=aboutness_cost,
