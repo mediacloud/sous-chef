@@ -7,7 +7,7 @@ from ..params import groq_costs, GroqModelName
 
 
 class LLMCostSummary(BaseArtifact):
-	artifact_type: ClassVar[str] = "LLM_usage_summary"
+	artifact_type: ClassVar[str] = "llm_usage_summary"
 
 	provider: str = 'groq'
 	model: GroqModelName

@@ -63,9 +63,7 @@ def send_email(
         email_addresses = email_to
     
     email_server_credentials = EmailServerCredentials.load(email_server_credentials_block)
-    logger.info(email_server_credentials)
-    logger.info(f"email: {email_server_credentials.username }")
-    logger.info(f"password: {email_server_credentials.password.get_secret_value()}")
+    logger.info("Loaded email server credentials block '%s'", email_server_credentials_block)
 
     results = []
     for email_address in email_addresses:

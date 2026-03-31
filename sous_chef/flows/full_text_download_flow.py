@@ -43,7 +43,6 @@ class FullTextDownloadFlowOutput(BaseFlowOutput):
     params_model=FullTextDownloadParams,
     output_model=FullTextDownloadFlowOutput,
     admin_only=True,
-    restricted_fields={"full_text_data": True},
     log_prints=True,
 )
 def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadFlowOutput:

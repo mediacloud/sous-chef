@@ -7,6 +7,16 @@
   "about_target": "Minneapolis",
   "about_target_kind": "geography",
   "aboutness_threshold": 0.5,
-  "max_articles_per_step": 200
+  "max_articles_per_step": 200,
+  "classification_labels": [
+    "politics",
+    "economy",
+    "environment",
+    "technology",
+    "health"
+  ],
+  "hypothesis_template": "This text is about {}",
+  "multi_label": true,
+  "zeroshot_score_threshold": null
 }
 
