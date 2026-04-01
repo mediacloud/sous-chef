@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
+from sous_chef.tasks.zeroshot.config import ZEROSHOT_HF_INFERENCE_TIMEOUT_S
 from sous_chef.tasks.zeroshot_tasks import (
     add_zero_shot_classification,
     compute_zero_shot_label_counts,
@@ -91,7 +92,9 @@ def test_add_zero_shot_hf_inference_mocked():
         )
 
     mock_inference_client.assert_called_once_with(
-        token=None, bill_to="my-org"
+        token=None,
+        bill_to="my-org",
+        timeout=ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
     )
     assert out.loc[0, "zeroshot_top_label"] == "politics"
     mock_client.zero_shot_classification.assert_called_once()
@@ -128,7 +131,10 @@ def test_add_zero_shot_hf_inference_mocked_without_bill_to():
             backend="hf_inference",
         )
 
-    mock_inference_client.assert_called_once_with(token=None)
+    mock_inference_client.assert_called_once_with(
+        token=None,
+        timeout=ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
+    )
     assert out.loc[0, "zeroshot_top_label"] == "politics"
     mock_client.zero_shot_classification.assert_called_once()
     call_kw = mock_client.zero_shot_classification.call_args

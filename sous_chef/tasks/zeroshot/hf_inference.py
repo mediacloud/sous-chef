@@ -12,7 +12,14 @@ from huggingface_hub.errors import HfHubHTTPError, InferenceTimeoutError
 from sous_chef.secrets import get_hf_bill_to, get_llm_api_key
 
 from .common import _append_passing_threshold_column, _truncate
-from .config import DEFAULT_ZEROSHOT_MODEL, ZEROSHOT_TEXT_MAX_CHARS_DEFAULT
+from .config import (
+    DEFAULT_ZEROSHOT_MODEL,
+    ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
+    ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
+)
+
+# HTTP statuses treated as transient for hosted inference (gateway / overload / cold model).
+_RETRYABLE_HF_HTTP_STATUSES = frozenset({502, 503, 504})
 
 
 def _hf_token_optional() -> Optional[str]:
@@ -69,7 +76,8 @@ def _call_with_model_loading_retry(
             if attempt >= max_retries - 1:
                 raise
         except HfHubHTTPError as e:
-            if e.response.status_code != 503 or attempt >= max_retries - 1:
+            code = e.response.status_code
+            if code not in _RETRYABLE_HF_HTTP_STATUSES or attempt >= max_retries - 1:
                 raise
         delay = base_delay_s * (attempt + 1)
         time.sleep(delay)
@@ -105,9 +113,16 @@ def add_zero_shot_classification_hf_inference(
     token = _hf_token_optional()
     bill_to = get_hf_bill_to()
     if bill_to:
-        client = InferenceClient(token=token, bill_to=bill_to)
+        client = InferenceClient(
+            token=token,
+            bill_to=bill_to,
+            timeout=ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
+        )
     else:
-        client = InferenceClient(token=token)
+        client = InferenceClient(
+            token=token,
+            timeout=ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
+        )
 
     labels_col: list[str] = []
     scores_col: list[str] = []
