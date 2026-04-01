@@ -6,6 +6,9 @@ from typing import Literal
 
 DEFAULT_ZEROSHOT_MODEL = "MoritzLaurer/bge-m3-zeroshot-v2.0"
 
+# Reserved top label when inference fails after retries (not counted toward user label distribution).
+ZEROSHOT_UNKNOWN_LABEL = "unknown"
+
 # Flow-owned defaults (not user parameters): MediaCloud stories use `text`; CPU unless you change this constant.
 ZEROSHOT_STORY_TEXT_COLUMN = "text"
 ZEROSHOT_CLASSIFY_DEVICE = -1

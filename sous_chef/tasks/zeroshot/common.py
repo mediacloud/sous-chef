@@ -2,11 +2,47 @@
 from __future__ import annotations
 
 import json
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
 from .config import ZEROSHOT_DEFAULT_STORY_COLUMNS
+
+
+def _zeroshot_row_error_message(row: pd.Series) -> Optional[str]:
+    """Non-empty error string if this row recorded an inference failure."""
+    if "zeroshot_error" not in row.index:
+        return None
+    err = row.get("zeroshot_error")
+    if err is None or (isinstance(err, float) and pd.isna(err)):
+        return None
+    s = str(err).strip()
+    return s or None
+
+
+def zeroshot_classification_failure_details(df: pd.DataFrame) -> List[Dict[str, str]]:
+    """Structured entries for artifact / logs (story_id, title, error)."""
+    if df.empty or "zeroshot_error" not in df.columns:
+        return []
+    out: list[dict[str, str]] = []
+    for _, row in df.iterrows():
+        msg = _zeroshot_row_error_message(row)
+        if not msg:
+            continue
+        sid = row.get("story_id", "")
+        if sid is None or (isinstance(sid, float) and pd.isna(sid)):
+            sid = ""
+        title = row.get("title", "")
+        if title is None or (isinstance(title, float) and pd.isna(title)):
+            title = ""
+        out.append(
+            {
+                "story_id": str(sid),
+                "title": str(title)[:500],
+                "error": msg[:2000],
+            }
+        )
+    return out
 
 
 def _truncate(s: str, max_chars: Optional[int]) -> str:
@@ -28,6 +64,9 @@ def _append_passing_threshold_column(
     thr = float(threshold)
     passing_col: list[str] = []
     for _, row in df.iterrows():
+        if _zeroshot_row_error_message(row):
+            passing_col.append(json.dumps([]))
+            continue
         try:
             labs = json.loads(row["zeroshot_labels_json"])
             scs = json.loads(row["zeroshot_scores_json"])
@@ -51,7 +90,7 @@ def compute_zero_shot_label_counts(
     df: pd.DataFrame,
     input_labels: List[str],
     summary_score_threshold: Optional[float],
-) -> Tuple[List[int], int]:
+) -> Tuple[List[int], int, int]:
     """
     Compute per-label counts for the summary artifact.
 
@@ -61,15 +100,23 @@ def compute_zero_shot_label_counts(
     If summary_score_threshold is set: for each story, every input label whose
     score meets or exceeds the threshold increments that label's count.
 
+    Rows with a non-empty ``zeroshot_error`` are inference failures: they do not
+    contribute to label counts or ``stories_without_prediction``.
+
     Returns:
-        (label_counts aligned with input_labels, stories_without_prediction)
+        (label_counts aligned with input_labels, stories_without_prediction,
+         stories_classification_failed)
     """
     counts = [0] * len(input_labels)
     label_to_idx = {lab: i for i, lab in enumerate(input_labels)}
     no_pred = 0
+    failed = 0
 
     if summary_score_threshold is None:
         for _, row in df.iterrows():
+            if _zeroshot_row_error_message(row):
+                failed += 1
+                continue
             tl = row.get("zeroshot_top_label")
             if tl is None or (isinstance(tl, float) and pd.isna(tl)):
                 no_pred += 1
@@ -86,6 +133,9 @@ def compute_zero_shot_label_counts(
     else:
         thr = float(summary_score_threshold)
         for _, row in df.iterrows():
+            if _zeroshot_row_error_message(row):
+                failed += 1
+                continue
             try:
                 labs = json.loads(row["zeroshot_labels_json"])
                 scs = json.loads(row["zeroshot_scores_json"])
@@ -105,7 +155,7 @@ def compute_zero_shot_label_counts(
             if not any_hit:
                 no_pred += 1
 
-    return counts, no_pred
+    return counts, no_pred, failed
 
 
 def story_dataframe_for_zeroshot_csv(df: pd.DataFrame) -> pd.DataFrame:

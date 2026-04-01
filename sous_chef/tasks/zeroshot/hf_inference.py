@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from typing import List, Optional
 
@@ -16,10 +17,13 @@ from .config import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
     ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
+    ZEROSHOT_UNKNOWN_LABEL,
 )
 
 # HTTP statuses treated as transient for hosted inference (gateway / overload / cold model).
 _RETRYABLE_HF_HTTP_STATUSES = frozenset({502, 503, 504})
+
+logger = logging.getLogger(__name__)
 
 
 def _hf_token_optional() -> Optional[str]:
@@ -128,6 +132,7 @@ def add_zero_shot_classification_hf_inference(
     scores_col: list[str] = []
     top_label_col: list[str] = []
     top_score_col: list[Optional[float]] = []
+    error_col: list[str] = []
 
     for _, row in df.iterrows():
         raw = row.get(text_column)
@@ -135,24 +140,46 @@ def add_zero_shot_classification_hf_inference(
             text = ""
         else:
             text = _truncate(str(raw), text_max_chars)
-        labels, scores = _call_with_model_loading_retry(
-            client,
-            model,
-            text,
-            candidate_labels,
-            hypothesis_template,
-            multi_label,
-        )
+        err_msg = ""
+        try:
+            labels, scores = _call_with_model_loading_retry(
+                client,
+                model,
+                text,
+                candidate_labels,
+                hypothesis_template,
+                multi_label,
+            )
+        except Exception as e:
+            err_msg = f"{type(e).__name__}: {e}"[:2000]
+            sid = row.get("story_id", "")
+            if sid is None or (isinstance(sid, float) and pd.isna(sid)):
+                sid = ""
+            logger.warning(
+                "zeroshot hf_inference failed story_id=%s: %s",
+                sid,
+                err_msg,
+            )
+            labels, scores = [], []
+            top_label_col.append(ZEROSHOT_UNKNOWN_LABEL)
+            top_score_col.append(None)
+            labels_col.append(json.dumps(labels))
+            scores_col.append(json.dumps(scores))
+            error_col.append(err_msg)
+            continue
+
         labels_col.append(json.dumps(labels))
         scores_col.append(json.dumps(scores))
         top_label_col.append(labels[0] if labels else "")
         top_score_col.append(scores[0] if scores else None)
+        error_col.append(err_msg)
 
     out = df.copy()
     out["zeroshot_labels_json"] = labels_col
     out["zeroshot_scores_json"] = scores_col
     out["zeroshot_top_label"] = top_label_col
     out["zeroshot_top_score"] = top_score_col
+    out["zeroshot_error"] = error_col
 
     if passing_score_threshold is not None:
         out = _append_passing_threshold_column(

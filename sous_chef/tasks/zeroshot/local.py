@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any, List, Optional
 
 import pandas as pd
@@ -9,7 +10,13 @@ import torch
 from transformers import pipeline
 
 from .common import _append_passing_threshold_column, _truncate
-from .config import DEFAULT_ZEROSHOT_MODEL, ZEROSHOT_TEXT_MAX_CHARS_DEFAULT
+from .config import (
+    DEFAULT_ZEROSHOT_MODEL,
+    ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
+    ZEROSHOT_UNKNOWN_LABEL,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def _classify_one_pipeline(
@@ -74,6 +81,7 @@ def add_zero_shot_classification_local(
     scores_col: list[str] = []
     top_label_col: list[str] = []
     top_score_col: list[Optional[float]] = []
+    error_col: list[str] = []
 
     for _, row in df.iterrows():
         raw = row.get(text_column)
@@ -81,22 +89,44 @@ def add_zero_shot_classification_local(
             text = ""
         else:
             text = _truncate(str(raw), text_max_chars)
-        labels, scores = classify_one(
-            text,
-            candidate_labels,
-            hypothesis_template,
-            multi_label,
-        )
+        err_msg = ""
+        try:
+            labels, scores = classify_one(
+                text,
+                candidate_labels,
+                hypothesis_template,
+                multi_label,
+            )
+        except Exception as e:
+            err_msg = f"{type(e).__name__}: {e}"[:2000]
+            sid = row.get("story_id", "")
+            if sid is None or (isinstance(sid, float) and pd.isna(sid)):
+                sid = ""
+            logger.warning(
+                "zeroshot local pipeline failed story_id=%s: %s",
+                sid,
+                err_msg,
+            )
+            labels, scores = [], []
+            labels_col.append(json.dumps(labels))
+            scores_col.append(json.dumps(scores))
+            top_label_col.append(ZEROSHOT_UNKNOWN_LABEL)
+            top_score_col.append(None)
+            error_col.append(err_msg)
+            continue
+
         labels_col.append(json.dumps(labels))
         scores_col.append(json.dumps(scores))
         top_label_col.append(labels[0] if labels else "")
         top_score_col.append(scores[0] if scores else None)
+        error_col.append(err_msg)
 
     out = df.copy()
     out["zeroshot_labels_json"] = labels_col
     out["zeroshot_scores_json"] = scores_col
     out["zeroshot_top_label"] = top_label_col
     out["zeroshot_top_score"] = top_score_col
+    out["zeroshot_error"] = error_col
 
     if passing_score_threshold is not None:
         out = _append_passing_threshold_column(

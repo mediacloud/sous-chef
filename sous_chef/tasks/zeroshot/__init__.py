@@ -11,6 +11,7 @@ from .common import (
     _truncate,
     compute_zero_shot_label_counts,
     story_dataframe_for_zeroshot_csv,
+    zeroshot_classification_failure_details,
 )
 from .config import (
     DEFAULT_ZEROSHOT_MODEL,
@@ -34,4 +35,5 @@ __all__ = [
     "compute_zero_shot_label_counts",
     "get_zeroshot_backend",
     "story_dataframe_for_zeroshot_csv",
+    "zeroshot_classification_failure_details",
 ]

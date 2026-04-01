@@ -22,6 +22,7 @@ from ..tasks.zeroshot_tasks import (
     ZEROSHOT_STORY_TEXT_COLUMN,
     compute_zero_shot_label_counts,
     story_dataframe_for_zeroshot_csv,
+    zeroshot_classification_failure_details,
     zero_shot_classify_stories,
 )
 from ..utils import create_url_safe_slug, get_logger
@@ -88,15 +89,20 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         device=ZEROSHOT_CLASSIFY_DEVICE,
         passing_score_threshold=params.zeroshot_score_threshold,
     )
+    label_counts, stories_without_prediction, stories_failed = (
+        compute_zero_shot_label_counts(
+            articles,
+            params.classification_labels,
+            params.zeroshot_score_threshold,
+        )
+    )
+    failure_details = zeroshot_classification_failure_details(articles)
     mark_step(
         "zeroshot_classification_end",
-        meta={"stories": len(articles)},
-    )
-
-    label_counts, stories_without_prediction = compute_zero_shot_label_counts(
-        articles,
-        params.classification_labels,
-        params.zeroshot_score_threshold,
+        meta={
+            "stories": len(articles),
+            "classification_failures": stories_failed,
+        },
     )
 
     zeroshot_summary = ZeroShotClassificationSummary(
@@ -104,6 +110,8 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         label_counts=label_counts,
         stories_classified=len(articles),
         stories_without_prediction=stories_without_prediction,
+        stories_classification_failed=stories_failed,
+        classification_failure_details=failure_details,
         summary_score_threshold=params.zeroshot_score_threshold,
         distribution_mode=(
             "threshold_ge"

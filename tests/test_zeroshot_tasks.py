@@ -168,11 +168,12 @@ def test_compute_zero_shot_label_counts_top_label():
             "zeroshot_scores_json": ["[1]", "[1]", "[]", "[1]"],
         }
     )
-    counts, no_pred = compute_zero_shot_label_counts(
+    counts, no_pred, failed = compute_zero_shot_label_counts(
         df, ["a", "b", "c"], summary_score_threshold=None
     )
     assert counts == [2, 1, 0]
     assert no_pred == 1
+    assert failed == 0
 
 
 def test_compute_zero_shot_label_counts_threshold():
@@ -191,11 +192,46 @@ def test_compute_zero_shot_label_counts_threshold():
             "zeroshot_top_label": ["a", "b", "a"],
         }
     )
-    counts, no_pred = compute_zero_shot_label_counts(
+    counts, no_pred, failed = compute_zero_shot_label_counts(
         df, ["a", "b"], summary_score_threshold=0.5
     )
     assert counts == [1, 1]
     assert no_pred == 1
+    assert failed == 0
+
+
+def test_compute_zero_shot_label_counts_skips_inference_errors():
+    df = pd.DataFrame(
+        {
+            "zeroshot_top_label": ["a", "unknown", "b"],
+            "zeroshot_labels_json": ['["a"]', "[]", '["b"]'],
+            "zeroshot_scores_json": ["[1]", "[]", "[1]"],
+            "zeroshot_error": ["", "HfHubHTTPError: 504", ""],
+        }
+    )
+    counts, no_pred, failed = compute_zero_shot_label_counts(
+        df, ["a", "b"], summary_score_threshold=None
+    )
+    assert failed == 1
+    assert counts == [1, 1]
+    assert no_pred == 0
+
+
+def test_zeroshot_classification_failure_details():
+    from sous_chef.tasks.zeroshot.common import zeroshot_classification_failure_details
+
+    df = pd.DataFrame(
+        {
+            "story_id": ["s1"],
+            "title": ["Hello"],
+            "zeroshot_error": ["Something broke"],
+        }
+    )
+    details = zeroshot_classification_failure_details(df)
+    assert len(details) == 1
+    assert details[0]["story_id"] == "s1"
+    assert details[0]["title"] == "Hello"
+    assert "broke" in details[0]["error"]
 
 
 def test_story_dataframe_for_zeroshot_csv_drops_text():

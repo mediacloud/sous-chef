@@ -40,6 +40,7 @@ from ..tasks import (
     ZEROSHOT_CLASSIFY_DEVICE,
     ZEROSHOT_STORY_TEXT_COLUMN,
     compute_zero_shot_label_counts,
+    zeroshot_classification_failure_details,
     zero_shot_classify_stories,
 )
 from ..utils import create_url_safe_slug, get_logger
@@ -105,6 +106,7 @@ _EXPORT_COLUMNS: list[str] = [
     "llm_summary_error",
     # Zero-shot matching labels for each row (JSON list as string).
     "zero-shot-tags",
+    "zeroshot_error",
 ]
 
 
@@ -176,6 +178,8 @@ def tagged_filtered_summaries_flow(
             label_counts=[0] * len(params.classification_labels),
             stories_classified=0,
             stories_without_prediction=0,
+            stories_classification_failed=0,
+            classification_failure_details=[],
             summary_score_threshold=params.zeroshot_score_threshold,
             distribution_mode=(
                 "threshold_ge"
@@ -292,18 +296,29 @@ def tagged_filtered_summaries_flow(
             device=ZEROSHOT_CLASSIFY_DEVICE,
             passing_score_threshold=params.zeroshot_score_threshold,
         )
-    mark_step("zeroshot_classification_end", meta={"stories": len(classified_df)})
-
-    label_counts, stories_without_prediction = compute_zero_shot_label_counts(
-        classified_df,
-        params.classification_labels,
-        params.zeroshot_score_threshold,
+    label_counts, stories_without_prediction, stories_failed = (
+        compute_zero_shot_label_counts(
+            classified_df,
+            params.classification_labels,
+            params.zeroshot_score_threshold,
+        )
     )
+    failure_details = zeroshot_classification_failure_details(classified_df)
+    mark_step(
+        "zeroshot_classification_end",
+        meta={
+            "stories": len(classified_df),
+            "classification_failures": stories_failed,
+        },
+    )
+
     zeroshot_summary = ZeroShotClassificationSummary(
         input_labels=params.classification_labels,
         label_counts=label_counts,
         stories_classified=len(classified_df),
         stories_without_prediction=stories_without_prediction,
+        stories_classification_failed=stories_failed,
+        classification_failure_details=failure_details,
         summary_score_threshold=params.zeroshot_score_threshold,
         distribution_mode=(
             "threshold_ge"

@@ -3,7 +3,9 @@ Artifacts for zero-shot classification flows.
 """
 from __future__ import annotations
 
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Dict, List, Optional
+
+from pydantic import Field
 
 from .base import BaseArtifact
 
@@ -25,6 +27,12 @@ class ZeroShotClassificationSummary(BaseArtifact):
     stories_without_prediction: int = 0
     """Stories with no non-empty classification (empty text or no scores)."""
 
+    stories_classification_failed: int = 0
+    """Stories where inference raised after retries (see classification_failure_details)."""
+
+    classification_failure_details: List[Dict[str, str]] = Field(default_factory=list)
+    """Per-story error messages (story_id, title, error) for Prefect / Kitchen artifacts."""
+
     summary_score_threshold: Optional[float] = None
     """
     If set, distribution counts each story per label whose score is >= this value.
@@ -39,10 +47,12 @@ class ZeroShotClassificationSummary(BaseArtifact):
     model_id: str = ""
 
     def _summary(self) -> str:
+        failed = self.stories_classification_failed
+        failed_part = f", {failed} inference failure(s)" if failed else ""
         return (
             f"{self.stories_classified} stories, "
             f"{self.stories_without_prediction} without prediction "
-            f"({self.distribution_mode})"
+            f"({self.distribution_mode}){failed_part}"
         )
 
     def get_artifact_description(self) -> str:
@@ -51,7 +61,10 @@ class ZeroShotClassificationSummary(BaseArtifact):
             if self.summary_score_threshold is not None
             else "top label per story"
         )
-        return (
+        base = (
             f"Zero-shot summary: {self.stories_classified} stories "
             f"({mode}) across {len(self.input_labels)} labels"
         )
+        if self.stories_classification_failed:
+            base += f"; {self.stories_classification_failed} inference failure(s)"
+        return base
