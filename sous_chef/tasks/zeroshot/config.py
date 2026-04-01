@@ -12,6 +12,10 @@ ZEROSHOT_CLASSIFY_DEVICE = -1
 # Truncation before inference (task default; not a Kitchen param unless a flow exposes it).
 ZEROSHOT_TEXT_MAX_CHARS_DEFAULT = 12000
 
+# Hugging Face InferenceClient HTTP timeout (seconds). Larger than typical gateway
+# idle limits so the client waits for slow zero-shot responses before InferenceTimeoutError.
+ZEROSHOT_HF_INFERENCE_TIMEOUT_S = 180.0
+
 ZEROSHOT_BACKEND_ENV = "ZEROSHOT_BACKEND"
 
 # Default metadata columns for CSV export (never includes full story `text`).
