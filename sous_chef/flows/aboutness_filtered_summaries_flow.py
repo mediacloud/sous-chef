@@ -70,12 +70,6 @@ class TaggedFilteredSummariesParams(
             "(title-based dedup)."
         ),
     )
-    store_filter_scored_rows: bool = Field(
-        default = False,
-        title="Store aboutness-scored rows (before filtering)",
-        description=(
-            "For this flow, store a csv with the whole mc query result before filtering for aboutness")
-        )
     aboutness_threshold: float = 0.5
     # Cap how many articles are sent to each LLM step (aboutness, then summarization).
     max_articles_per_step: Optional[int] = None
@@ -90,7 +84,6 @@ class TaggedFilteredSummariesFlowOutput(BaseFlowOutput):
     summarizer_llm_cost: LLMCostSummary
     zeroshot_summary: ZeroShotClassificationSummary
     b2_artifact: FileUploadArtifact
-    unfiltered_b2_artifact: FileUploadArtifact
 
 
 _EXPORT_COLUMNS: list[str] = [
@@ -208,6 +201,11 @@ def tagged_filtered_summaries_flow(
 
     max_rows = params.max_articles_per_step
 
+    slug = create_url_safe_slug(params.query or params.about_target)
+    scored_object_name = (
+        f"{params.b2_object_prefix}/DATE/{slug}-tagged-unfiltered-summaries.csv"
+    )
+
     # Step 2: Build aboutness context (mirrors `aboutness_filter_flow`)
     if params.about_target_kind == AboutnessTargetKind.custom:
         context = params.about_context or None
@@ -217,9 +215,9 @@ def tagged_filtered_summaries_flow(
             params.about_target,
         )
 
-    # Step 3: LLM aboutness scoring
+    # Step 3: LLM aboutness scoring (optional B2 upload of all scored rows, task-level)
     mark_step("aboutness_scoring_start", meta={"articles": len(articles)})
-    scored_df, aboutness_cost = score_aboutness_llm(
+    scored_df, aboutness_run = score_aboutness_llm(
         articles,
         target=params.about_target,
         context=context,
@@ -227,7 +225,15 @@ def tagged_filtered_summaries_flow(
         title_col="title",
         model_name=params.model_name,
         max_rows=max_rows,
+        upload_scored_rows_csv=params.upload_prefiltered_rows,
+        scored_csv_object_name=(
+            scored_object_name if params.upload_prefiltered_rows else None
+        ),
+        b2_add_date_slug=params.b2_add_date_slug,
+        b2_ensure_unique=params.b2_ensure_unique,
+        drop_text_for_scored_csv=False,
     )
+    aboutness_cost = aboutness_run.llm_cost
     mark_step("aboutness_scoring_end", meta={"articles": len(scored_df)})
 
     # Step 4: Filter by aboutness threshold
@@ -359,11 +365,9 @@ def tagged_filtered_summaries_flow(
             export_df[col] = None
     export_df = export_df[_EXPORT_COLUMNS]
 
-    slug = create_url_safe_slug(params.query or params.about_target)
     object_name = (
         f"{params.b2_object_prefix}/DATE/{slug}-tagged-filtered-summaries.csv"
     )
-
 
     _, b2_artifact = csv_to_b2(
         export_df,
@@ -372,30 +376,12 @@ def tagged_filtered_summaries_flow(
         ensure_unique=params.b2_ensure_unique,
     )
 
-    scored_object_name = (
-        f"{params.b2_object_prefix}/DATE/{slug}-tagged-unfiltered-summaries.csv"
-    )
-
-    if params.store_filter_scored_rows:
-        _, unfiltered_b2_artifact = csv_to_b2(
-            scored_df,
-            object_name = scored_object_name,
-            add_date_slug=params.b2_add_date_slug,
-            ensure_unique=params.b2_ensure_unique,
-            )
-    else:
-        unfiltered_b2_artifact = FileUploadArtifact(bucket="", object_key="")
-
-
-
-
     return TaggedFilteredSummariesFlowOutput(
         query_summary=query_summary,
         filter_summary=filter_summary,
         aboutness_llm_cost=aboutness_cost,
         summarizer_llm_cost=summarizer_cost,
         zeroshot_summary=zeroshot_summary,
-        b2_artifact=b2_artifact,
-        unfiltered_b2_artifact=unfiltered_b2_artifact
+        b2_artifact=b2_artifact
     )
 

@@ -66,7 +66,7 @@ from .base import BaseArtifact
 from .mediacloud import MediacloudQuerySummary, ArticleDeduplicationSummary
 from .file_upload import FileUploadArtifact
 from .llm_cost import LLMCostSummary
-from .aboutness import AboutnessFilterSummary
+from .aboutness import AboutnessFilterSummary, AboutnessScoringRunArtifact
 from .zeroshot import ZeroShotClassificationSummary
 from .runtime_timeline import RuntimeTimelineArtifact
 
@@ -101,6 +101,7 @@ __all__ = [
     "ArtifactResult",
     "LLMCostSummary",
     "AboutnessFilterSummary",
+    "AboutnessScoringRunArtifact",
     "ZeroShotClassificationSummary",
     "RuntimeTimelineArtifact",
 ]

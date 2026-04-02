@@ -4,6 +4,8 @@ Aboutness filter flow artifacts.
 from typing import ClassVar, List, Optional
 
 from .base import BaseArtifact
+from .file_upload import FileUploadArtifact
+from .llm_cost import LLMCostSummary
 
 
 class AboutnessFilterSummary(BaseArtifact):
@@ -64,3 +66,25 @@ class AboutnessFilterSummary(BaseArtifact):
             f"Aboutness filter: {self.passed_count} articles passed, "
             f"{self.discarded_count} discarded from {self.total_scored} scored"
         )
+
+
+class AboutnessScoringRunArtifact(BaseArtifact):
+    """
+    Task-level result for `score_aboutness_llm`: LLM usage/cost plus an optional
+    B2 upload of all scored rows (before threshold filtering), mirroring how
+    `query_online_news` can attach an optional dedup CSV via the query summary.
+    """
+
+    artifact_type: ClassVar[str] = "aboutness_scoring_run"
+
+    llm_cost: LLMCostSummary
+    scored_rows_csv: Optional[FileUploadArtifact] = None
+
+    def _summary(self) -> str:
+        base = str(self.llm_cost)
+        if self.scored_rows_csv and getattr(self.scored_rows_csv, "object_key", None):
+            return f"{base} | scored CSV uploaded"
+        return base
+
+    def get_artifact_description(self) -> str:
+        return self.llm_cost.get_artifact_description()
