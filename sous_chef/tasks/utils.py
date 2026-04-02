@@ -4,8 +4,8 @@ Utilities for working with DataFrames in tasks.
 Common patterns for applying functions to DataFrame rows and adding results as columns,
 plus helpers for running LLM tasks over DataFrames.
 """
-from typing import Callable, List, Tuple, Any, Dict
-from pydantic import BaseModel  
+from typing import Callable, List, Tuple, Any, Dict, Optional
+from pydantic import BaseModel
 import pandas as pd
 
 from .llm_base import BaseLLMTask, TaskOutcome, run_llm_task_over_rows
@@ -121,7 +121,7 @@ def apply_llm_task_over_dataframe(
     Error handling / per-row failure policies are left to the caller, who can
     inspect the TaskOutcome list if needed.
     """
-    
+
 
     if df.empty:
         return df, [], []
