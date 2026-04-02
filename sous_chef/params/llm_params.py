@@ -5,6 +5,7 @@ from enum import Enum
 class GroqModelName(str, Enum):
     llama="llama-3.1-8b-instant" #Cheapest model
     qwen="qwen/qwen3-32b" #On the more expensive side but good at job
+    llama_versatile="llama-3.3-70b-versatile" # expensive but validated for quote extraction
 
 
 class GroqModelParams(BaseModel):
