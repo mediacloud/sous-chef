@@ -125,6 +125,11 @@ class ArticleQuotesTask(
             prompt_template=_QUOTE_EXTRACTION_PROMPT,
         )
 
+    def build_prompt(self, data: ArticleQuotesInput) -> str:
+        # Prompt includes literal JSON braces, so use targeted replacement
+        # instead of str.format() to avoid treating JSON keys as placeholders.
+        return self.prompt_template.replace("{text}", data.text)
+
 
 @task
 def article_quotes_llm(
@@ -159,7 +164,7 @@ def article_quotes_llm(
             {
                 "quote": quote.quote,
                 "speaker": quote.speaker,
-                "pronoun": str(quote.pronoun),
+                "pronoun": quote.pronoun.value,
             }
             for quote in output.quotes
         ]
@@ -170,9 +175,9 @@ def article_quotes_llm(
         task_impl,
         build_input,
         map_output_to_row,
-        error_col="llm_summary_error"
+        error_col="llm_error"
     )
-
+    results_df.drop(columns=[text_col], inplace=True)
 
     # Aggregate usage into LLMCostSummary artifact - again hardcoded to groq for now
     groq_usage_summary = LLMCostSummary.from_groq_summaries(model_name, usages)
