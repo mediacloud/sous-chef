@@ -70,7 +70,12 @@ class TaggedFilteredSummariesParams(
             "(title-based dedup)."
         ),
     )
-
+    store_filter_scored_rows: bool = Field(
+        default = False,
+        title="Store aboutness-scored rows (before filtering)",
+        description=(
+            "For this flow, store a csv with the whole mc query result before filtering for aboutness")
+        )
     aboutness_threshold: float = 0.5
     # Cap how many articles are sent to each LLM step (aboutness, then summarization).
     max_articles_per_step: Optional[int] = None
@@ -85,6 +90,7 @@ class TaggedFilteredSummariesFlowOutput(BaseFlowOutput):
     summarizer_llm_cost: LLMCostSummary
     zeroshot_summary: ZeroShotClassificationSummary
     b2_artifact: FileUploadArtifact
+    unfiltered_b2_artifact: FileUploadArtifact
 
 
 _EXPORT_COLUMNS: list[str] = [
@@ -358,12 +364,30 @@ def tagged_filtered_summaries_flow(
         f"{params.b2_object_prefix}/DATE/{slug}-tagged-filtered-summaries.csv"
     )
 
+
     _, b2_artifact = csv_to_b2(
         export_df,
         object_name=object_name,
         add_date_slug=params.b2_add_date_slug,
         ensure_unique=params.b2_ensure_unique,
     )
+
+    scored_object_name = (
+        f"{params.b2_object_prefix}/DATE/{slug}-tagged-unfiltered-summaries.csv"
+    )
+
+    if params.store_filter_scored_rows:
+        _, unfiltered_b2_artifact = csv_to_b2(
+            scored_df,
+            object_name = scored_object_name,
+            add_date_slug=params.b2_add_date_slug,
+            ensure_unique=params.b2_ensure_unique,
+            )
+    else:
+        unfiltered_b2_artifact = FileUploadArtifact(bucket="", object_key="")
+
+
+
 
     return TaggedFilteredSummariesFlowOutput(
         query_summary=query_summary,
@@ -372,5 +396,6 @@ def tagged_filtered_summaries_flow(
         summarizer_llm_cost=summarizer_cost,
         zeroshot_summary=zeroshot_summary,
         b2_artifact=b2_artifact,
+        unfiltered_b2_artifact=unfiltered_b2_artifact
     )
 
