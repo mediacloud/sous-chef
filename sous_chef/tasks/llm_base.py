@@ -185,11 +185,15 @@ class GroqClient(LLMModelClient):
         raw_client = Groq(api_key=api_key)
 
         try:
-            # Wrap Groq client with Instructor using the provider string
-            # "groq/<model_name>" follows the from_provider convention
-            provider_str = f"groq/{self.model_name}"
-            self.client = instructor.from_provider(provider_str)
-            
+            # Wrap Groq client with Instructor in JSON mode.
+            # JSON mode asks the model to produce a JSON object in its response
+            # content rather than via tool/function calling (TOOLS mode).
+            # TOOLS mode (the default from_provider uses) causes `tool_use_failed`
+            # 400 errors on smaller Groq models (e.g. llama-3.1-8b-instant)
+            # because they generate an empty tool-call body `{}` that fails
+            # schema validation on Groq's side.
+            self.client = instructor.from_groq(raw_client, mode=instructor.Mode.JSON)
+
         except ImportError as exc:
             raise ImportError(
                 "instructor with Groq support is required for GroqClient. "
@@ -226,6 +230,7 @@ class GroqClient(LLMModelClient):
         self.client.on("completion:response", groq_response_callback_hook)
 
         result = self.client.create(
+            model=self.model_name,
             messages=messages,
             response_model=response_model,
             max_retries=max_retries,

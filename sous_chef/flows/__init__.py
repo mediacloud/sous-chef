@@ -14,6 +14,7 @@ from .llm_demo_flow import llm_demo_flow
 from .aboutness_filter_flow import aboutness_filter_flow
 from .aboutness_filtered_summaries_flow import tagged_filtered_summaries_flow
 from .zeroshot_demo_flow import zeroshot_demo_flow
+from .llm_quotes_flow import llm_quotes_flow
 
 __all__ = [
     "keywords_demo_flow",
@@ -22,6 +23,7 @@ __all__ = [
     "targeted_sentiment_flow",
     "full_text_download_flow",
     "llm_demo_flow",
+    "llm_quotes_flow",
     "aboutness_filter_flow",
     "tagged_filtered_summaries_flow",
     "zeroshot_demo_flow",
