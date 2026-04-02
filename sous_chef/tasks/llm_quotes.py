@@ -49,26 +49,58 @@ class ArticleQuotesOutput(BaseModel):
 
 
 _QUOTE_EXTRACTION_PROMPT = """
-You are a robot that processes news stories that I send you and produces JSON content containing all the quotes in 
-the text, who said them, and what pronoun is used to refer to the speaker. I will input text and you should process 
-it to extract all the quotes, speakers, and their pronouns in the text I send you. Only include quotes that are included 
-in the story, do not include any other text. If there are no quotes, return a result with an empty quotes array. 
-If the quote uses a pronoun or partial name to indicate who said it then you should try to resolve that to the full 
-name of the person who said it, which might be mentioned earlier in the story. I also want to know what pronoun is 
-used in the text to refer to each speaker - "he", "she", or "they".  
 
-Give me back the JSON in text format and no other explanation. The resulting JSON you create should have a 
-top-level "quotes" property that is an array of objects. Each object should have three properties: 
-- the "quote" property should be the quote that was in the text without surrounding quote marks
-- the "speaker" property should be the full name of the person that said the quote
-- and the "pronoun" property should be the pronoun that is used in the text to identify the speaker
+You are a quote extraction system. Your task is to analyze a news story and extract all direct quotations along with speaker attribution and pronouns.
 
-If there is no person that can be identified as the speaker, set the "speaker" property to "unspecified", otherwise
-try to include the person's whole name. If there isn't a pronoun used to identify the speaker of the quote anywhere 
-then set the "pronoun" property to "unspecified". The value of the "pronoun" property should be "he", "she", "they", 
-or "unspecified". 
+TASK REQUIREMENTS:
+1. Extract ONLY direct quotations that appear in the story text
+2. Identify the speaker for each quote (full name if possible)
+3. Identify the pronoun used in the text to refer to the speaker
+4. Return ONLY valid JSON with no other explanation or text
 
-Here is the article text that I want you to analyze:
+EXTRACTION RULES:
+- Extract quotes exactly as they appear in the text, without surrounding quotation marks.
+- Be accurate. Do not embellish of add any text to what is included in the quotation marks in the story.
+- If a quote uses a pronoun or partial name (e.g., "he said") instead of a full name, resolve it to the complete name mentioned earlier in the story
+- If the speaker cannot be identified, use "unspecified"
+- If no pronoun is used in the text to refer to the speaker, use "unspecified"
+- Valid pronoun values: "he", "she", "they", or "unspecified"
+- Do not guess the pronoun from the name. Only include pronouns actually resolved to identified speakers of the quote.
+- If there are NO quotes in the story, return {"quotes": []}
+
+OUTPUT JSON SCHEMA:
+{
+  "quotes": [
+    {
+      "quote": "the exact quote text without surrounding quote marks",
+      "speaker": "full name of speaker or 'unspecified'",
+      "pronoun": "he OR she OR they OR unspecified"
+    }
+  ]
+}
+
+EXAMPLE:
+Input: "Mayor Johnson spoke at the event. She said, 'We must invest in infrastructure.' Johnson also noted, 'Education is key.' He meant this seriously."
+
+Output:
+{
+  "quotes": [
+    {
+      "quote": "We must invest in infrastructure",
+      "speaker": "Mayor Johnson",
+      "pronoun": "she"
+    },
+    {
+      "quote": "Education is key",
+      "speaker": "Mayor Johnson",
+      "pronoun": "he"
+    }
+  ]
+}
+
+OUTPUT: Return ONLY the JSON object. Do not include any explanation, markdown formatting, or additional text.
+
+Here is the article to analyze:
 {text}
 """.strip()
 
@@ -98,7 +130,7 @@ class ArticleQuotesTask(
 def article_quotes_llm(
     df: pd.DataFrame,
     text_col: str = "text",
-    model_name: GroqModelName = GroqModelName.llama,
+    model_name: GroqModelName = GroqModelName.llama_versatile,
     max_rows: Optional[int] = None,
 ) -> ArtifactResult[pd.DataFrame]:
     """
