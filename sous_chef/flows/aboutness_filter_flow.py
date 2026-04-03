@@ -153,6 +153,10 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
     # Optional: limit how many articles we send to the LLM
     max_rows = params.max_articles_for_llm
 
+    slug = create_url_safe_slug(params.query or params.about_target)
+    base_object_prefix = f"{params.b2_object_prefix}/DATE/{slug}-aboutness"
+    object_name_scored = f"{base_object_prefix}-scored.csv"
+
     # Step 2: Apply LLM aboutness scoring
     # When target kind is Custom, use the user's about_context; otherwise use
     # the preset for the selected kind (and ignore about_context).
@@ -162,7 +166,7 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         context = build_default_about_context(params.about_target_kind, params.about_target)
 
     mark_step("aboutness_scoring_start", meta={"articles": len(articles)})
-    scored_df, cost_summary = score_aboutness_llm(
+    scored_df, scoring_run = score_aboutness_llm(
         articles,
         target=params.about_target,
         context=context,
@@ -170,7 +174,15 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
         title_col="title",
         model_name=params.model_name,
         max_rows=max_rows,
+        upload_scored_rows_csv=params.upload_prefiltered_rows,
+        scored_csv_object_name=(
+            object_name_scored if params.upload_prefiltered_rows else None
+        ),
+        b2_add_date_slug=params.b2_add_date_slug,
+        b2_ensure_unique=params.b2_ensure_unique,
+        drop_text_for_scored_csv=True,
     )
+    cost_summary = scoring_run.llm_cost
     mark_step("aboutness_scoring_end", meta={"articles": len(scored_df)})
 
     # Step 3: Filter by aboutness threshold
@@ -213,18 +225,21 @@ def aboutness_filter_flow(params: AboutnessFilterParams) -> AboutnessFilterFlowO
     )
 
     # Step 4: Export scored and filtered results to B2 as CSV
-    slug = create_url_safe_slug(params.query or params.about_target)
-    base_object_prefix = f"{params.b2_object_prefix}/DATE/{slug}-aboutness"
-
-    # 4a: Unfiltered, scored articles (drop raw text for export)
-    scored_export_df = scored_df.drop(columns=["text"], errors="ignore").copy()
-    object_name_scored = f"{base_object_prefix}-scored.csv"
-    _, scored_b2_artifact = csv_to_b2(
-        scored_export_df,
-        object_name=object_name_scored,
-        add_date_slug=params.b2_add_date_slug,
-        ensure_unique=params.b2_ensure_unique,
-    )
+    # 4a: Scored (pre-threshold) rows — either uploaded in the scoring task or here
+    if (
+        params.upload_prefiltered_rows
+        and scoring_run.scored_rows_csv
+        and scoring_run.scored_rows_csv.object_key
+    ):
+        scored_b2_artifact = scoring_run.scored_rows_csv
+    else:
+        scored_export_df = scored_df.drop(columns=["text"], errors="ignore").copy()
+        _, scored_b2_artifact = csv_to_b2(
+            scored_export_df,
+            object_name=object_name_scored,
+            add_date_slug=params.b2_add_date_slug,
+            ensure_unique=params.b2_ensure_unique,
+        )
 
     # 4b: Filtered subset
     object_name_filtered = f"{base_object_prefix}-filtered.csv"

@@ -64,6 +64,15 @@ class AboutnessParams(BaseModel):
         ),
     )
 
+    upload_prefiltered_rows: bool = Field(
+        default=False,
+        title="Upload pre-threshold aboutness rows",
+        description=(
+            "If enabled, the aboutness scoring task uploads a CSV of every row after "
+            "LLM scoring but before the aboutness threshold filter (all scored articles)."
+        ),
+    )
+
 
 def build_default_about_context(kind: AboutnessTargetKind, target: str) -> str:
     """
