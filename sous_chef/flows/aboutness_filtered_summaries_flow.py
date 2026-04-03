@@ -84,6 +84,8 @@ class TaggedFilteredSummariesFlowOutput(BaseFlowOutput):
     summarizer_llm_cost: LLMCostSummary
     zeroshot_summary: ZeroShotClassificationSummary
     b2_artifact: FileUploadArtifact
+    # Populated from score_aboutness_llm when upload_prefiltered_rows is enabled.
+    prefiltered_b2_artifact: FileUploadArtifact
 
 
 _EXPORT_COLUMNS: list[str] = [
@@ -197,6 +199,7 @@ def tagged_filtered_summaries_flow(
             summarizer_llm_cost=empty_cost,
             zeroshot_summary=zeroshot_summary,
             b2_artifact=b2_artifact,
+            prefiltered_b2_artifact=FileUploadArtifact(bucket="", object_key=""),
         )
 
     max_rows = params.max_articles_per_step
@@ -376,12 +379,17 @@ def tagged_filtered_summaries_flow(
         ensure_unique=params.b2_ensure_unique,
     )
 
+    prefiltered_b2_artifact = aboutness_run.scored_rows_csv or FileUploadArtifact(
+        bucket="", object_key=""
+    )
+
     return TaggedFilteredSummariesFlowOutput(
         query_summary=query_summary,
         filter_summary=filter_summary,
         aboutness_llm_cost=aboutness_cost,
         summarizer_llm_cost=summarizer_cost,
         zeroshot_summary=zeroshot_summary,
-        b2_artifact=b2_artifact
+        b2_artifact=b2_artifact,
+        prefiltered_b2_artifact=prefiltered_b2_artifact,
     )
 
