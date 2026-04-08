@@ -1,7 +1,8 @@
 """
-Flow: query -> LLM aboutness filter -> LLM summaries -> CSV export to B2.
+Flow: query -> LLM aboutness filter -> zero-shot tags -> LLM summaries -> CSV export to B2.
 
-This flow intentionally exports a "core story metadata + aboutness + summaries"
+Zero-shot runs before summarization so predicted labels can steer the summarizer.
+This flow exports a "core story metadata + aboutness + summaries + tags"
 CSV (no full `text` column).
 """
 
@@ -43,6 +44,7 @@ from ..tasks import (
     zeroshot_classification_failure_details,
     zero_shot_classify_stories,
 )
+from ..tasks.zeroshot import build_zero_shot_tag_scores_json_for_row
 from ..utils import create_url_safe_slug, get_logger
 
 
@@ -71,8 +73,32 @@ class TaggedFilteredSummariesParams(
         ),
     )
     aboutness_threshold: float = 0.5
-    # Cap how many articles are sent to each LLM step (aboutness, then summarization).
+    # Cap how many articles are sent to each LLM step (aboutness, zeroshot, summarization).
     max_articles_per_step: Optional[int] = None
+    summary_focus_context: Optional[str] = Field(
+        default=None,
+        title="Summarizer run focus (optional)",
+        description=(
+            "Optional themes for the LLM summarizer for every article in the batch. "
+            "If unset, the aboutness target is used. Set to an empty string to omit "
+            "run-level focus (per-article zeroshot tags may still apply)."
+        ),
+    )
+
+
+def _resolve_tagged_flow_summary_focus(
+    params: TaggedFilteredSummariesParams,
+) -> Optional[str]:
+    """
+    Run-level string passed into the article summarizer.
+
+    ``summary_focus_context`` None → use ``about_target``. Explicit empty string → no run focus.
+    """
+    if params.summary_focus_context is None:
+        s = (params.about_target or "").strip()
+        return s or None
+    s = params.summary_focus_context.strip()
+    return s or None
 
 
 class TaggedFilteredSummariesFlowOutput(BaseFlowOutput):
@@ -107,6 +133,8 @@ _EXPORT_COLUMNS: list[str] = [
     "llm_summary_error",
     # Zero-shot matching labels for each row (JSON list as string).
     "zero-shot-tags",
+    # Scores for those labels only: JSON object mapping label -> float (or null for top-label mode if score missing).
+    "zero-shot-tag-scores",
     "zeroshot_error",
 ]
 
@@ -115,8 +143,9 @@ _EXPORT_COLUMNS: list[str] = [
     name="tagged_filtered_summaries",
     description=(
         "Query MediaCloud, deduplicate by story title, filter with the LLM "
-        "aboutness judge, summarize with the LLM summarizer, then add "
-        "zero-shot tags and upload a core-metadata CSV (no full text) to B2."
+        "aboutness judge, run zero-shot tagging on article text, summarize with "
+        "the LLM (using aboutness target and predicted tags as optional focus), "
+        "then upload a core-metadata CSV (no full text) to B2."
     ),
     params_model=TaggedFilteredSummariesParams,
     output_model=TaggedFilteredSummariesFlowOutput,
@@ -278,31 +307,20 @@ def tagged_filtered_summaries_flow(
         threshold,
     )
 
-    # Step 5: LLM summarization over the filtered subset
-    mark_step("llm_summarization_start", meta={"articles": len(filtered_df)})
-    summarized_df, summarizer_cost = summarize_articles_llm(
-        filtered_df,
-        text_col="text",
-        title_col="title",
-        model_name=params.model_name,
-        max_rows=max_rows,
-    )
-    mark_step("llm_summarization_end", meta={"articles": len(summarized_df)})
-
-    # Step 6: Zero-shot classification on original article text for filtered rows.
+    # Step 5: Zero-shot on article text (before summarization so tags steer the LLM).
     mark_step(
         "zeroshot_classification_start",
         meta={
-            "stories": len(summarized_df),
+            "stories": len(filtered_df),
             "labels": len(params.classification_labels),
             "multi_label": params.multi_label,
         },
     )
-    if summarized_df.empty:
-        classified_df = summarized_df.copy()
+    if filtered_df.empty:
+        classified_df = filtered_df.copy()
     else:
         classified_df = zero_shot_classify_stories(
-            summarized_df,
+            filtered_df,
             params.classification_labels,
             text_column=ZEROSHOT_STORY_TEXT_COLUMN,
             hypothesis_template=params.hypothesis_template,
@@ -345,22 +363,44 @@ def tagged_filtered_summaries_flow(
         model_id=DEFAULT_ZEROSHOT_MODEL,
     )
 
-    # Populate placeholder output column with matching zero-shot labels.
-    if params.zeroshot_score_threshold is not None:
-        classified_df["zero-shot-tags"] = classified_df.get(
+    # Step 6: LLM summarization (run focus + per-row zeroshot tags when present).
+    mark_step("llm_summarization_start", meta={"articles": len(classified_df)})
+    summarized_df, summarizer_cost = summarize_articles_llm(
+        classified_df,
+        text_col="text",
+        title_col="title",
+        model_name=params.model_name,
+        max_rows=max_rows,
+        focus_context=_resolve_tagged_flow_summary_focus(params),
+        use_zeroshot_row_tags=True,
+    )
+    mark_step("llm_summarization_end", meta={"articles": len(summarized_df)})
+
+    # Populate output column with matching zero-shot labels for CSV export.
+    use_passing_threshold = params.zeroshot_score_threshold is not None
+    if use_passing_threshold:
+        summarized_df["zero-shot-tags"] = summarized_df.get(
             "zeroshot_labels_passing_threshold_json", "[]"
         )
     else:
         tags_col: list[str] = []
-        for label in classified_df.get("zeroshot_top_label", []):
+        for label in summarized_df.get("zeroshot_top_label", []):
             if isinstance(label, str) and label.strip():
                 tags_col.append(json.dumps([label]))
             else:
                 tags_col.append("[]")
-        classified_df["zero-shot-tags"] = tags_col
+        summarized_df["zero-shot-tags"] = tags_col
+
+    summarized_df["zero-shot-tag-scores"] = [
+        build_zero_shot_tag_scores_json_for_row(
+            row,
+            use_passing_threshold=use_passing_threshold,
+        )
+        for _, row in summarized_df.iterrows()
+    ]
 
     # Step 7: Export (no full text)
-    export_df = classified_df.drop(columns=["text"], errors="ignore").copy()
+    export_df = summarized_df.drop(columns=["text"], errors="ignore").copy()
 
     # Ensure stable column contract/order for downstream CSV ingestion.
     for col in _EXPORT_COLUMNS:

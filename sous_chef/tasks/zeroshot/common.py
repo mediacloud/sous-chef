@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from .config import ZEROSHOT_DEFAULT_STORY_COLUMNS
+from .config import ZEROSHOT_DEFAULT_STORY_COLUMNS, ZEROSHOT_UNKNOWN_LABEL
 
 
 def _zeroshot_row_error_message(row: pd.Series) -> Optional[str]:
@@ -18,6 +18,69 @@ def _zeroshot_row_error_message(row: pd.Series) -> Optional[str]:
         return None
     s = str(err).strip()
     return s or None
+
+
+def build_zero_shot_tag_scores_json_for_row(
+    row: pd.Series,
+    *,
+    use_passing_threshold: bool,
+) -> str:
+    """
+    JSON object mapping each *exported* zero-shot tag to its score.
+
+    When ``use_passing_threshold`` is True, uses labels in
+    ``zeroshot_labels_passing_threshold_json`` and scores from
+    ``zeroshot_labels_json`` / ``zeroshot_scores_json``. Otherwise uses
+    ``zeroshot_top_label`` and ``zeroshot_top_score`` (value ``null`` if score
+    is missing). Returns ``"{}"`` on inference error or when there is no tag.
+    """
+    if _zeroshot_row_error_message(row):
+        return "{}"
+
+    if use_passing_threshold:
+        try:
+            raw_pass = row.get("zeroshot_labels_passing_threshold_json")
+            passed = json.loads(raw_pass if raw_pass is not None else "[]")
+            if not isinstance(passed, list):
+                passed = []
+            labs = json.loads(row["zeroshot_labels_json"])
+            scs = json.loads(row["zeroshot_scores_json"])
+        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+            return "{}"
+        scores_by_label: Dict[str, float] = {}
+        for lab, sc in zip(labs, scs):
+            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+                continue
+            key = str(lab).strip()
+            if not key:
+                continue
+            try:
+                scores_by_label[key] = float(sc)
+            except (TypeError, ValueError):
+                continue
+        out: Dict[str, float] = {}
+        for lab in passed:
+            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+                continue
+            key = str(lab).strip()
+            if key in scores_by_label:
+                out[key] = scores_by_label[key]
+        return json.dumps(out, ensure_ascii=False)
+
+    top = row.get("zeroshot_top_label")
+    if top is None or (isinstance(top, float) and pd.isna(top)):
+        return "{}"
+    top_str = str(top).strip()
+    if not top_str or top_str == ZEROSHOT_UNKNOWN_LABEL:
+        return "{}"
+    ts = row.get("zeroshot_top_score")
+    if ts is None or (isinstance(ts, float) and pd.isna(ts)):
+        return json.dumps({top_str: None}, ensure_ascii=False)
+    try:
+        score_f = float(ts)
+    except (TypeError, ValueError):
+        return json.dumps({top_str: None}, ensure_ascii=False)
+    return json.dumps({top_str: score_f}, ensure_ascii=False)
 
 
 def zeroshot_classification_failure_details(df: pd.DataFrame) -> List[Dict[str, str]]:

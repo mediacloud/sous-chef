@@ -17,6 +17,6 @@
   ],
   "hypothesis_template": "This text is about {}",
   "multi_label": true,
-  "zeroshot_score_threshold": null
+  "zeroshot_score_threshold": 0.5
 }
 

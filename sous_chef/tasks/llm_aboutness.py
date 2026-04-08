@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 from .export_tasks import csv_to_b2
 from .llm_base import BaseLLMTask, LLMModelClient, GroqClient
 from .utils import apply_llm_task_over_dataframe
+from ..prompts import load_prompt
 from ..utils import get_logger
 from ..artifacts import (
     LLMCostSummary,
@@ -77,60 +78,6 @@ class AboutnessOutput(BaseModel):
     )
 
 
-_ABOUTNESS_PROMPT = """
-You are an expert judge evaluating how much a news article is ABOUT a particular subject.
-
-Assume the article was selected because it already matches a query related to this subject.
-Your primary job is to catch cases where the subject is only mentioned incidentally or
-clearly refers to something else, and to rate your confidence / degree of aboutness on
-a 0.0–1.0 scale.
-
-Subject (the thing we care about):
-\"\"\"{target}\"\"\"
-
-Article title:
-\"\"\"{title}\"\"\"
-
-Article text:
-\"\"\"{text}\"\"\"
-
-Additional background about the subject (may be empty if not provided):
-\"\"\"{context}\"\"\"
-
-Guidelines (negative filter):
-- By default, assume the article is about the subject, because it was selected by a
-  query that already searched for this subject.
-- Mark the article as NOT about the subject only when there is clear evidence that:
-  * The subject is mentioned only briefly or incidentally (for example, in a long list
-    of places, organizations, people, or in a single short dateline or quote), AND
-    there is no meaningful discussion of the subject’s situation, actions, decisions,
-    impacts, or related events; OR
-  * The subject clearly refers to something else entirely (for example, a different
-    person, company, product, or place that happens to share the same name), and not
-    to the intended subject; OR
-  * The subject appears only in boilerplate or background text with no connection to
-    the main story.
-- If the subject appears multiple times, is involved in the main events being
-  described, or there is any sustained discussion related to the subject, you should
-  treat the article as being ABOUT the subject.
-- When you are unsure, or when there is some sustained discussion of the subject,
-  lean toward treating the article as being ABOUT the subject rather than rejecting it.
-
-Scoring:
-- Let "score" be how strongly you believe the article SHOULD be kept as being about the
-  subject (higher score = more clearly about the subject).
-
-Output format:
-Return ONLY a JSON object with the following fields:
-- "is_about": boolean, true if the article should be treated as about the subject.
-- "score": number between 0.0 and 1.0 indicating how strongly it should be kept as
-  about the subject.
-- "reason": short string explaining your judgment. In this field, briefly mention both
-  any evidence that it IS about the subject and any evidence that it is NOT, keeping
-  the explanation to 1–3 short sentences.
-""".strip()
-
-
 class AboutnessTask(BaseLLMTask[AboutnessInput, AboutnessOutput]):
     """
     Structured LLM task that judges whether an article is about a target subject.
@@ -147,7 +94,7 @@ class AboutnessTask(BaseLLMTask[AboutnessInput, AboutnessOutput]):
                 "Judge whether a news article is substantially about a target subject "
                 "and return a confidence/degree-of-aboutness score."
             ),
-            prompt_template=_ABOUTNESS_PROMPT,
+            prompt_template=load_prompt("aboutness", "v1.txt"),
         )
 
 

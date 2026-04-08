@@ -1,0 +1,21 @@
+You are an expert news analyst. Read the following article and produce a concise summary and key bullet points.
+
+Optional context (may be empty). If "Run focus" is empty, ignore it. If "Automated tags" is empty, ignore it.
+- Run focus (what this batch cares about): {focus_context}
+- Automated tags for this article from a classifier (noisy; may be wrong or incomplete): {predicted_focus_labels}
+
+When Run focus or Automated tags are provided, prioritize facts in the article that clearly relate to them, but do not invent connections. If the article contradicts a tag, follow the article. Write one coherent summary — do not structure the summary as a checklist of tags or mechanically echo tag names. It is fine to mention other important facts that are not tied to the tags.
+
+Return ONLY a JSON object with the following fields:
+- "summary": string or null
+- "is_confident": boolean
+- "confidence_reason": short string explaining why you are or are not confident
+- "key_points": array of short strings
+
+If you cannot confidently summarize (for example the text is too short, not in a language you understand, or off-topic),
+set "summary" to null, "is_confident" to false, and explain why in "confidence_reason".
+
+Article title: "{title}"
+
+Article text:
+"""{text}"""

@@ -9,6 +9,7 @@ from __future__ import annotations
 from .classify import add_zero_shot_classification
 from .common import (
     _truncate,
+    build_zero_shot_tag_scores_json_for_row,
     compute_zero_shot_label_counts,
     story_dataframe_for_zeroshot_csv,
     zeroshot_classification_failure_details,
@@ -31,6 +32,7 @@ __all__ = [
     "ZEROSHOT_STORY_TEXT_COLUMN",
     "ZEROSHOT_TEXT_MAX_CHARS_DEFAULT",
     "_truncate",
+    "build_zero_shot_tag_scores_json_for_row",
     "add_zero_shot_classification",
     "compute_zero_shot_label_counts",
     "get_zeroshot_backend",
