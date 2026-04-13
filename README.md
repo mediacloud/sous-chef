@@ -128,3 +128,11 @@ sous_chef/
 tests/                   # Test suite
 └── test_export_tasks.py
 ```
+
+### Release
+
+Depended on downstream by sous-chef-kitchen- versioning is managed by github tags. 
+
+So, after merging a feature to main, bump the version number in pyproject.toml and tag the commit correspondingly.
+
+Then to actually deploy the change to (sous-chef-kitchen)[https://github.com/mediacloud/sous-chef-kitchen], bump the version tag on line 57 of that repository's pyproject.toml, run `make requirements`, and commit.  
