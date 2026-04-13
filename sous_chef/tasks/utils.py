@@ -4,8 +4,8 @@ Utilities for working with DataFrames in tasks.
 Common patterns for applying functions to DataFrame rows and adding results as columns,
 plus helpers for running LLM tasks over DataFrames.
 """
-from typing import Callable, List, Tuple, Any, Dict
-from pydantic import BaseModel  
+from typing import Callable, List, Tuple, Any, Dict, Optional
+from pydantic import BaseModel
 import pandas as pd
 
 from .llm_base import BaseLLMTask, TaskOutcome, run_llm_task_over_rows
@@ -103,25 +103,21 @@ def apply_llm_task_over_dataframe(
     df: pd.DataFrame,
     llm_task: BaseLLMTask[Any, Any],
     build_input: Callable[[Dict[str, Any]], BaseModel],
-    map_output_to_row: Callable[[Any], Dict[str, Any]],
+    map_output_to_row: Callable[[Any], Dict[str, Any] | List[Dict[str, Any]]],
     error_col: str | None = "llm_error",
 ) -> Tuple[pd.DataFrame, List[Any], List[TaskOutcome[Any]]]:
     """
-    Apply a BaseLLMTask over a DataFrame, adding columns derived from the output model.
+    Apply a BaseLLMTask over a DataFrame and map output models back to rows.
 
-    This is a higher-level helper built on top of run_llm_task_over_rows. It:
-      - Converts the DataFrame to a list of row dicts
-      - Runs the LLM task over each row
-      - Uses map_output_to_row(output_model) -> {col: value} to build new columns
-      - Returns:
-          * The augmented DataFrame
-          * A list of usage objects (for cost aggregation)
-          * The list of TaskOutcome objects
+    `map_output_to_row` may return either:
+      - Dict[str, Any]: classic 1:1 mapping (one output row per input row)
+      - List[Dict[str, Any]]: 1:many mapping (zero or more output rows per input row)
 
-    Error handling / per-row failure policies are left to the caller, who can
-    inspect the TaskOutcome list if needed.
+    In list mode, each returned dict is merged with the original input row to
+    create an output row. Returning an empty list for a row yields zero output
+    rows for that input row.
     """
-    
+
 
     if df.empty:
         return df, [], []
@@ -131,36 +127,94 @@ def apply_llm_task_over_dataframe(
 
     outcomes, usages = run_llm_task_over_rows(rows, llm_task, build_input)
 
-    # Determine columns from the first successful output
-    new_cols: Dict[str, List[Any]] = {}
-    num_rows = len(outcomes)
+    mapped_values: List[Optional[Dict[str, Any] | List[Dict[str, Any]]]] = []
+    list_mode = False
 
     for idx, outcome in enumerate(outcomes):
-        if outcome.ok and outcome.output is not None:
-            values = map_output_to_row(outcome.output)
-            # Initialize storage for any new columns
-            for col in values.keys():
-                if col not in new_cols:
-                    new_cols[col] = [None] * num_rows
-            for col, val in values.items():
-                new_cols[col][idx] = val
-        else:
-            # For failed rows, we leave the default None values in place
+        if not (outcome.ok and outcome.output is not None):
+            mapped_values.append(None)
             continue
 
-    # 2) Build a generic error column if requested
-    if error_col is not None:
-        errors: list[Optional[str]] = []
-        for outcome in outcomes:
-            if outcome.ok:
-                errors.append(None)
-            else:
-                err = outcome.metadata.get("error") if outcome.metadata else None
-                errors.append(err or "LLM call failed")
-        df[error_col] = errors
+        mapped = map_output_to_row(outcome.output)
 
-    for col, values in new_cols.items():
-        df[col] = values
+        if isinstance(mapped, dict):
+            mapped_values.append(mapped)
+            continue
 
-    return df, usages, outcomes
+        if isinstance(mapped, list):
+            for item_idx, item in enumerate(mapped):
+                if not isinstance(item, dict):
+                    raise ValueError(
+                        f"map_output_to_row returned list item of type "
+                        f"{type(item).__name__} at row {idx}, item {item_idx}; "
+                        "expected dict"
+                    )
+            list_mode = True
+            mapped_values.append(mapped)
+            continue
 
+        raise ValueError(
+            f"map_output_to_row must return dict or list[dict], "
+            f"got {type(mapped).__name__} at row {idx}"
+        )
+
+    # Dict mode preserves the previous 1:1 behavior and output shape.
+    if not list_mode:
+        new_cols: Dict[str, List[Any]] = {}
+        num_rows = len(outcomes)
+
+        for idx, mapped in enumerate(mapped_values):
+            if isinstance(mapped, dict):
+                for col in mapped.keys():
+                    if col not in new_cols:
+                        new_cols[col] = [None] * num_rows
+                for col, val in mapped.items():
+                    new_cols[col][idx] = val
+
+        if error_col is not None:
+            errors: List[Optional[str]] = []
+            for outcome in outcomes:
+                if outcome.ok:
+                    errors.append(None)
+                else:
+                    err = outcome.metadata.get("error") if outcome.metadata else None
+                    errors.append(err or "LLM call failed")
+            df[error_col] = errors
+
+        for col, values in new_cols.items():
+            df[col] = values
+
+        return df, usages, outcomes
+
+    # List mode expands each input row into zero or more output rows.
+    expanded_rows: List[Dict[str, Any]] = []
+    expanded_output_cols: set[str] = set()
+
+    for idx, (row, outcome, mapped) in enumerate(zip(rows, outcomes, mapped_values)):
+        if not (outcome.ok and outcome.output is not None) or mapped is None:
+            continue
+
+        row_mappings = mapped if isinstance(mapped, list) else [mapped]
+
+        for output_values in row_mappings:
+            if not isinstance(output_values, dict):
+                raise ValueError(
+                    f"map_output_to_row must return dict items in list mode, "
+                    f"got {type(output_values).__name__} at row {idx}"
+                )
+            expanded_output_cols.update(output_values.keys())
+            new_row = dict(row)
+            new_row.update(output_values)
+            if error_col is not None:
+                new_row[error_col] = None
+            expanded_rows.append(new_row)
+
+    base_cols = list(df.columns)
+    extra_cols = [col for col in expanded_output_cols if col not in base_cols]
+    output_cols = [*base_cols, *extra_cols]
+    if error_col is not None and error_col not in output_cols:
+        output_cols.append(error_col)
+
+    expanded_df = pd.DataFrame(expanded_rows, columns=output_cols)
+
+    return expanded_df, usages, outcomes
