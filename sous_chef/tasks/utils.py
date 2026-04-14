@@ -109,13 +109,29 @@ def apply_llm_task_over_dataframe(
     """
     Apply a BaseLLMTask over a DataFrame and map output models back to rows.
 
-    `map_output_to_row` may return either:
-      - Dict[str, Any]: classic 1:1 mapping (one output row per input row)
-      - List[Dict[str, Any]]: 1:many mapping (zero or more output rows per input row)
+    Returns ``(result_df, usages, outcomes)``. ``usages`` aggregates provider
+    usage for cost summaries. ``outcomes`` has one entry per **input** row (same
+    order as ``df``), even when ``result_df`` has a different length in list mode.
 
-    In list mode, each returned dict is merged with the original input row to
-    create an output row. Returning an empty list for a row yields zero output
-    rows for that input row.
+    ``map_output_to_row`` return shapes:
+
+    - **Dict** — one output row per input row. The input frame is updated in
+      place (on the copied ``df`` passed in): new columns from the dict,
+      optional ``error_col`` for failures, row count and index match the input.
+
+    - **List[dict]** — zero or more output rows per input row. Each dict is
+      merged onto a **copy of the full input row** (all columns from ``df``),
+      so identifiers such as story or article ids remain on every exploded row
+      unless a mapping key collides with an existing column name.
+
+    NB: If any successful row uses list-shaped output, the whole run uses list
+    mode; dict outputs from other rows are treated as a single-element list.
+    Additionally, In dict mode, failed rows stay in the frame with ``error_col``
+    set. In list mode, failed rows produce **no** rows in ``result_df``; use
+    ``outcomes`` to see errors. 
+    A successful call that returns ``[]`` also
+    produces no rows for that input (distinct from failure: check ``outcomes``).
+
     """
 
 

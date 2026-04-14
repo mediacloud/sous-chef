@@ -2,7 +2,8 @@ import unittest
 import os
 import json
 
-from sous_chef.tasks.llm_quotes import ArticleQuotesOutput, _QUOTE_EXTRACTION_PROMPT
+from sous_chef.prompts import load_prompt
+from sous_chef.tasks.llm_quotes import ArticleQuotesOutput
 from ..llm_base import GroqClient
 from ...params import GroqModelName
 
@@ -24,7 +25,9 @@ class TestExtractQuotes(unittest.TestCase):
         # run the `text` from each story through the LLM function from the task
         for story_idx, test_story in enumerate(samples):
             # can't do .format call here because there are JSON format note in the prompt
-            story_prompt = _QUOTE_EXTRACTION_PROMPT.replace("{text}", test_story['text'])
+            story_prompt = load_prompt("quotes", "v1.txt").replace(
+                "{text}", test_story["text"]
+            )
             output, usage = self._client.execute(story_prompt, ArticleQuotesOutput)
             for q in output.quotes:
                 assert len(q.quote) > 0  # there is text that got extracted

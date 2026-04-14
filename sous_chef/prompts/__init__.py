@@ -17,7 +17,8 @@ def load_prompt(*parts: str) -> str:
     Load a UTF-8 prompt file from this package (works from source and installed wheels).
 
     Args:
-        *parts: Path segments under ``sous_chef.prompts``, e.g. ``"aboutness", "v1.txt"``.
+        *parts: Path segments under ``sous_chef.prompts``, e.g. ``"aboutness", "v1.txt"``
+        or ``"quotes", "v1.txt"``.
     """
     root = files("sous_chef.prompts")
     return root.joinpath(*parts).read_text(encoding="utf-8").strip()

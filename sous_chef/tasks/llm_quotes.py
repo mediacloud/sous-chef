@@ -11,6 +11,7 @@ import pandas as pd
 from prefect import task
 from pydantic import BaseModel
 
+from ..prompts import load_prompt
 from .llm_base import BaseLLMTask, LLMModelClient, GroqClient
 from .utils import apply_llm_task_over_dataframe
 from ..artifacts import LLMCostSummary, ArtifactResult
@@ -47,69 +48,11 @@ class ArticleQuotesOutput(BaseModel):
         return shaped_output
 
 
-
-_QUOTE_EXTRACTION_PROMPT = """
-
-You are a quote extraction system. Your task is to analyze a news story and extract all direct quotations along with speaker attribution and pronouns.
-
-TASK REQUIREMENTS:
-1. Extract ONLY direct quotations that appear in the story text
-2. Identify the speaker for each quote (full name if possible)
-3. Identify the pronoun used in the text to refer to the speaker
-4. Return ONLY valid JSON with no other explanation or text
-
-EXTRACTION RULES:
-- Extract quotes exactly as they appear in the text, without surrounding quotation marks.
-- Be accurate. Do not embellish of add any text to what is included in the quotation marks in the story.
-- If a quote uses a pronoun or partial name (e.g., "he said") instead of a full name, resolve it to the complete name mentioned earlier in the story
-- If the speaker cannot be identified, use "unspecified"
-- If no pronoun is used in the text to refer to the speaker, use "unspecified"
-- Valid pronoun values: "he", "she", "they", or "unspecified"
-- Do not guess the pronoun from the name. Only include pronouns actually resolved to identified speakers of the quote.
-- If there are NO quotes in the story, return {"quotes": []}
-
-OUTPUT JSON SCHEMA:
-{
-  "quotes": [
-    {
-      "quote": "the exact quote text without surrounding quote marks",
-      "speaker": "full name of speaker or 'unspecified'",
-      "pronoun": "he OR she OR they OR unspecified"
-    }
-  ]
-}
-
-EXAMPLE:
-Input: "Mayor Johnson spoke at the event. She said, 'We must invest in infrastructure.' Johnson also noted, 'Education is key.' He meant this seriously."
-
-Output:
-{
-  "quotes": [
-    {
-      "quote": "We must invest in infrastructure",
-      "speaker": "Mayor Johnson",
-      "pronoun": "she"
-    },
-    {
-      "quote": "Education is key",
-      "speaker": "Mayor Johnson",
-      "pronoun": "he"
-    }
-  ]
-}
-
-OUTPUT: Return ONLY the JSON object. Do not include any explanation, markdown formatting, or additional text.
-
-Here is the article to analyze:
-{text}
-""".strip()
-
-
 class ArticleQuotesTask(
     BaseLLMTask[ArticleQuotesInput, ArticleQuotesOutput]
 ):
     """
-    Structured LLM task that summarizes a single article.
+    Structured LLM task that extracts direct quotes from a single article.
     """
 
     input_model = ArticleQuotesInput
@@ -122,7 +65,7 @@ class ArticleQuotesTask(
             description=(
                 "Extract quotes from an article and speaker info."
             ),
-            prompt_template=_QUOTE_EXTRACTION_PROMPT,
+            prompt_template=load_prompt("quotes", "v1.txt"),
         )
 
     def build_prompt(self, data: ArticleQuotesInput) -> str:
@@ -139,7 +82,15 @@ def article_quotes_llm(
     max_rows: Optional[int] = None,
 ) -> ArtifactResult[pd.DataFrame]:
     """
-    Run a structured LLM summarization task over each article row.
+    Extract quotes per article using the structured LLM task.
+    Output is **one row per quote** (list-shaped mapping in
+    ``apply_llm_task_over_dataframe``). Non-quote columns from the input
+    ``df`` are copied onto each quote row so you can group or join back to the
+    parent story on whatever id columns the caller included. The full-text
+    ``text_col`` is dropped from the returned frame after extraction.
+    LLM failures omit that article from ``results_df`` entirely; inspect the
+    third return value from ``apply_llm_task_over_dataframe`` (``outcomes``) if
+    you need per-article success or error detail.
     """
 
     if df.empty:
