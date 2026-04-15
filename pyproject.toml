@@ -27,6 +27,7 @@ dependencies = [
   
   # MediaCloud integration
   "mediacloud >= 4.1.3",
+  "mediacloud-metadata >= 1.4.3",
   "mc-providers >= 0.5.4",
   "wayback-news-search >= 1.2.0",
   
@@ -48,6 +49,7 @@ dependencies = [
   "requests >= 2.32.5",
   "python-dotenv >= 1.2.1",
   "jinja2 >= 3.1.0",
+  "scrapy >= 2.14.2",
   
   # AWS/B2 storage
   "boto3",
