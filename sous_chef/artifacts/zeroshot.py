@@ -38,9 +38,11 @@ class ZeroShotClassificationSummary(BaseArtifact):
     If set, distribution counts each story per label whose score is >= this value.
     If null, distribution counts only the single top label per story.
     """
+    summary_top_n: Optional[int] = None
+    """If set and >0, distribution counts labels from each story's top-N results."""
 
     distribution_mode: str = "top_label"
-    """Either 'top_label' or 'threshold_ge' (mirrors how label_counts were computed)."""
+    """One of 'top_label', 'threshold_ge', or 'top_n'."""
 
     multi_label: bool = True
     hypothesis_template: str = "This text is about {}"
@@ -56,11 +58,12 @@ class ZeroShotClassificationSummary(BaseArtifact):
         )
 
     def get_artifact_description(self) -> str:
-        mode = (
-            f"threshold≥{self.summary_score_threshold}"
-            if self.summary_score_threshold is not None
-            else "top label per story"
-        )
+        if self.summary_top_n is not None and self.summary_top_n > 0:
+            mode = f"top {self.summary_top_n} labels per story"
+        elif self.summary_score_threshold is not None:
+            mode = f"threshold≥{self.summary_score_threshold}"
+        else:
+            mode = "top label per story"
         base = (
             f"Zero-shot summary: {self.stories_classified} stories "
             f"({mode}) across {len(self.input_labels)} labels"

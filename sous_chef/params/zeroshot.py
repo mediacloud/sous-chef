@@ -46,7 +46,17 @@ class ZeroShotClassificationParams(BaseModel):
         description=(
             "If set: summary distribution counts a label per story when its score ≥ this value; "
             "adds zeroshot_labels_passing_threshold_json to the export. "
-            "If unset: distribution uses only the single top label per story."
+            "If unset: distribution uses only the single top label per story. "
+            "Ignored when Top-N labels is set."
+        ),
+    )
+    zeroshot_top_n: Optional[int] = Field(
+        default=None,
+        ge=1,
+        title="Top-N labels (optional)",
+        description=(
+            "If set and non-zero: select the highest-scoring N labels per story and "
+            "ignore score threshold for selection and summary distribution."
         ),
     )
 

@@ -158,6 +158,32 @@ def test_add_zero_shot_passing_threshold_column_mocked():
 
     passed = json.loads(out.loc[0, "zeroshot_labels_passing_threshold_json"])
     assert passed == ["politics"]
+    selected = json.loads(out.loc[0, "zeroshot_labels_selected_json"])
+    assert selected == ["politics"]
+
+
+def test_add_zero_shot_top_n_overrides_threshold_mocked():
+    mock_clf = MagicMock()
+    mock_clf.return_value = {
+        "labels": ["politics", "economy", "technology"],
+        "scores": [0.91, 0.62, 0.58],
+    }
+
+    df = pd.DataFrame({"text": ["hello"]})
+
+    with patch("sous_chef.tasks.zeroshot.local.pipeline", return_value=mock_clf):
+        out = add_zero_shot_classification(
+            df,
+            ["politics", "economy", "technology"],
+            passing_score_threshold=0.99,
+            top_n=2,
+            backend="local",
+        )
+
+    passed = json.loads(out.loc[0, "zeroshot_labels_passing_threshold_json"])
+    selected = json.loads(out.loc[0, "zeroshot_labels_selected_json"])
+    assert passed == []
+    assert selected == ["politics", "economy"]
 
 
 def test_compute_zero_shot_label_counts_top_label():
@@ -196,6 +222,30 @@ def test_compute_zero_shot_label_counts_threshold():
         df, ["a", "b"], summary_score_threshold=0.5
     )
     assert counts == [1, 1]
+    assert no_pred == 1
+    assert failed == 0
+
+
+def test_compute_zero_shot_label_counts_top_n():
+    df = pd.DataFrame(
+        {
+            "zeroshot_labels_json": [
+                '["a","b","c"]',
+                '["b","a","c"]',
+                '["c","d","e"]',
+            ],
+            "zeroshot_scores_json": [
+                "[0.9,0.2,0.1]",
+                "[0.8,0.7,0.1]",
+                "[0.7,0.6,0.5]",
+            ],
+            "zeroshot_top_label": ["a", "b", "c"],
+        }
+    )
+    counts, no_pred, failed = compute_zero_shot_label_counts(
+        df, ["a", "b"], summary_score_threshold=0.95, summary_top_n=2
+    )
+    assert counts == [1, 2]
     assert no_pred == 1
     assert failed == 0
 

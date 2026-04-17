@@ -20,67 +20,92 @@ def _zeroshot_row_error_message(row: pd.Series) -> Optional[str]:
     return s or None
 
 
+def _selected_zeroshot_labels_for_row(
+    row: pd.Series,
+    *,
+    selection_mode: str,
+) -> list[str]:
+    """Return selected zero-shot labels for a row per selection mode."""
+    if _zeroshot_row_error_message(row):
+        return []
+
+    if selection_mode in {"threshold_ge", "top_n"}:
+        try:
+            raw_selected = row.get("zeroshot_labels_selected_json")
+            selected = json.loads(raw_selected if raw_selected is not None else "[]")
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return []
+        if not isinstance(selected, list):
+            return []
+        out: list[str] = []
+        for lab in selected:
+            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+                continue
+            key = str(lab).strip()
+            if key:
+                out.append(key)
+        return out
+
+    top = row.get("zeroshot_top_label")
+    if top is None or (isinstance(top, float) and pd.isna(top)):
+        return []
+    top_str = str(top).strip()
+    if not top_str or top_str == ZEROSHOT_UNKNOWN_LABEL:
+        return []
+    return [top_str]
+
+
 def build_zero_shot_tag_scores_json_for_row(
     row: pd.Series,
     *,
-    use_passing_threshold: bool,
+    selection_mode: str = "top_label",
 ) -> str:
     """
     JSON object mapping each *exported* zero-shot tag to its score.
 
-    When ``use_passing_threshold`` is True, uses labels in
-    ``zeroshot_labels_passing_threshold_json`` and scores from
-    ``zeroshot_labels_json`` / ``zeroshot_scores_json``. Otherwise uses
-    ``zeroshot_top_label`` and ``zeroshot_top_score`` (value ``null`` if score
-    is missing). Returns ``"{}"`` on inference error or when there is no tag.
+    Uses selected labels per ``selection_mode``:
+      - ``threshold_ge`` / ``top_n`` read ``zeroshot_labels_selected_json``.
+      - ``top_label`` uses ``zeroshot_top_label``.
+    Scores always come from ``zeroshot_labels_json`` / ``zeroshot_scores_json``.
+    Returns ``"{}"`` on inference error or when there is no selected tag.
     """
     if _zeroshot_row_error_message(row):
         return "{}"
 
-    if use_passing_threshold:
-        try:
-            raw_pass = row.get("zeroshot_labels_passing_threshold_json")
-            passed = json.loads(raw_pass if raw_pass is not None else "[]")
-            if not isinstance(passed, list):
-                passed = []
-            labs = json.loads(row["zeroshot_labels_json"])
-            scs = json.loads(row["zeroshot_scores_json"])
-        except (json.JSONDecodeError, KeyError, TypeError, ValueError):
-            return "{}"
-        scores_by_label: Dict[str, float] = {}
-        for lab, sc in zip(labs, scs):
-            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
-                continue
-            key = str(lab).strip()
-            if not key:
-                continue
-            try:
-                scores_by_label[key] = float(sc)
-            except (TypeError, ValueError):
-                continue
-        out: Dict[str, float] = {}
-        for lab in passed:
-            if lab is None or (isinstance(lab, float) and pd.isna(lab)):
-                continue
-            key = str(lab).strip()
-            if key in scores_by_label:
-                out[key] = scores_by_label[key]
-        return json.dumps(out, ensure_ascii=False)
-
-    top = row.get("zeroshot_top_label")
-    if top is None or (isinstance(top, float) and pd.isna(top)):
-        return "{}"
-    top_str = str(top).strip()
-    if not top_str or top_str == ZEROSHOT_UNKNOWN_LABEL:
-        return "{}"
-    ts = row.get("zeroshot_top_score")
-    if ts is None or (isinstance(ts, float) and pd.isna(ts)):
-        return json.dumps({top_str: None}, ensure_ascii=False)
     try:
-        score_f = float(ts)
+        labs = json.loads(row["zeroshot_labels_json"])
+        scs = json.loads(row["zeroshot_scores_json"])
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return "{}"
+    scores_by_label: Dict[str, float] = {}
+    for lab, sc in zip(labs, scs):
+        if lab is None or (isinstance(lab, float) and pd.isna(lab)):
+            continue
+        key = str(lab).strip()
+        if not key:
+            continue
+        try:
+            scores_by_label[key] = float(sc)
+        except (TypeError, ValueError):
+            continue
+
+    selected_labels = _selected_zeroshot_labels_for_row(
+        row, selection_mode=selection_mode
+    )
+    if not selected_labels:
+        return "{}"
+    out: Dict[str, Optional[float]] = {}
+    for lab in selected_labels:
+        out[lab] = scores_by_label.get(lab)
+    if selection_mode == "top_label" and len(out) == 1:
+        key = next(iter(out))
+        val = out[key]
+        if val is None:
+            return json.dumps({key: None}, ensure_ascii=False)
+    try:
+        return json.dumps(out, ensure_ascii=False)
     except (TypeError, ValueError):
-        return json.dumps({top_str: None}, ensure_ascii=False)
-    return json.dumps({top_str: score_f}, ensure_ascii=False)
+        return "{}"
 
 
 def zeroshot_classification_failure_details(df: pd.DataFrame) -> List[Dict[str, str]]:
@@ -149,19 +174,77 @@ def _append_passing_threshold_column(
     return out
 
 
+def _append_selected_labels_column(
+    df: pd.DataFrame,
+    candidate_labels: List[str],
+    *,
+    passing_score_threshold: Optional[float],
+    top_n: Optional[int],
+) -> tuple[pd.DataFrame, str]:
+    """
+    Append canonical selected labels column and return distribution mode.
+
+    Precedence: ``top_n`` (if provided and > 0) overrides ``passing_score_threshold``.
+    """
+    selected_col: list[str] = []
+    if top_n is not None and top_n > 0:
+        mode = "top_n"
+        n = int(top_n)
+    elif passing_score_threshold is not None:
+        mode = "threshold_ge"
+        thr = float(passing_score_threshold)
+    else:
+        mode = "top_label"
+
+    for _, row in df.iterrows():
+        if _zeroshot_row_error_message(row):
+            selected_col.append(json.dumps([]))
+            continue
+        try:
+            labs = json.loads(row["zeroshot_labels_json"])
+            scs = json.loads(row["zeroshot_scores_json"])
+        except (json.JSONDecodeError, KeyError, TypeError):
+            selected_col.append(json.dumps([]))
+            continue
+
+        if mode == "top_n":
+            selected_col.append(json.dumps(list(labs[:n])))
+            continue
+        if mode == "threshold_ge":
+            scores_by_label = dict(zip(labs, scs))
+            passed = [
+                lab
+                for lab in candidate_labels
+                if scores_by_label.get(lab) is not None
+                and float(scores_by_label[lab]) >= thr
+            ]
+            selected_col.append(json.dumps(passed))
+            continue
+        if labs:
+            selected_col.append(json.dumps([labs[0]]))
+        else:
+            selected_col.append(json.dumps([]))
+
+    out = df.copy()
+    out["zeroshot_labels_selected_json"] = selected_col
+    return out, mode
+
+
 def compute_zero_shot_label_counts(
     df: pd.DataFrame,
     input_labels: List[str],
     summary_score_threshold: Optional[float],
+    summary_top_n: Optional[int] = None,
 ) -> Tuple[List[int], int, int]:
     """
     Compute per-label counts for the summary artifact.
 
-    If summary_score_threshold is None: each story contributes at most one count
-    to the label matching zeroshot_top_label (if it is in input_labels).
-
-    If summary_score_threshold is set: for each story, every input label whose
-    score meets or exceeds the threshold increments that label's count.
+    Selection precedence:
+      1) ``summary_top_n`` (if provided and > 0): each story contributes counts
+         for any of its top-N labels that are in ``input_labels``.
+      2) ``summary_score_threshold``: each story contributes counts for labels
+         meeting/exceeding the threshold.
+      3) top-label mode: each story contributes at most one count.
 
     Rows with a non-empty ``zeroshot_error`` are inference failures: they do not
     contribute to label counts or ``stories_without_prediction``.
@@ -175,7 +258,30 @@ def compute_zero_shot_label_counts(
     no_pred = 0
     failed = 0
 
-    if summary_score_threshold is None:
+    if summary_top_n is not None and summary_top_n > 0:
+        n = int(summary_top_n)
+        for _, row in df.iterrows():
+            if _zeroshot_row_error_message(row):
+                failed += 1
+                continue
+            try:
+                labs = json.loads(row["zeroshot_labels_json"])
+            except (json.JSONDecodeError, KeyError, TypeError):
+                no_pred += 1
+                continue
+            if not labs:
+                no_pred += 1
+                continue
+            any_hit = False
+            for lab in labs[:n]:
+                idx = label_to_idx.get(str(lab))
+                if idx is None:
+                    continue
+                counts[idx] += 1
+                any_hit = True
+            if not any_hit:
+                no_pred += 1
+    elif summary_score_threshold is None:
         for _, row in df.iterrows():
             if _zeroshot_row_error_message(row):
                 failed += 1

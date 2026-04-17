@@ -25,6 +25,7 @@ def add_zero_shot_classification(
     device: int = -1,
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
+    top_n: Optional[int] = None,
     backend: Optional[str] = None,
 ) -> pd.DataFrame:
     """
@@ -43,6 +44,8 @@ def add_zero_shot_classification(
       - zeroshot_top_score: score for top label (or None)
       - zeroshot_labels_passing_threshold_json: if passing_score_threshold is set,
         JSON list of input labels scoring >= threshold for that row.
+      - zeroshot_labels_selected_json: selected labels for downstream consumers;
+        top_n (if provided and >0) takes precedence over threshold.
     """
     kwargs = dict(
         text_column=text_column,
@@ -52,6 +55,7 @@ def add_zero_shot_classification(
         device=device,
         text_max_chars=text_max_chars,
         passing_score_threshold=passing_score_threshold,
+        top_n=top_n,
     )
     mode = get_zeroshot_backend(backend)
     if mode == "local":

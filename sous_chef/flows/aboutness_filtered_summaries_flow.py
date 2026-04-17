@@ -8,7 +8,6 @@ CSV (no full `text` column).
 
 from __future__ import annotations
 
-import json
 from typing import Optional
 
 import pandas as pd
@@ -82,6 +81,23 @@ class TaggedFilteredSummariesParams(
             "Optional themes for the LLM summarizer for every article in the batch. "
             "If unset, the aboutness target is used. Set to an empty string to omit "
             "run-level focus (per-article zeroshot tags may still apply)."
+        ),
+    )
+    zeroshot_top_n: Optional[int] = Field(
+        default=3,
+        ge=1,
+        title="Zero-shot top-N labels",
+        description=(
+            "Select the top N zero-shot labels per story for summary steering and CSV export."
+        ),
+    )
+    zeroshot_score_threshold: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        title="Zero-shot score threshold (optional fallback)",
+        description=(
+            "Optional fallback when top-N is unset. If both are set, top-N selection is used."
         ),
     )
 
@@ -203,6 +219,12 @@ def tagged_filtered_summaries_flow(
             model=params.model_name,
             usages=[],
         )
+        empty_mode = "top_label"
+        if params.zeroshot_top_n is not None and params.zeroshot_top_n > 0:
+            empty_mode = "top_n"
+        elif params.zeroshot_score_threshold is not None:
+            empty_mode = "threshold_ge"
+
         zeroshot_summary = ZeroShotClassificationSummary(
             input_labels=params.classification_labels,
             label_counts=[0] * len(params.classification_labels),
@@ -211,11 +233,8 @@ def tagged_filtered_summaries_flow(
             stories_classification_failed=0,
             classification_failure_details=[],
             summary_score_threshold=params.zeroshot_score_threshold,
-            distribution_mode=(
-                "threshold_ge"
-                if params.zeroshot_score_threshold is not None
-                else "top_label"
-            ),
+            summary_top_n=params.zeroshot_top_n,
+            distribution_mode=empty_mode,
             multi_label=params.multi_label,
             hypothesis_template=params.hypothesis_template,
             model_id=DEFAULT_ZEROSHOT_MODEL,
@@ -328,12 +347,14 @@ def tagged_filtered_summaries_flow(
             model=DEFAULT_ZEROSHOT_MODEL,
             device=ZEROSHOT_CLASSIFY_DEVICE,
             passing_score_threshold=params.zeroshot_score_threshold,
+            top_n=params.zeroshot_top_n,
         )
     label_counts, stories_without_prediction, stories_failed = (
         compute_zero_shot_label_counts(
             classified_df,
             params.classification_labels,
             params.zeroshot_score_threshold,
+            params.zeroshot_top_n,
         )
     )
     failure_details = zeroshot_classification_failure_details(classified_df)
@@ -345,6 +366,12 @@ def tagged_filtered_summaries_flow(
         },
     )
 
+    zeroshot_mode = "top_label"
+    if params.zeroshot_top_n is not None and params.zeroshot_top_n > 0:
+        zeroshot_mode = "top_n"
+    elif params.zeroshot_score_threshold is not None:
+        zeroshot_mode = "threshold_ge"
+
     zeroshot_summary = ZeroShotClassificationSummary(
         input_labels=params.classification_labels,
         label_counts=label_counts,
@@ -353,11 +380,8 @@ def tagged_filtered_summaries_flow(
         stories_classification_failed=stories_failed,
         classification_failure_details=failure_details,
         summary_score_threshold=params.zeroshot_score_threshold,
-        distribution_mode=(
-            "threshold_ge"
-            if params.zeroshot_score_threshold is not None
-            else "top_label"
-        ),
+        summary_top_n=params.zeroshot_top_n,
+        distribution_mode=zeroshot_mode,
         multi_label=params.multi_label,
         hypothesis_template=params.hypothesis_template,
         model_id=DEFAULT_ZEROSHOT_MODEL,
@@ -376,25 +400,15 @@ def tagged_filtered_summaries_flow(
     )
     mark_step("llm_summarization_end", meta={"articles": len(summarized_df)})
 
-    # Populate output column with matching zero-shot labels for CSV export.
-    use_passing_threshold = params.zeroshot_score_threshold is not None
-    if use_passing_threshold:
-        summarized_df["zero-shot-tags"] = summarized_df.get(
-            "zeroshot_labels_passing_threshold_json", "[]"
-        )
-    else:
-        tags_col: list[str] = []
-        for label in summarized_df.get("zeroshot_top_label", []):
-            if isinstance(label, str) and label.strip():
-                tags_col.append(json.dumps([label]))
-            else:
-                tags_col.append("[]")
-        summarized_df["zero-shot-tags"] = tags_col
+    # Populate output column with selected zero-shot labels for CSV export.
+    summarized_df["zero-shot-tags"] = summarized_df.get(
+        "zeroshot_labels_selected_json", "[]"
+    )
 
     summarized_df["zero-shot-tag-scores"] = [
         build_zero_shot_tag_scores_json_for_row(
             row,
-            use_passing_threshold=use_passing_threshold,
+            selection_mode=zeroshot_mode,
         )
         for _, row in summarized_df.iterrows()
     ]

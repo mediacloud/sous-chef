@@ -54,6 +54,7 @@ def zero_shot_classify_stories(
     device: int = -1,
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
+    top_n: Optional[int] = None,
     backend: Optional[str] = None,
 ) -> pd.DataFrame:
     """Prefect task wrapper for add_zero_shot_classification."""
@@ -67,5 +68,6 @@ def zero_shot_classify_stories(
         device=device,
         text_max_chars=text_max_chars,
         passing_score_threshold=passing_score_threshold,
+        top_n=top_n,
         backend=backend,
     )

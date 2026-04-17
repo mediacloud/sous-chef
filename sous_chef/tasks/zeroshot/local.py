@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 from transformers import pipeline
 
-from .common import _append_passing_threshold_column, _truncate
+from .common import _append_passing_threshold_column, _append_selected_labels_column, _truncate
 from .config import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
@@ -50,7 +50,11 @@ def add_zero_shot_classification_local(
     device: int = -1,
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
+    top_n: Optional[int] = None,
 ) -> pd.DataFrame:
+    if top_n is not None and int(top_n) < 1:
+        raise ValueError("top_n must be >= 1 when provided")
+
     if not candidate_labels:
         raise ValueError("candidate_labels must be non-empty")
 
@@ -132,5 +136,11 @@ def add_zero_shot_classification_local(
         out = _append_passing_threshold_column(
             out, candidate_labels, passing_score_threshold
         )
+    out, _ = _append_selected_labels_column(
+        out,
+        candidate_labels,
+        passing_score_threshold=passing_score_threshold,
+        top_n=top_n,
+    )
 
     return out

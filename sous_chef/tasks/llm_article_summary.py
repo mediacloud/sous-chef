@@ -33,16 +33,16 @@ def format_zeroshot_tags_for_summary_row(
     """
     Build a short string of predicted zeroshot labels for summarizer steering.
 
-    Uses passing-threshold labels when present, else the top label.
+    Uses selected labels when present, else the top label.
     """
     err = row.get("zeroshot_error")
     if err is not None and str(err).strip():
         return None
 
-    raw_passing = row.get("zeroshot_labels_passing_threshold_json")
-    if raw_passing is not None and str(raw_passing).strip():
+    raw_selected = row.get("zeroshot_labels_selected_json")
+    if raw_selected is not None and str(raw_selected).strip():
         try:
-            labs = json.loads(raw_passing)
+            labs = json.loads(raw_selected)
             if isinstance(labs, list) and labs:
                 parts = [
                     str(x).strip()
@@ -140,7 +140,7 @@ def summarize_articles_llm(
     Optional steering:
       - ``focus_context``: same run-level string passed into every row's prompt.
       - ``use_zeroshot_row_tags``: if True, reads zeroshot columns on each row
-        (``zeroshot_labels_passing_threshold_json`` or ``zeroshot_top_label``)
+        (``zeroshot_labels_selected_json`` or ``zeroshot_top_label``)
         and passes them as ``predicted_focus_labels``.
     """
     logger = get_logger()

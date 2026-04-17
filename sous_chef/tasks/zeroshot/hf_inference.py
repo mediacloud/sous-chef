@@ -12,7 +12,7 @@ from huggingface_hub.errors import HfHubHTTPError, InferenceTimeoutError
 
 from sous_chef.secrets import get_hf_bill_to, get_llm_api_key
 
-from .common import _append_passing_threshold_column, _truncate
+from .common import _append_passing_threshold_column, _append_selected_labels_column, _truncate
 from .config import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
@@ -99,6 +99,7 @@ def add_zero_shot_classification_hf_inference(
     device: int = -1,
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
+    top_n: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Same column contract as :func:`add_zero_shot_classification_local`.
@@ -110,6 +111,8 @@ def add_zero_shot_classification_hf_inference(
     del device  # hosted path has no local torch device
     if not candidate_labels:
         raise ValueError("candidate_labels must be non-empty")
+    if top_n is not None and int(top_n) < 1:
+        raise ValueError("top_n must be >= 1 when provided")
 
     if text_column not in df.columns:
         raise ValueError(f"DataFrame missing text column {text_column!r}")
@@ -185,5 +188,11 @@ def add_zero_shot_classification_hf_inference(
         out = _append_passing_threshold_column(
             out, candidate_labels, passing_score_threshold
         )
+    out, _ = _append_selected_labels_column(
+        out,
+        candidate_labels,
+        passing_score_threshold=passing_score_threshold,
+        top_n=top_n,
+    )
 
     return out

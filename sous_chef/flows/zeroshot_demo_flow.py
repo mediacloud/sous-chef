@@ -88,12 +88,14 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         model=DEFAULT_ZEROSHOT_MODEL,
         device=ZEROSHOT_CLASSIFY_DEVICE,
         passing_score_threshold=params.zeroshot_score_threshold,
+        top_n=params.zeroshot_top_n,
     )
     label_counts, stories_without_prediction, stories_failed = (
         compute_zero_shot_label_counts(
             articles,
             params.classification_labels,
             params.zeroshot_score_threshold,
+            params.zeroshot_top_n,
         )
     )
     failure_details = zeroshot_classification_failure_details(articles)
@@ -105,6 +107,12 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         },
     )
 
+    zeroshot_mode = "top_label"
+    if params.zeroshot_top_n is not None and params.zeroshot_top_n > 0:
+        zeroshot_mode = "top_n"
+    elif params.zeroshot_score_threshold is not None:
+        zeroshot_mode = "threshold_ge"
+
     zeroshot_summary = ZeroShotClassificationSummary(
         input_labels=params.classification_labels,
         label_counts=label_counts,
@@ -113,11 +121,8 @@ def zeroshot_demo_flow(params: ZeroshotDemoParams) -> ZeroshotDemoFlowOutput:
         stories_classification_failed=stories_failed,
         classification_failure_details=failure_details,
         summary_score_threshold=params.zeroshot_score_threshold,
-        distribution_mode=(
-            "threshold_ge"
-            if params.zeroshot_score_threshold is not None
-            else "top_label"
-        ),
+        summary_top_n=params.zeroshot_top_n,
+        distribution_mode=zeroshot_mode,
         multi_label=params.multi_label,
         hypothesis_template=params.hypothesis_template,
         model_id=DEFAULT_ZEROSHOT_MODEL,
