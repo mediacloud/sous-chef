@@ -1,0 +1,8 @@
+{
+  "query": "\"vaccine vaccine vaccine\"~1000",
+  "collection_ids": [262985263],
+  "start_date": "2026-02-24",
+  "end_date": "2026-02-26",
+  "dedup_strategy": "title_source",
+  "max_articles": 10
+}
