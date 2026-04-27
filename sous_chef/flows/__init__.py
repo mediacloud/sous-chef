@@ -15,12 +15,14 @@ from .aboutness_filter_flow import aboutness_filter_flow
 from .aboutness_filtered_summaries_flow import tagged_filtered_summaries_flow
 from .zeroshot_demo_flow import zeroshot_demo_flow
 from .llm_quotes_flow import llm_quotes_flow
+from .top_images_flow import top_images_flow
 
 __all__ = [
     "keywords_demo_flow",
     "entities_demo_flow",
     "matching_sentences_flow",
     "targeted_sentiment_flow",
+    "top_images_flow",
     "full_text_download_flow",
     "llm_demo_flow",
     "llm_quotes_flow",
