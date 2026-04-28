@@ -3,7 +3,7 @@ Zero-shot classification tasks: Prefect entrypoints re-exporting the ``zeroshot`
 """
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 from prefect import task
@@ -56,6 +56,7 @@ def zero_shot_classify_stories(
     passing_score_threshold: Optional[float] = None,
     top_n: Optional[int] = None,
     backend: Optional[str] = None,
+    classification_label_hypotheses: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """Prefect task wrapper for add_zero_shot_classification."""
     return add_zero_shot_classification(
@@ -70,4 +71,5 @@ def zero_shot_classify_stories(
         passing_score_threshold=passing_score_threshold,
         top_n=top_n,
         backend=backend,
+        classification_label_hypotheses=classification_label_hypotheses,
     )

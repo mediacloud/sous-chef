@@ -343,6 +343,7 @@ def tagged_filtered_summaries_flow(
             params.classification_labels,
             text_column=ZEROSHOT_STORY_TEXT_COLUMN,
             hypothesis_template=params.hypothesis_template,
+            classification_label_hypotheses=params.classification_label_hypotheses,
             multi_label=params.multi_label,
             model=DEFAULT_ZEROSHOT_MODEL,
             device=ZEROSHOT_CLASSIFY_DEVICE,

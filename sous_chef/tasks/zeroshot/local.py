@@ -3,13 +3,18 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 import torch
 from transformers import pipeline
 
-from .common import _append_passing_threshold_column, _append_selected_labels_column, _truncate
+from .common import (
+    _append_passing_threshold_column,
+    _append_selected_labels_column,
+    _truncate,
+    build_zeroshot_inference_label_mapping,
+)
 from .config import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
@@ -51,6 +56,7 @@ def add_zero_shot_classification_local(
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
     top_n: Optional[int] = None,
+    classification_label_hypotheses: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     if top_n is not None and int(top_n) < 1:
         raise ValueError("top_n must be >= 1 when provided")
@@ -60,6 +66,16 @@ def add_zero_shot_classification_local(
 
     if text_column not in df.columns:
         raise ValueError(f"DataFrame missing text column {text_column!r}")
+
+    (
+        inference_candidate_labels,
+        inference_hypothesis_template,
+        inference_to_canonical_label,
+    ) = build_zeroshot_inference_label_mapping(
+        candidate_labels,
+        hypothesis_template,
+        classification_label_hypotheses,
+    )
 
     if device == -1:
         torch_device = -1
@@ -97,10 +113,11 @@ def add_zero_shot_classification_local(
         try:
             labels, scores = classify_one(
                 text,
-                candidate_labels,
-                hypothesis_template,
+                inference_candidate_labels,
+                inference_hypothesis_template,
                 multi_label,
             )
+            labels = [inference_to_canonical_label.get(l, l) for l in labels]
         except Exception as e:
             err_msg = f"{type(e).__name__}: {e}"[:2000]
             sid = row.get("story_id", "")

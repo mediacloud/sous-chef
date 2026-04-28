@@ -1,7 +1,7 @@
 """Dispatch zero-shot classification to local pipeline or Hugging Face Inference API."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -27,6 +27,7 @@ def add_zero_shot_classification(
     passing_score_threshold: Optional[float] = None,
     top_n: Optional[int] = None,
     backend: Optional[str] = None,
+    classification_label_hypotheses: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Add zero-shot classification columns to a story DataFrame.
@@ -56,6 +57,7 @@ def add_zero_shot_classification(
         text_max_chars=text_max_chars,
         passing_score_threshold=passing_score_threshold,
         top_n=top_n,
+        classification_label_hypotheses=classification_label_hypotheses,
     )
     mode = get_zeroshot_backend(backend)
     if mode == "local":

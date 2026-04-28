@@ -142,6 +142,89 @@ def test_add_zero_shot_hf_inference_mocked_without_bill_to():
     assert call_kw[1]["candidate_labels"] == ["politics", "economy"]
 
 
+def test_add_zero_shot_local_with_label_hypotheses_maps_back_to_labels():
+    mock_clf = MagicMock()
+    mock_clf.return_value = {
+        "labels": [
+            "this article is about maternal health including pregnancy and childbirth",
+            "This text is about economy",
+        ],
+        "scores": [0.81, 0.22],
+    }
+
+    df = pd.DataFrame({"text": ["hello world"]})
+
+    with patch("sous_chef.tasks.zeroshot.local.pipeline", return_value=mock_clf):
+        out = add_zero_shot_classification(
+            df,
+            ["maternal health", "economy"],
+            backend="local",
+            classification_label_hypotheses={
+                "maternal health": (
+                    "this article is about maternal health including pregnancy and childbirth"
+                )
+            },
+        )
+
+    assert out.loc[0, "zeroshot_top_label"] == "maternal health"
+    call = mock_clf.call_args
+    assert call[0][1] == [
+        "this article is about maternal health including pregnancy and childbirth",
+        "This text is about economy",
+    ]
+    assert call[1]["hypothesis_template"] == "{}"
+
+
+def test_add_zero_shot_hf_inference_with_label_hypotheses_maps_back_to_labels():
+    maternal = MagicMock()
+    maternal.label = "maternal health hypothesis"
+    maternal.score = 0.77
+    economy = MagicMock()
+    economy.label = "This text is about economy"
+    economy.score = 0.21
+    mock_client = MagicMock()
+    mock_client.zero_shot_classification.return_value = [maternal, economy]
+
+    df = pd.DataFrame({"text": ["hello world"]})
+
+    with patch(
+        "sous_chef.tasks.zeroshot.hf_inference._hf_token_optional",
+        return_value=None,
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.get_hf_bill_to",
+        return_value="my-org",
+    ), patch(
+        "sous_chef.tasks.zeroshot.hf_inference.InferenceClient",
+        return_value=mock_client,
+    ):
+        out = add_zero_shot_classification(
+            df,
+            ["maternal health", "economy"],
+            backend="hf_inference",
+            hypothesis_template="This text is about {}",
+            classification_label_hypotheses={"maternal health": "maternal health hypothesis"},
+        )
+
+    assert out.loc[0, "zeroshot_top_label"] == "maternal health"
+    call_kw = mock_client.zero_shot_classification.call_args
+    assert call_kw[1]["candidate_labels"] == [
+        "maternal health hypothesis",
+        "This text is about economy",
+    ]
+    assert call_kw[1]["hypothesis_template"] == "{}"
+
+
+def test_add_zero_shot_label_hypotheses_unknown_label_raises():
+    df = pd.DataFrame({"text": ["hello"]})
+    with pytest.raises(ValueError, match="classification_label_hypotheses contains labels"):
+        add_zero_shot_classification(
+            df,
+            ["politics"],
+            backend="local",
+            classification_label_hypotheses={"unknown": "unknown label text"},
+        )
+
+
 def test_add_zero_shot_passing_threshold_column_mocked():
     mock_clf = MagicMock()
     mock_clf.return_value = {"labels": ["politics", "economy"], "scores": [0.91, 0.12]}

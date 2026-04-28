@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 from huggingface_hub import InferenceClient
@@ -12,7 +12,12 @@ from huggingface_hub.errors import HfHubHTTPError, InferenceTimeoutError
 
 from sous_chef.secrets import get_hf_bill_to, get_llm_api_key
 
-from .common import _append_passing_threshold_column, _append_selected_labels_column, _truncate
+from .common import (
+    _append_passing_threshold_column,
+    _append_selected_labels_column,
+    _truncate,
+    build_zeroshot_inference_label_mapping,
+)
 from .config import (
     DEFAULT_ZEROSHOT_MODEL,
     ZEROSHOT_HF_INFERENCE_TIMEOUT_S,
@@ -100,6 +105,7 @@ def add_zero_shot_classification_hf_inference(
     text_max_chars: Optional[int] = ZEROSHOT_TEXT_MAX_CHARS_DEFAULT,
     passing_score_threshold: Optional[float] = None,
     top_n: Optional[int] = None,
+    classification_label_hypotheses: Optional[Dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Same column contract as :func:`add_zero_shot_classification_local`.
@@ -116,6 +122,16 @@ def add_zero_shot_classification_hf_inference(
 
     if text_column not in df.columns:
         raise ValueError(f"DataFrame missing text column {text_column!r}")
+
+    (
+        inference_candidate_labels,
+        inference_hypothesis_template,
+        inference_to_canonical_label,
+    ) = build_zeroshot_inference_label_mapping(
+        candidate_labels,
+        hypothesis_template,
+        classification_label_hypotheses,
+    )
 
     token = _hf_token_optional()
     bill_to = get_hf_bill_to()
@@ -149,10 +165,11 @@ def add_zero_shot_classification_hf_inference(
                 client,
                 model,
                 text,
-                candidate_labels,
-                hypothesis_template,
+                inference_candidate_labels,
+                inference_hypothesis_template,
                 multi_label,
             )
+            labels = [inference_to_canonical_label.get(l, l) for l in labels]
         except Exception as e:
             err_msg = f"{type(e).__name__}: {e}"[:2000]
             sid = row.get("story_id", "")
