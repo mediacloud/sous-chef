@@ -1,7 +1,7 @@
 """
 Parameters for zero-shot classification flows (Kitchen / frontend grouping).
 """
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,6 +26,15 @@ class ZeroShotClassificationParams(BaseModel):
         default="This text is about {}",
         title="Hypothesis template",
         description='NLI hypothesis with "{}" where the label is inserted (Hugging Face zero-shot format).',
+    )
+    classification_label_hypotheses: Optional[Dict[str, str]] = Field(
+        default=None,
+        title="Per-label hypothesis text (optional)",
+        description=(
+            "Optional map of classification label -> expanded hypothesis text. "
+            "When provided for a label, uses that text instead of hypothesis_template formatting. "
+            "Labels omitted from the map continue to use hypothesis_template."
+        ),
     )
     multi_label: bool = Field(
         default=True,
@@ -74,3 +83,24 @@ class ZeroShotClassificationParams(BaseModel):
         if not stripped:
             raise ValueError("classification_labels must contain at least one non-empty label")
         return stripped
+
+    @field_validator("classification_label_hypotheses")
+    @classmethod
+    def _normalize_label_hypotheses(
+        cls,
+        v: Optional[Dict[str, str]],
+    ) -> Optional[Dict[str, str]]:
+        if v is None:
+            return None
+        out: Dict[str, str] = {}
+        for raw_key, raw_val in v.items():
+            key = str(raw_key).strip()
+            if not key:
+                continue
+            if raw_val is None:
+                continue
+            val = str(raw_val).strip()
+            if not val:
+                continue
+            out[key] = val
+        return out or None

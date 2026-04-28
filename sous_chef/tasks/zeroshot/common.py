@@ -20,6 +20,66 @@ def _zeroshot_row_error_message(row: pd.Series) -> Optional[str]:
     return s or None
 
 
+def build_zeroshot_inference_label_mapping(
+    candidate_labels: List[str],
+    hypothesis_template: str,
+    classification_label_hypotheses: Optional[Dict[str, str]] = None,
+) -> tuple[list[str], str, dict[str, str]]:
+    """
+    Build backend inference labels and a map back to canonical labels.
+
+    Returns:
+        (
+            inference_candidate_labels,
+            inference_hypothesis_template,
+            inference_label_to_canonical_label,
+        )
+    """
+    if not classification_label_hypotheses:
+        return list(candidate_labels), hypothesis_template, {
+            str(lab): str(lab) for lab in candidate_labels
+        }
+
+    sanitized_hypotheses: dict[str, str] = {}
+    for raw_key, raw_value in classification_label_hypotheses.items():
+        key = str(raw_key).strip()
+        if not key:
+            continue
+        if raw_value is None:
+            continue
+        value = str(raw_value).strip()
+        if not value:
+            continue
+        sanitized_hypotheses[key] = value
+
+    unknown_labels = [k for k in sanitized_hypotheses if k not in candidate_labels]
+    if unknown_labels:
+        raise ValueError(
+            "classification_label_hypotheses contains labels not present in "
+            f"candidate_labels: {unknown_labels}"
+        )
+
+    inference_labels: list[str] = []
+    inference_to_canonical: dict[str, str] = {}
+    for label in candidate_labels:
+        hypothesis_text = sanitized_hypotheses.get(label, hypothesis_template.format(label))
+        inference_label = str(hypothesis_text).strip()
+        if not inference_label:
+            raise ValueError(
+                f"Empty hypothesis text for label {label!r}; provide non-empty text or remove the override"
+            )
+        existing = inference_to_canonical.get(inference_label)
+        if existing is not None and existing != label:
+            raise ValueError(
+                "classification_label_hypotheses produced duplicate inference text for "
+                f"labels {existing!r} and {label!r}: {inference_label!r}"
+            )
+        inference_labels.append(inference_label)
+        inference_to_canonical[inference_label] = label
+
+    return inference_labels, "{}", inference_to_canonical
+
+
 def _selected_zeroshot_labels_for_row(
     row: pd.Series,
     *,
