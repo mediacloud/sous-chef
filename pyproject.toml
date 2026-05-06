@@ -28,7 +28,7 @@ dependencies = [
   # MediaCloud integration
   "mediacloud >= 5.0.0",
   "mediacloud-metadata",
-  "mc-providers",
+  "mc-providers @ git+https://github.com/mediacloud/mc-providers@v4.4.latest",
   "wayback-news-search >= 1.2.0",
   
   # NLP and text processing
