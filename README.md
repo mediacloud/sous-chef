@@ -63,6 +63,9 @@ python run_flow.py keywords_demo --interactive
 
 # Run with parameters
 python run_flow.py keywords_demo --query "climate change" --start-date 2024-01-01 --end-date 2024-01-07
+
+# Or from a file
+python run_flow.py full_text_download --params test-vaccine.json
 ```
 
 ### Architecture

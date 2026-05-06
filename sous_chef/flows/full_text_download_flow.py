@@ -80,41 +80,12 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
 
     logger.info(f"Retrieved {len(articles)} articles")
 
-    # Use the returned articles directly; any deduplication has already been applied
-    articles_to_use = articles
-
-    # Step 2: Extract full text with metadata
-    # Select relevant columns for the CSV export
-    # Common MediaCloud columns: stories_id, title, url, text, publish_date, media_id
-    columns_to_include = []
-    
-    # Always include text if available
-    if "text" in articles_to_use.columns:
-        columns_to_include.append("text")
-    
-    # Include metadata columns if available
-    metadata_columns = ["stories_id", "title", "url", "publish_date", "media_id", "language"]
-    for col in metadata_columns:
-        if col in articles_to_use.columns:
-            columns_to_include.append(col)
-    
-    # Create DataFrame with selected columns
-    mark_step("full_text_selection_start", meta={"articles": len(articles_to_use)})
-    if columns_to_include:
-        full_text_df = articles_to_use[columns_to_include].copy()
-    else:
-        # Fallback: if no expected columns, just use the text column or all columns
-        if "text" in articles_to_use.columns:
-            full_text_df = articles_to_use[["text"]].copy()
-        else:
-            logger.warning("No 'text' column found, using all available columns")
-            full_text_df = articles_to_use.copy()
     mark_step(
         "full_text_selection_end",
-        meta={"rows": len(full_text_df), "columns": len(full_text_df.columns)},
+        meta={"rows": len(articles), "columns": len(articles.columns)},
     )
 
-    logger.info(f"Prepared full text data with {len(full_text_df)} articles and {len(full_text_df.columns)} columns")
+    logger.info(f"Prepared full text data with {len(articles)} articles and {len(articles.columns)} columns")
 
     # Step 3: Export to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)
@@ -124,7 +95,7 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
     logger.info(f"Exporting full text to B2: {object_name}")
     
     b2_metadata, b2_artifact = csv_to_b2(
-        full_text_df,
+        articles,
         object_name=object_name,
         add_date_slug=params.b2_add_date_slug,
         ensure_unique=params.b2_ensure_unique,
