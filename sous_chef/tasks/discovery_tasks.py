@@ -23,6 +23,8 @@ def query_online_news(
     source_ids: List[int] = [],
     dedup_strategy: DedupStrategy = DedupStrategy.none,
     upload_dedup_summary: bool = False,
+    randomized: bool = False,
+    max_articles: int = 0  # 0 means no limit in the UI
 ) -> ArtifactResult[pd.DataFrame]:
     """
     Query MediaCloud for news articles matching a search query.
@@ -43,18 +45,21 @@ def query_online_news(
     logger = get_logger()
     api_key = get_mediacloud_api_key()
     mc_search = mediacloud.api.SearchApi(api_key)
-    stories = []
+    story_pages = []  # this is a list of dataframes for some reason
     pagination_token = None
     more_stories = True
-    while more_stories:
+    total_articles = 0
+    while more_stories and (total_articles < max_articles if max_articles > 0 else True):
         try:
             page, pagination_token = mc_search.story_list(
-                query, 
-                start_date=start_date, 
-                end_date=end_date, 
-                collection_ids=collection_ids, 
+                query,
+                start_date=start_date,
+                end_date=end_date,
+                collection_ids=collection_ids,
                 source_ids=source_ids,
                 expanded=True,
+                randomized=randomized,
+                page_size=1000,
                 pagination_token=pagination_token
             )
             #time.sleep(5)
@@ -69,12 +74,17 @@ def query_online_news(
             # Re-raise API errors as-is
             raise e
         df = pd.DataFrame.from_records(page)
-        stories.append(df)
+        story_pages.append(df)
+        total_articles += len(df)
         more_stories = pagination_token is not None
 
     # Concatenate all pages into a single DataFrame and reset index to avoid
     # duplicate indices across pages, which can break downstream dedup logic.
-    stories_df = pd.concat(stories, ignore_index=True)
+    stories_df = pd.concat(story_pages, ignore_index=True)
+
+    # Truncate to max_articles after concat so we slice rows, not pages
+    if max_articles > 0:
+        stories_df = stories_df.head(max_articles)
 
     dedup_summary = None
     duplicates_file_artifact = None
