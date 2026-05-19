@@ -26,7 +26,7 @@ dependencies = [
   "pydantic >= 2.12.5",
   
   # MediaCloud integration
-  "mediacloud >= 5.0.0",
+  "mediacloud >= 5.1.0",
   "mediacloud-metadata",
   "mc-providers @ git+https://github.com/mediacloud/mc-providers@v4.4.latest",
   "wayback-news-search >= 1.2.0",

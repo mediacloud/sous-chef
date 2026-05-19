@@ -25,7 +25,7 @@ class LLMQuotesFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, Ema
 
     max_articles: int = Field(
         default=1,
-        description="Maximum number of articles to analyze (for demos).",
+        description="Maximum number of articles to analyze (for demos). Note that this is applied *before* deduplication.",
     )
 
 
@@ -58,13 +58,10 @@ def llm_quotes_flow(params: LLMQuotesFlowParams) -> LLMQuotesFlowOutput:
         end_date=params.end_date,
         dedup_strategy=params.dedup_strategy,
         upload_dedup_summary=params.upload_dedup_summary,
+        max_articles=params.max_articles,
     )
 
-    # Step 2: Limit articles for demo
-    if params.max_articles and params.max_articles > 0:
-        articles = articles.head(params.max_articles).copy()
-
-    # Step 3: Run task
+    # Step 2: Run task
     mark_step("llm_quotes_start", meta={"articles": len(articles)})
     quotes_df, cost_summary = article_quotes_llm(
         articles,
@@ -73,10 +70,7 @@ def llm_quotes_flow(params: LLMQuotesFlowParams) -> LLMQuotesFlowOutput:
     )
     mark_step("llm_quotes_end", meta={"quotes": len(quotes_df)})
 
-    # Step 4: Prepare export data (remove full text column)
-    # export_df = articles_with_summaries.drop(columns=["text"], errors="ignore").copy()
-
-    # Step 5: Export results to Backblaze B2 as CSV
+    # Step 3: Export results to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)
     object_name = (
         f"{params.b2_object_prefix}/DATE/{slug}-llm-quotes.csv"
@@ -89,7 +83,7 @@ def llm_quotes_flow(params: LLMQuotesFlowParams) -> LLMQuotesFlowOutput:
         ensure_unique=params.b2_ensure_unique,
     )
 
-    # Step 6: Send email notification if recipients are specified
+    # Step 4: Send email notification if recipients are specified
     if params.email_to:
         email_result = send_run_summary_email(
             email_to=params.email_to,

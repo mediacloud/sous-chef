@@ -5,6 +5,9 @@ This flow queries MediaCloud for articles, extracts the full text along with
 basic metadata, and exports it as a CSV file to Backblaze B2.
 """
 import pandas as pd
+import logging
+from pydantic import BaseModel, Field
+
 from ..flow import register_flow, BaseFlowOutput
 from ..runtime import mark_step
 from ..params.mediacloud_query import MediacloudQuery
@@ -21,18 +24,23 @@ from ..tasks.email_tasks import send_run_summary_email
 from ..utils import create_url_safe_slug, get_logger
 
 
-class FullTextDownloadParams(
-    MediacloudQuery,
-    CsvExportParams,
-    EmailRecipientParam,
-    WebhookCallbackParam,
-):
+class FullTextDownloadParams(MediacloudQuery, CsvExportParams, EmailRecipientParam, WebhookCallbackParam):
     """Parameters for the full-text download flow."""
+    max_articles: int = Field(
+        default=1,
+        title="Maximum number of articles to download",
+        description="Stop after this many articles. Useful for testing and when using randomized order option. Note that this is applied *before* deduplication.",
+    )
+
+    randomized: bool = Field(
+        default=False,
+        title="Randomize Article Selection",
+        description="Make sure to set max_articles to something small if you use this!",
+    )
 
 
 class FullTextDownloadFlowOutput(BaseFlowOutput):
     """Output artifacts for the full-text download flow."""
-
     query_summary: MediacloudQuerySummary
     b2_artifact: FileUploadArtifact
 
@@ -76,6 +84,8 @@ def full_text_download_flow(params: FullTextDownloadParams) -> FullTextDownloadF
         end_date=params.end_date,
         dedup_strategy=params.dedup_strategy,
         upload_dedup_summary=params.upload_dedup_summary,
+        randomized=params.randomized,
+        max_articles=params.max_articles
     )
 
     logger.info(f"Retrieved {len(articles)} articles")

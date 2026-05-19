@@ -25,7 +25,7 @@ class LLMDemoFlowParams(MediacloudQuery, GroqModelParams, CsvExportParams, Email
 
     max_articles: int = Field(
         default=1,
-        description="Maximum number of articles to summarize (for demos).",
+        description="Maximum number of articles to summarize (for demos). Note that this is applied *before* deduplication.",
     )
 
 
@@ -72,13 +72,10 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
         end_date=params.end_date,
         dedup_strategy=params.dedup_strategy,
         upload_dedup_summary=params.upload_dedup_summary,
+        max_articles=params.max_articles,
     )
 
-    # Step 2: Limit articles for demo
-    if params.max_articles and params.max_articles > 0:
-        articles = articles.head(params.max_articles).copy()
-
-    # Step 3: Run LLM summarization task
+    # Step 2: Run LLM summarization task
     mark_step("llm_summarization_start", meta={"articles": len(articles)})
     articles_with_summaries, cost_summary = summarize_articles_llm(
         articles,
@@ -88,10 +85,10 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
     )
     mark_step("llm_summarization_end", meta={"articles": len(articles_with_summaries)})
 
-    # Step 4: Prepare export data (remove full text column)
+    # Step 3: Prepare export data (remove full text column)
     export_df = articles_with_summaries.drop(columns=["text"], errors="ignore").copy()
 
-    # Step 5: Export results to Backblaze B2 as CSV
+    # Step 4: Export results to Backblaze B2 as CSV
     slug = create_url_safe_slug(params.query)
     object_name = (
         f"{params.b2_object_prefix}/DATE/{slug}-llm-summaries.csv"
@@ -104,7 +101,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
         ensure_unique=params.b2_ensure_unique,
     )
 
-    # Step 6: Send email notification if recipients are specified
+    # Step 5: Send email notification if recipients are specified
     if params.email_to:
         email_result = send_run_summary_email(
             email_to=params.email_to,
