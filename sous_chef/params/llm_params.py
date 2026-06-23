@@ -3,9 +3,9 @@ from typing import ClassVar
 from enum import Enum
 
 class GroqModelName(str, Enum):
-    gpt_oss_20b = "groq/openai/gpt-oss-120b",  # ⭐️
-    gpt_oss_120b="groq/openai/gpt-oss-120b",  # ⭐️
-    qwen_36_27b="groq/qwen/qwen3.6-27b"  # recall terrible!
+    gpt_oss_20b="openai/gpt-oss-20b",  # ⭐️
+    gpt_oss_120b="openai/gpt-oss-120b",  # ⭐️
+    qwen_36_27b="qwen/qwen3.6-27b"  # recall terrible!
 
 
 class GroqModelParams(BaseModel):
