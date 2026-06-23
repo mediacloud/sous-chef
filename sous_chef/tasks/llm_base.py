@@ -166,7 +166,7 @@ class GroqClient(LLMModelClient):
 
     def __init__(
         self,
-        model_name: GroqModelName = GroqModelName.llama,  # reasonable default
+        model_name: GroqModelName = GroqModelName.gpt_oss_20b,  # reasonable default
         provider: str = "groq",
         **kwargs: Any,
     ) -> None:

@@ -105,7 +105,7 @@ def score_aboutness_llm(
     context: Optional[str] = None,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: GroqModelName = GroqModelName.llama,
+    model_name: GroqModelName = GroqModelName.gpt_oss_20b,
     max_rows: Optional[int] = None,
     upload_scored_rows_csv: bool = False,
     scored_csv_object_name: Optional[str] = None,

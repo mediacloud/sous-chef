@@ -122,7 +122,7 @@ def summarize_articles_llm(
     df: pd.DataFrame,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: GroqModelName = GroqModelName.llama,
+    model_name: GroqModelName = GroqModelName.gpt_oss_20b,
     max_rows: Optional[int] = None,
     focus_context: Optional[str] = None,
     use_zeroshot_row_tags: bool = False,
