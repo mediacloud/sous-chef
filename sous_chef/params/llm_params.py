@@ -3,10 +3,11 @@ from typing import ClassVar
 from enum import Enum
 
 class GroqModelName(str, Enum):
-    llama="llama-3.1-8b-instant" #Cheapest model
-    qwen="qwen/qwen3-32b" #On the more expensive side but good at job
-    llama_versatile="llama-3.3-70b-versatile" # expensive but validated for quote extraction
+    gpt_oss_20b="openai/gpt-oss-20b",  # ⭐️
+    gpt_oss_120b="openai/gpt-oss-120b",  # ⭐️
+    qwen_36_27b="qwen/qwen3.6-27b"  # recall terrible!
 
+DEFAULT_GROQ_MODEL = GroqModelName.gpt_oss_20b
 
 class GroqModelParams(BaseModel):
     """
@@ -16,13 +17,14 @@ class GroqModelParams(BaseModel):
     _component_hint: ClassVar[str] = "LLMModelParams"
 
     model_name: GroqModelName = Field(
-        default=GroqModelName.llama, 
+        default=DEFAULT_GROQ_MODEL,
         title="LLM Model Identifier",
         description="Model identifier to use via Groq.",
     )
 
 #For calculating run costs
 groq_costs = {
-	GroqModelName.llama: {'i':0.05,'o':0.08},
-	GroqModelName.qwen: {'i':0.29, 'o':0.59}
+    GroqModelName.gpt_oss_20b: {'i':0.075, 'o':0.3},
+    GroqModelName.qwen_36_27b: {'i':0.6, 'o':3},
+    GroqModelName.gpt_oss_120b: {'i':0.15, 'o':0.60}
 }

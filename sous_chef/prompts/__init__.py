@@ -2,7 +2,7 @@
 Packaged LLM prompt templates.
 
 Templates use str.format placeholders matching the corresponding Pydantic input models.
-Version files (e.g. aboutness/v1.txt) can be bumped or forked without changing task code.
+Version files (e.g. aboutness/FILE.txt) can be bumped or forked without changing task code.
 """
 
 from __future__ import annotations

@@ -17,6 +17,7 @@ from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, Callable, Li
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
 from ..params import GroqModelName
+from ..params.llm_params import DEFAULT_GROQ_MODEL
 import instructor
 from litellm import completion
 from groq import Groq
@@ -166,7 +167,7 @@ class GroqClient(LLMModelClient):
 
     def __init__(
         self,
-        model_name: GroqModelName = GroqModelName.llama,  # reasonable default
+        model_name: GroqModelName = DEFAULT_GROQ_MODEL,  # reasonable default
         provider: str = "groq",
         **kwargs: Any,
     ) -> None:

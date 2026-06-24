@@ -16,7 +16,7 @@ FIXTURE_1 = os.path.join(
 class TestExtractQuotes(unittest.TestCase):
 
     def setUp(self):
-        self._client = GroqClient(model_name=GroqModelName.llama)
+        self._client = GroqClient(model_name=GroqModelName.gpt_oss_120b)
 
     def test_static_example(self):
         # load sample stories from quote-samples.csv into a data frame
@@ -25,7 +25,7 @@ class TestExtractQuotes(unittest.TestCase):
         # run the `text` from each story through the LLM function from the task
         for story_idx, test_story in enumerate(samples):
             # can't do .format call here because there are JSON format note in the prompt
-            story_prompt = load_prompt("quotes", "v1.txt").replace(
+            story_prompt = load_prompt("quotes", "v2-sauti-health.txt").replace(
                 "{text}", test_story["text"]
             )
             output, usage = self._client.execute(story_prompt, ArticleQuotesOutput)

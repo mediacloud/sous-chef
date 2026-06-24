@@ -9,7 +9,7 @@ This module provides:
 - score_aboutness_llm: Prefect task that applies the LLM task to a DataFrame
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import pandas as pd
 from prefect import task
@@ -27,6 +27,7 @@ from ..artifacts import (
     FileUploadArtifact,
 )
 from ..params import GroqModelName
+from ..params.llm_params import DEFAULT_GROQ_MODEL
 
 
 class AboutnessInput(BaseModel):
@@ -105,7 +106,7 @@ def score_aboutness_llm(
     context: Optional[str] = None,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: GroqModelName = GroqModelName.llama,
+    model_name: GroqModelName = DEFAULT_GROQ_MODEL,
     max_rows: Optional[int] = None,
     upload_scored_rows_csv: bool = False,
     scored_csv_object_name: Optional[str] = None,

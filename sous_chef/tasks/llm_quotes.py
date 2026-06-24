@@ -63,9 +63,9 @@ class ArticleQuotesTask(
             client=client,
             task_name="article_quotes",
             description=(
-                "Extract quotes from an article and speaker info."
+                "Extract quotes from an article and speaker info (slightly ptimized for SautiHealth project)."
             ),
-            prompt_template=load_prompt("quotes", "v1.txt"),
+            prompt_template=load_prompt("quotes", "v2-sauti-health.txt"),
         )
 
     def build_prompt(self, data: ArticleQuotesInput) -> str:
@@ -78,7 +78,7 @@ class ArticleQuotesTask(
 def article_quotes_llm(
     df: pd.DataFrame,
     text_col: str = "text",
-    model_name: GroqModelName = GroqModelName.llama_versatile,
+    model_name: GroqModelName = GroqModelName.gpt_oss_120b,
     max_rows: Optional[int] = None,
 ) -> ArtifactResult[pd.DataFrame]:
     """
