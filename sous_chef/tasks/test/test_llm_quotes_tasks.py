@@ -16,7 +16,7 @@ FIXTURE_1 = os.path.join(
 class TestExtractQuotes(unittest.TestCase):
 
     def setUp(self):
-        self._client = GroqClient(model_name=GroqModelName.gpt_oss_20b)
+        self._client = GroqClient(model_name=GroqModelName.gpt_oss_120b)
 
     def test_static_example(self):
         # load sample stories from quote-samples.csv into a data frame
