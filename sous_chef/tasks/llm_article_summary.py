@@ -23,6 +23,7 @@ from .utils import apply_llm_task_over_dataframe
 from ..utils import get_logger
 from ..artifacts import LLMCostSummary, ArtifactResult
 from ..params import GroqModelName
+from ..params.llm_params import DEFAULT_GROQ_MODEL
 
 
 def format_zeroshot_tags_for_summary_row(
@@ -122,7 +123,7 @@ def summarize_articles_llm(
     df: pd.DataFrame,
     text_col: str = "text",
     title_col: str = "title",
-    model_name: GroqModelName = GroqModelName.gpt_oss_20b,
+    model_name: GroqModelName = DEFAULT_GROQ_MODEL,
     max_rows: Optional[int] = None,
     focus_context: Optional[str] = None,
     use_zeroshot_row_tags: bool = False,

@@ -7,6 +7,7 @@ class GroqModelName(str, Enum):
     gpt_oss_120b="openai/gpt-oss-120b",  # ⭐️
     qwen_36_27b="qwen/qwen3.6-27b"  # recall terrible!
 
+DEFAULT_GROQ_MODEL = GroqModelName.gpt_oss_20b
 
 class GroqModelParams(BaseModel):
     """
@@ -16,7 +17,7 @@ class GroqModelParams(BaseModel):
     _component_hint: ClassVar[str] = "LLMModelParams"
 
     model_name: GroqModelName = Field(
-        default=GroqModelName.gpt_oss_20b,
+        default=DEFAULT_GROQ_MODEL,
         title="LLM Model Identifier",
         description="Model identifier to use via Groq.",
     )
