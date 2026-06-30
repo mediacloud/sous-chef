@@ -1,6 +1,7 @@
 
 VERSION 3
 =========
+- v3.10.1 - include story text in prompt and validate quote counts
 - v3.10.0 - various:
 	+ Lock to mc-providers v4.4.latest (is it even used???)
 	+ Add randomized sort support to full-text recipe
