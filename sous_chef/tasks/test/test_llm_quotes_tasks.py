@@ -29,5 +29,6 @@ class TestExtractQuotes(unittest.TestCase):
                 "{text}", test_story["text"]
             )
             output, usage = self._client.execute(story_prompt, ArticleQuotesOutput)
+            assert len(output.quotes) > 0
             for q in output.quotes:
                 assert len(q.quote) > 0  # there is text that got extracted
