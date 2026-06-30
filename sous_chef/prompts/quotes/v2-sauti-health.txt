@@ -44,3 +44,6 @@ Return only a single valid JSON object. No explanation, no markdown, no code fen
     }
   ]
 }
+
+Here is the article to analyze:
+{text}
