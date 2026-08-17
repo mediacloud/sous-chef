@@ -14,6 +14,60 @@ from ..utils import create_url_safe_slug, get_logger
 from .deduplication_tasks import deduplicate_articles
 
 
+def _matching_stories(
+        query: str,
+        start_date: date,
+        end_date: date,
+        collection_ids: List[int] = [],
+        source_ids: List[int] = [],
+        randomized: bool = False,
+        max_articles: int = 0  # 0 means no limit in the UI
+) -> pd.DataFrame:
+    api_key = get_mediacloud_api_key()
+    mc_search = mediacloud.api.SearchApi(api_key)
+    story_pages = []  # this is a list of dataframes for some reason
+    pagination_token = None
+    more_stories = True
+    total_articles = 0
+    while more_stories and (total_articles < max_articles if max_articles > 0 else True):
+        try:
+            page, pagination_token = mc_search.story_list(
+                query,
+                start_date=start_date,
+                end_date=end_date,
+                collection_ids=collection_ids,
+                source_ids=source_ids,
+                expanded=True,
+                randomized=randomized,
+                page_size=1000,
+                pagination_token=pagination_token
+            )
+            # time.sleep(5)
+        except requests.exceptions.JSONDecodeError as e:
+            # Handle case where API returns non-JSON response (e.g., HTML error page)
+            raise RuntimeError(
+                f"MediaCloud API returned a non-JSON response. "
+                f"This usually indicates an API error (authentication, rate limit, etc.). "
+                f"Original error: {str(e)}"
+            ) from e
+        except mediacloud.error.APIResponseError as e:
+            # Re-raise API errors as-is
+            raise e
+        df = pd.DataFrame.from_records(page)
+        story_pages.append(df)
+        total_articles += len(df)
+        more_stories = pagination_token is not None
+
+    # Concatenate all pages into a single DataFrame and reset index to avoid
+    # duplicate indices across pages, which can break downstream dedup logic.
+    stories_df = pd.concat(story_pages, ignore_index=True)
+
+    # Truncate to max_articles after concat so we slice rows, not pages
+    if max_articles > 0:
+        stories_df = stories_df.head(max_articles)
+    return stories_df
+
+
 @task
 def query_online_news(
     query: str,
@@ -43,49 +97,11 @@ def query_online_news(
         )
     """
     logger = get_logger()
-    api_key = get_mediacloud_api_key()
-    mc_search = mediacloud.api.SearchApi(api_key)
-    story_pages = []  # this is a list of dataframes for some reason
-    pagination_token = None
-    more_stories = True
-    total_articles = 0
-    while more_stories and (total_articles < max_articles if max_articles > 0 else True):
-        try:
-            page, pagination_token = mc_search.story_list(
-                query,
-                start_date=start_date,
-                end_date=end_date,
-                collection_ids=collection_ids,
-                source_ids=source_ids,
-                expanded=True,
-                randomized=randomized,
-                page_size=1000,
-                pagination_token=pagination_token
-            )
-            #time.sleep(5)
-        except requests.exceptions.JSONDecodeError as e:
-            # Handle case where API returns non-JSON response (e.g., HTML error page)
-            raise RuntimeError(
-                f"MediaCloud API returned a non-JSON response. "
-                f"This usually indicates an API error (authentication, rate limit, etc.). "
-                f"Original error: {str(e)}"
-            ) from e
-        except mediacloud.error.APIResponseError as e:
-            # Re-raise API errors as-is
-            raise e
-        df = pd.DataFrame.from_records(page)
-        story_pages.append(df)
-        total_articles += len(df)
-        more_stories = pagination_token is not None
 
-    # Concatenate all pages into a single DataFrame and reset index to avoid
-    # duplicate indices across pages, which can break downstream dedup logic.
-    stories_df = pd.concat(story_pages, ignore_index=True)
+    # first use basic API calls to get all the matching stories
+    stories_df = _matching_stories(query, start_date, end_date, collection_ids, source_ids, randomized, max_articles)
 
-    # Truncate to max_articles after concat so we slice rows, not pages
-    if max_articles > 0:
-        stories_df = stories_df.head(max_articles)
-
+    # now apply any specified dedup strategy
     dedup_summary = None
     duplicates_file_artifact = None
     if dedup_strategy != DedupStrategy.none:
@@ -132,7 +148,7 @@ def query_online_news(
         )
         stories_df = deduped_df
     
-    # Create summary artifact
+    # Create summary artifact for the flow processing
     summary = MediacloudQuerySummary(
         query=query,
         start_date=start_date,
