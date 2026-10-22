@@ -9,6 +9,10 @@ class GroqModelName(str, Enum):
 
 DEFAULT_GROQ_MODEL = GroqModelName.gpt_oss_20b
 
+# Groq caps output at ~3k tokens when no limit is sent, which reasoning models
+# (gpt-oss) can exceed on long articles and get cut off mid-response
+DEFAULT_GROQ_MAX_COMPLETION_TOKENS = 8192
+
 class GroqModelParams(BaseModel):
     """
     Parameters for the LLM demo flow.
