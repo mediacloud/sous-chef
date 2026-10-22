@@ -17,10 +17,10 @@ dependencies = [
   "pandas >= 2.2.0, < 3.0",
   "numpy >= 1.26.0, < 2.0",
   
-  # Prefect orchestration (updated to v3.6.10)
-  "prefect >= 3.6.10",
-  "prefect_aws",
-  "prefect_email",
+  # Prefect orchestration
+  "prefect >= 3.9.0",
+  "prefect_aws >= 0.7.12",
+  "prefect_email >= 0.4.3",
   
   # Data validation and models
   "pydantic >= 2.14.1",
