@@ -1,3 +1,6 @@
+VERSION 4
+=========
+- v4.0.0a1 - major library updates and related compatability tweaks
 
 VERSION 3
 =========
