@@ -27,7 +27,7 @@ dependencies = [
   
   # MediaCloud integration
   "mediacloud >= 5.1.0",
-  "mediacloud-metadata",
+  "mediacloud-metadata >= 2.1.0",
   
   # NLP and text processing
   "yake >= 0.7.3",
