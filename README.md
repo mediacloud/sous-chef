@@ -1,10 +1,12 @@
-# Sous-Chef
+Sous-Chef
+=========
 
-Sous-Chef is a data pipeline tool for building and executing data processing workflows with MediaCloud and other data sources.
+Sous-Chef is a data augmentation pipeline for building and executing data processing workflows with 
+Media Cloud and other data sources.
 
-## Version 3.0.0
-
-This version introduces a new Python-based flow architecture. Flows are defined as Python functions with Pydantic parameter models, providing better type safety and easier testing compared to the previous YAML-based recipe system.
+It builds on Prefect's Python-based flow architecture. Flows are defined as Python functions with 
+Pydantic parameter models, providing better type safety and easier testing compared to the 
+previous YAML-based recipe system.
 
 ### Quick Start
 
@@ -136,6 +138,8 @@ tests/                   # Test suite
 
 Depended on downstream by sous-chef-kitchen- versioning is managed by github tags. 
 
-So, after merging a feature to main, bump the version number in pyproject.toml and tag the commit correspondingly.
+So, after merging a feature to main, bump the version number in pyproject.toml and tag 
+the commit correspondingly.
 
-Then to actually deploy the change to (sous-chef-kitchen)[https://github.com/mediacloud/sous-chef-kitchen], bump the version tag on line 57 of that repository's pyproject.toml, run `make requirements`, and commit.  
+Then to actually deploy the change to (sous-chef-kitchen)[https://github.com/mediacloud/sous-chef-kitchen], 
+bump the version tag on line 57 of that repository's pyproject.toml, run `make requirements`, and commit.
