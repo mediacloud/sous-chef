@@ -47,7 +47,7 @@ dependencies = [
   "requests >= 2.34.2",
   "python-dotenv >= 1.2.4",
   "jinja2 >= 3.1.6",
-  "scrapy >= 2.14.2",
+  "scrapy >= 2.19.0",
   
   # AWS/B2 storage
   "boto3 >= 1.43.0",  # exact version is bounded by aiobotocore (via prefect-aws)
