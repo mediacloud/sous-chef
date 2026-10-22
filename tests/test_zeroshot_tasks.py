@@ -328,7 +328,8 @@ def test_compute_zero_shot_label_counts_top_n():
     counts, no_pred, failed = compute_zero_shot_label_counts(
         df, ["a", "b"], summary_score_threshold=0.95, summary_top_n=2
     )
-    assert counts == [1, 2]
+    # top_n overrides the threshold: "a" and "b" are both in the top 2 of rows 1 and 2
+    assert counts == [2, 2]
     assert no_pred == 1
     assert failed == 0
 

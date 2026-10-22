@@ -28,8 +28,6 @@ dependencies = [
   # MediaCloud integration
   "mediacloud >= 5.1.0",
   "mediacloud-metadata",
-  "mc-providers @ git+https://github.com/mediacloud/mc-providers@v4.4.latest",
-  "wayback-news-search >= 1.2.0",
   
   # NLP and text processing
   "yake >= 0.6.0",
