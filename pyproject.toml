@@ -52,10 +52,10 @@ dependencies = [
   # AWS/B2 storage
   "boto3 >= 1.43.0",  # exact version is bounded by aiobotocore (via prefect-aws)
 
-  #LLM use,
-  "litellm",
-  "instructor",
-  "groq"
+  # LLM use (litellm caps openai < 3)
+  "litellm >= 1.106.2",
+  "instructor >= 1.17.0",
+  "groq >= 1.7.0"
 ]
 
 [project.optional-dependencies]
