@@ -13,9 +13,9 @@ authors = [
 ]
 
 dependencies = [
-  # Core data processing (numpy < 2.0 required by matplotlib 3.8.2)
-  "pandas >= 2.2.0, < 3.0",
-  "numpy >= 1.26.0, < 2.0",
+  # Core data processing
+  "pandas >= 3.1.0",
+  "numpy >= 2.5.4",
   
   # Prefect orchestration
   "prefect >= 3.9.0",
@@ -31,7 +31,7 @@ dependencies = [
   
   # NLP and text processing
   "yake >= 0.7.3",
-  "spacy",
+  "spacy >= 3.8.16",
   "spacy-download",
   "spacy-ngram",
   "torch >= 2.14.1",
