@@ -34,9 +34,9 @@ dependencies = [
   "spacy",
   "spacy-download",
   "spacy-ngram",
-  "torch",
-  "transformers >= 4.37.2",
-  "huggingface_hub >= 0.34.4",
+  "torch >= 2.14.1",
+  "transformers >= 5.20.2",  # earlier 5.x tokenizers dropped DeBERTa special tokens on sentence pairs
+  "huggingface_hub >= 1.33.0",  # litellm caps this at < 2.0
   "uniseg >= 0.10.1",
   "protobuf >= 7.36.2",
   "sentencepiece >= 0.2.2",
