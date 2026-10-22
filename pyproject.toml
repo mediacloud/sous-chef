@@ -58,6 +58,7 @@ dependencies = [
   "groq"
 ]
 
+[project.optional-dependencies]
 dev = [
   # Testing
   "pytest >= 9.1.1",
