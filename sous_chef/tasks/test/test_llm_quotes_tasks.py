@@ -3,7 +3,7 @@ import os
 import json
 
 from sous_chef.prompts import load_prompt
-from sous_chef.tasks.llm_quotes import ArticleQuotesOutput
+from sous_chef.tasks.llm_quotes import ArticleQuotesInput, ArticleQuotesOutput, ArticleQuotesTask
 from ..llm_base import GroqClient
 from ...params import GroqModelName
 
@@ -34,3 +34,14 @@ class TestExtractQuotes(unittest.TestCase):
         output1, usage1 = self._client.execute(story_prompt1, ArticleQuotesOutput)
         assert len(output1.quotes) == 0
 
+    def test_task_run_outcome_ok(self):
+        # BaseLLMTask.run() catches all exceptions and returns a FAILURE outcome,
+        # so assert on the outcome to catch breaking changes in instructor/groq
+        with open(FIXTURE_1, "r") as f:
+            samples = json.load(f)
+        task_impl = ArticleQuotesTask(client=self._client)
+        outcome = task_impl.run(ArticleQuotesInput(text=samples[0]["text"]))
+        assert outcome.ok, outcome.metadata.get("error")
+        assert len(outcome.output.quotes) > 0
+        # usage stats feed the LLM cost artifact
+        assert len(outcome.metadata.get("usage_summaries", [])) > 0

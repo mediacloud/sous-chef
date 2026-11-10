@@ -4,65 +4,64 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sous-chef"
-version = "v3.10.1"
+version = "v4.0.0a1"
 description = "Sous-Chef data pipeline tool - Media cloud NLP pipeline configured via Python flows"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 authors = [
   {name = "Paige Gulley", email = "pgulley@mediacloud.org"}
 ]
 
 dependencies = [
-  # Core data processing (numpy < 2.0 required by matplotlib 3.8.2)
-  "pandas >= 2.2.0, < 3.0",
-  "numpy >= 1.26.0, < 2.0",
+  # Core data processing
+  "pandas == 3.1.*",
+  "numpy == 2.5.*",
   
-  # Prefect orchestration (updated to v3.6.10)
-  "prefect >= 3.6.10",
-  "prefect_aws",
-  "prefect_email",
+  # Prefect orchestration
+  "prefect == 3.9.*",
+  "prefect_aws == 0.7.*",
+  "prefect_email == 0.4.*",
   
   # Data validation and models
-  "pydantic >= 2.12.5",
+  "pydantic == 2.14.*",
   
   # MediaCloud integration
-  "mediacloud >= 5.1.0",
-  "mediacloud-metadata",
-  "mc-providers @ git+https://github.com/mediacloud/mc-providers@v4.4.latest",
-  "wayback-news-search >= 1.2.0",
+  "mediacloud == 5.*",
+  "mediacloud-metadata == 2.*",
   
   # NLP and text processing
-  "yake >= 0.6.0",
-  "spacy",
+  "yake == 0.7.*",
+  "spacy == 3.8.*",
   "spacy-download",
   "spacy-ngram",
-  "torch",
-  "transformers >= 4.37.2",
-  "huggingface_hub >= 0.34.4",
-  "uniseg",
-  "protobuf",
-  "sentencepiece",
+  "torch == 2.15.*",
+  "transformers == 5.22.*",  # earlier 5.x tokenizers dropped DeBERTa special tokens on sentence pairs
+  "huggingface_hub == 1.33.*",  # litellm caps this at < 2.0
+  "uniseg == 0.10.*",
+  "protobuf == 7.36.*",
+  "sentencepiece == 0.2.*",
 
   
   # Utilities
-  "click >= 8.3.1",
-  "requests >= 2.32.5",
-  "python-dotenv >= 1.2.1",
-  "jinja2 >= 3.1.0",
-  "scrapy >= 2.14.2",
+  "click == 8.5.*",
+  "requests == 2.34.*",
+  "python-dotenv == 1.2.*",
+  "jinja2 == 3.1.*",
+  "scrapy == 2.20.*",
   
   # AWS/B2 storage
-  "boto3",
+  "boto3 == 1.43.*",  # exact version is bounded by aiobotocore (via prefect-aws)
 
-  #LLM use,
-  "litellm",
-  "instructor",
-  "groq"
+  # LLM use (litellm caps openai < 3)
+  "litellm == 1.108.*",
+  "instructor == 1.17.*",
+  "groq == 1.7.*"
 ]
 
+[project.optional-dependencies]
 dev = [
   # Testing
-  "pytest >= 8.0.0",
+  "pytest == 9.*",
 ]
 
 

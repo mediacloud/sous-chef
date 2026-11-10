@@ -17,13 +17,26 @@ from typing import Any, Dict, Generic, Optional, TypeVar, Iterable, Callable, Li
 from pydantic import BaseModel, Field
 from ..secrets import get_llm_api_key
 from ..params import GroqModelName
-from ..params.llm_params import DEFAULT_GROQ_MODEL
+from ..params.llm_params import DEFAULT_GROQ_MAX_COMPLETION_TOKENS, DEFAULT_GROQ_MODEL
 import instructor
 from litellm import completion
-from groq import Groq
+from groq import BadRequestError, Groq
 
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def _is_groq_json_validate_failed(error: Optional[BaseException]) -> bool:
+    """True when Groq rejected a response because it wasn't valid JSON (e.g. empty output)."""
+    # Instructor wraps provider errors (raise ... from original), so walk the cause chain
+    while error is not None:
+        if isinstance(error, BadRequestError):
+            body = error.body if isinstance(error.body, dict) else {}
+            # body may be the full payload or just its inner "error" object
+            details = body.get("error", body)
+            return isinstance(details, dict) and details.get("code") == "json_validate_failed"
+        error = error.__cause__
+    return False
 
 
 class OutcomeStatus(str, Enum):
@@ -230,15 +243,26 @@ class GroqClient(LLMModelClient):
 
         self.client.on("completion:response", groq_response_callback_hook)
 
-        result = self.client.create(
-            model=self.model_name,
-            messages=messages,
-            response_model=response_model,
-            max_retries=max_retries,
-            **kwargs,
-        )
-
-        self.client.off("completion:response", groq_response_callback_hook)
+        kwargs.setdefault("max_completion_tokens", DEFAULT_GROQ_MAX_COMPLETION_TOKENS)
+        try:
+            for attempt in range(max_retries + 1):
+                try:
+                    result = self.client.create(
+                        model=self.model_name,
+                        messages=messages,
+                        response_model=response_model,
+                        max_retries=max_retries,
+                        **kwargs,
+                    )
+                    break
+                except Exception as e:
+                    # Groq models sometimes return an empty generation in JSON mode, which
+                    # Groq rejects with a 400. Instructor only retries parse errors, not API
+                    # errors, so retry those here.
+                    if not _is_groq_json_validate_failed(e) or attempt >= max_retries:
+                        raise
+        finally:
+            self.client.off("completion:response", groq_response_callback_hook)
 
         return result, usage_aggregator
 

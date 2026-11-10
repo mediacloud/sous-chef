@@ -220,7 +220,7 @@ def csv_to_b2(
             row_count=len(df)
         )
     else:
-        local_file_name = f"test-{put_name}"
+        local_file_name = put_name  # already has the "test-" prefix in dry_run mode
 
         tmp_dir = tempfile.gettempdir()
         final_dir = "/".join(local_file_name.split("/")[:-1])

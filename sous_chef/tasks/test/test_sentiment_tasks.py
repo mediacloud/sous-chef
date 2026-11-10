@@ -22,7 +22,9 @@ class TestExtractSentences(unittest.TestCase):
 
     def test_static_example(self):
         results = add_targeted_sentiment(SENTENCES_DF, sentiment_target="Mamdani")
-        expected_sentiments = ['Negative', 'Positive', 'Positive', 'Negative']
-        expected_scores = [0.4766, 0.5811, 0.6132, 0.6]
+        # Values match transformers 4.57 and 5.20; early 5.x releases (e.g. 5.3) dropped the
+        # DeBERTa [CLS]/[SEP] special tokens on sentence pairs and gave different results
+        expected_sentiments = ['Neutral', 'Neutral', 'Neutral', 'Negative']
+        expected_scores = [0.8142, 0.6907, 0.9862, 0.9963]
         self.assertListEqual(results["target_sentiment"].tolist(), expected_sentiments)
         self.assertListEqual(results["target_sentiment_score"].tolist(), expected_scores)

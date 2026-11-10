@@ -83,7 +83,7 @@ def matching_sentences_flow(params: MatchingSentencesParams) -> MatchingSentence
             email_to=params.email_to,
             query_summary=query_summary,
             b2_artifact=b2_artifact,
-            flow_name="matchine_sentences",
+            flow_name="matching_sentences",
             query=params.query
         )
     

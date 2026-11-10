@@ -119,7 +119,7 @@ def entities_demo_flow(params: EntitiesDemoParams) -> EntitiesFlowOutput:
             email_to=params.email_to,
             query_summary=query_summary,
             b2_artifact=b2_artifact,
-            flow_name="entities_demo",
+            flow_name="spacy_entities",
             query=params.query
         )
     

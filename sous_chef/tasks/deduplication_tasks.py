@@ -101,8 +101,8 @@ def _select_earliest_in_group(
 
     # restore original index for downstream compatibility; keep helper columns
     # so that stats computation can still access group keys.
-    kept.set_index("_dedup_orig_index", inplace=True)
-    dups.set_index("_dedup_orig_index", inplace=True)
+    kept = kept.set_index("_dedup_orig_index")
+    dups = dups.set_index("_dedup_orig_index")
     return kept, dups
 
 
@@ -192,7 +192,7 @@ def deduplicate_articles(
             how="left",
             suffixes=("", "_kept"),
         )
-        merged.set_index("__dup_index", inplace=True)
+        merged = merged.set_index("__dup_index")
 
         # build final stats frame from original df plus mapping to kept
         stats_df = df.loc[merged.index].copy()

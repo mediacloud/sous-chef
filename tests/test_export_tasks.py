@@ -26,9 +26,10 @@ def _sample_df() -> pd.DataFrame:
 def test_csv_to_b2_dry_run_basic_naming():
     df = _sample_df()
     # Set environment variable for bucket name (since we're not in Prefect context)
+    previous_bucket = os.environ.get("B2_BUCKET")
     os.environ["B2_BUCKET"] = "demo-bucket"
     try:
-        result = csv_to_b2.fn(  # type: ignore[attr-defined]
+        result, artifact = csv_to_b2.fn(  # type: ignore[attr-defined]
             df,
             object_name="sous-chef-two/DATE/demo.csv",
             add_date_slug=True,
@@ -37,10 +38,15 @@ def test_csv_to_b2_dry_run_basic_naming():
         )
 
         assert result["bucket"] == "demo-bucket"
+        assert artifact.row_count == len(df)
     finally:
-        # Clean up environment variable
-        os.environ.pop("B2_BUCKET", None)
-    assert result["object"].startswith("sous-chef-two/")
+        # Restore environment variable (it may have been loaded from .env)
+        if previous_bucket is None:
+            os.environ.pop("B2_BUCKET", None)
+        else:
+            os.environ["B2_BUCKET"] = previous_bucket
+    # dry_run mode prefixes the object name with "test-"
+    assert result["object"].startswith("test-sous-chef-two/")
     assert result["object"].endswith("/demo.csv")
     # Ensure DATE was replaced with today's date
     today = date.today().strftime("%Y-%m-%d")

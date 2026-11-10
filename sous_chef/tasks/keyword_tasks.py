@@ -39,7 +39,7 @@ def extract_keywords_row(
         extractors[language] = yake.KeywordExtractor(
             lan=language,
             n=ngram_max,
-            dedupLim=dedup_limit,
+            dedup_lim=dedup_limit,
             top=top_n,
             features=None
         )
