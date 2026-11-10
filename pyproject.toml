@@ -14,54 +14,54 @@ authors = [
 
 dependencies = [
   # Core data processing
-  "pandas >= 3.1.0",
-  "numpy >= 2.5.4",
+  "pandas == 3.1.*",
+  "numpy == 2.5.*",
   
   # Prefect orchestration
-  "prefect >= 3.9.0",
-  "prefect_aws >= 0.7.12",
-  "prefect_email >= 0.4.3",
+  "prefect == 3.9.*",
+  "prefect_aws == 0.7.*",
+  "prefect_email == 0.4.*",
   
   # Data validation and models
-  "pydantic >= 2.14.1",
+  "pydantic == 2.14.*",
   
   # MediaCloud integration
-  "mediacloud >= 5.1.0",
-  "mediacloud-metadata >= 2.1.0",
+  "mediacloud == 5.*",
+  "mediacloud-metadata == 2.*",
   
   # NLP and text processing
-  "yake >= 0.7.3",
-  "spacy >= 3.8.16",
+  "yake == 0.7.*",
+  "spacy == 3.8.*",
   "spacy-download",
   "spacy-ngram",
-  "torch >= 2.14.1",
-  "transformers >= 5.20.2",  # earlier 5.x tokenizers dropped DeBERTa special tokens on sentence pairs
-  "huggingface_hub >= 1.33.0",  # litellm caps this at < 2.0
-  "uniseg >= 0.10.1",
-  "protobuf >= 7.36.2",
-  "sentencepiece >= 0.2.2",
+  "torch == 2.15.*",
+  "transformers == 5.22.*",  # earlier 5.x tokenizers dropped DeBERTa special tokens on sentence pairs
+  "huggingface_hub == 1.33.*",  # litellm caps this at < 2.0
+  "uniseg == 0.10.*",
+  "protobuf == 7.36.*",
+  "sentencepiece == 0.2.*",
 
   
   # Utilities
-  "click >= 8.5.0",
-  "requests >= 2.34.2",
-  "python-dotenv >= 1.2.4",
-  "jinja2 >= 3.1.6",
-  "scrapy >= 2.19.0",
+  "click == 8.5.*",
+  "requests == 2.34.*",
+  "python-dotenv == 1.2.*",
+  "jinja2 == 3.1.*",
+  "scrapy == 2.20.*",
   
   # AWS/B2 storage
-  "boto3 >= 1.43.0",  # exact version is bounded by aiobotocore (via prefect-aws)
+  "boto3 == 1.43.*",  # exact version is bounded by aiobotocore (via prefect-aws)
 
   # LLM use (litellm caps openai < 3)
-  "litellm >= 1.106.2",
-  "instructor >= 1.17.0",
-  "groq >= 1.7.0"
+  "litellm == 1.108.*",
+  "instructor == 1.17.*",
+  "groq == 1.7.*"
 ]
 
 [project.optional-dependencies]
 dev = [
   # Testing
-  "pytest >= 9.1.1",
+  "pytest == 9.*",
 ]
 
 
