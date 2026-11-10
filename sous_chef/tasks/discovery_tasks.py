@@ -25,6 +25,7 @@ def _matching_stories(
 ) -> pd.DataFrame:
     api_key = get_mediacloud_api_key()
     mc_search = mediacloud.api.SearchApi(api_key)
+    mc_search.TIMEOUT_SECS = 60 * 5  # give it a bit longer to respond (noticed this can help in testing)
     story_pages = []  # this is a list of dataframes for some reason
     pagination_token = None
     more_stories = True
