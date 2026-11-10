@@ -107,7 +107,7 @@ def llm_demo_flow(params: LLMDemoFlowParams) -> LLMDemoFlowOutput:
             email_to=params.email_to,
             query_summary=query_summary,
             b2_artifact=b2_artifact,
-            flow_name="llm_demo",
+            flow_name="llm_summary_demo",
             query=params.query,
         )
 

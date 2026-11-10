@@ -117,7 +117,7 @@ def keywords_demo_flow(params: KeywordsDemoParams) -> KeywordsFlowOutput:
             email_to=params.email_to,
             query_summary=query_summary,
             b2_artifact=b2_artifact,
-            flow_name="keywords_demo",
+            flow_name="yake_keywords",
             query=params.query
         )
 
